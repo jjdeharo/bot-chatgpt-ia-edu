@@ -615,7 +615,7 @@ class Karla(bot.Bot):
             return self.enviar(chat, self.tx(uid, "no_miembro"))
         comando = texto.split()[0].split("@")[0].lower() if texto.startswith("/") else ""
         if comando == "/estado" and uid == bot.JUANJO:
-            return self.enviar(chat, informe(bot.contabilidad(bot.leer_estado())))
+            return self.enviar_tablas(chat, bloques_estado(bot.contabilidad(bot.leer_estado())))
         if comando in ("/start", "/ayuda"):
             return self.enviar(chat, self.ayuda(uid), "HTML")
         if not texto and not fotos:
@@ -740,27 +740,19 @@ def resumen_incidencias(e: dict) -> str:
     return linea + "".join(f"\n· {i['enlace']} ({i['estado']})" for i in todas[:5]) + f"\nTodas: {LISTA_MIAS}"
 
 
-def informe(e: dict) -> str:
-    """/estado: preguntas de los miembros y gasto, en pocas líneas, sin nada de Juanjo (Juanjo, 30-10-2026)."""
-    h = bot.resumen_dia(e)
-    usd = lambda x: f"{x:.2f}".replace(".", ",")  # noqa: E731
+def bloques_estado(e: dict) -> list:
+    """/estado en tablas, como el del Bot de IA Educativa, sin nada de Juanjo (Juanjo, 30-10-2026)."""
+    filas, nota = bot.filas_uso(e)
+    filas.append(["Gasto (USD)", bot.usd(e.get("usd_hoy", 0.0)), f"{bot.usd(e['usd_mes'])} de {bot.usd(bot.TOPE_MES_USD)}"])
     modelo = "Sonnet" if e["usd_mes"] < CAMBIO_USD else "Haiku (reserva)"
-    lineas = [
-        f"Hoy: {bot.cuenta(h['preguntas'], 'pregunta', 'preguntas')} de "
-        f"{bot.cuenta(h['personas'], 'persona', 'personas')}.",
-        f"Este mes: {bot.cuenta(e['preguntas_mes'] - e['preguntas_mes_juanjo'], 'pregunta', 'preguntas')}.",
-        bot.personas_mes(e),
-        bot.valoraciones(e),
-        bot.sin_resolver_de(e),
-        resumen_incidencias(e),
-        f"Gasto: {usd(e.get('usd_hoy', 0.0))} USD hoy · {usd(e['usd_mes'])} de {usd(bot.TOPE_MES_USD)} este mes. "
-        f"Modelo: {modelo}; pasa a Haiku a los {CAMBIO_USD:.0f} USD.",
-    ]
-    dias = sorted(e.get("historial", {}).items())[-7:]
-    if dias:
-        lineas += ["", "Días anteriores (preguntas / personas)"]
-        lineas += [f"{d[8:10]}/{d[5:7]}: {x.get('preguntas', 0)} / {x.get('personas', 0)}" for d, x in reversed(dias)]
-    return "\n".join(lineas)
+    return [("tabla", "Uso", ["", "Hoy", "Este mes"], filas, nota),
+            ("texto", bot.sin_resolver_de(e)),
+            ("texto", f"Modelo: {modelo}; pasa a Haiku a los {CAMBIO_USD:.0f} USD del mes."),
+            ("texto", resumen_incidencias(e))] + bot.tabla_dias(e)
+
+
+def informe(e: dict) -> str:
+    return bot.a_texto(bloques_estado(e))
 
 
 if __name__ == "__main__":

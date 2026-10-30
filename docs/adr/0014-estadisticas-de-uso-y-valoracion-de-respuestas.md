@@ -31,6 +31,15 @@ vuelven, proporción de preguntas sin resolver y 👍/👎 bajo la última respu
    pasa a las sin resolver (anónima, motivo «valoración negativa»), salvo que ya
    estuviera. La ayuda de los dos bots lo dice en los cinco idiomas.
 
+4. **En tablas.** Juanjo las prefiere si Telegram las admite, y las admite
+   desde el Bot API 10.1 (11-06-2026), con los mensajes enriquecidos
+   (`sendRichMessage`, `<table>` en su HTML). `/estado` manda una tabla «Uso» con
+   lo de hoy y lo del mes en columnas («—» donde una cifra no existe: los
+   documentos recibidos solo se cuentan por día y los publicados por mes) y otra
+   con los últimos 7 días. Si Telegram rechaza el mensaje enriquecido, se manda
+   lo mismo en texto con las columnas alineadas, que es también lo que da
+   `python bot.py estado` en la terminal.
+
 Lo de Juanjo no cuenta en nada de esto, pero ve los mismos botones y avisos que
 los demás.
 
@@ -69,3 +78,6 @@ los demás.
 - En Telegram, desde la cuenta de Juanjo, dos preguntas a cada bot (IA Educativa
   y Karla): solo la última respuesta lleva 👍/👎; al pulsar 👎 sale «Gracias.
   Guardo la pregunta, sin nada tuyo, para mejorar.» y los botones desaparecen.
+- `/estado` a los dos bots: Telegram acepta el mensaje enriquecido (sin error en
+  el registro ni paso al texto). Telethon no lo interpreta, así que el aspecto se
+  mira en la app.

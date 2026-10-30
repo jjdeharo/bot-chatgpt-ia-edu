@@ -255,21 +255,6 @@ def contar_pregunta(e: dict, uid: int) -> None:
         dias.append(e["dia"])
 
 
-def personas_mes(e: dict) -> str:
-    """Cuántas personas han preguntado este mes y cuántas han vuelto otro día. Las de octubre de 2026
-    se cuentan desde el día 30, cuando empezó a guardarse, y lo dice para no mezclar periodos."""
-    gente = sin_juanjo(e.get("dias_mes", {}))
-    vuelven = sum(1 for d in gente.values() if len(d) > 1)
-    desde = e.get("dias_mes_desde")
-    periodo = f"desde el {desde[8:10]}/{desde[5:7]}" if desde and desde[8:] != "01" else "este mes"
-    return f"Personas {periodo}: {len(gente)}; {vuelven} {'ha vuelto' if vuelven == 1 else 'han vuelto'} otro día."
-
-
-def valoraciones(e: dict) -> str:
-    return (f"Respuestas valoradas este mes: {cuenta(e.get('utiles_mes', 0), 'útil', 'útiles')} y "
-            f"{cuenta(e.get('no_utiles_mes', 0), 'no útil', 'no útiles')}.")
-
-
 def resumen_dia(e: dict) -> dict:
     """Solo lo de los miembros, sin las consultas de Juanjo; el gasto, todo junto. Sin separar por grupos:
     mucha gente está en los tres y no se sabe desde cuál pregunta (Juanjo, 30-10-2026)."""
@@ -337,34 +322,93 @@ def cuenta(n: int, una: str, varias: str) -> str:
     return f"{n} {una if n == 1 else varias}"
 
 
-def informe(e: dict) -> str:
-    """/estado: el uso de los miembros en pocas líneas, sin nada de Juanjo ni separar por grupos
-    (Juanjo, 30-10-2026)."""
+def usd(x: float) -> str:
+    return f"{x:.2f}".replace(".", ",")
+
+
+def filas_uso(e: dict) -> tuple[list[list], str | None]:
+    """Las filas comunes a los dos bots, con lo de hoy y lo del mes en columnas, y la nota si las personas del
+    mes no abarcan el mes entero (empezaron a contarse el 30-10-2026)."""
     h = resumen_dia(e)
-    pub = e["publicados_mes"] - e["publicados_mes_juanjo"]
-    rec = e["recursos_mes"] - e.get("recursos_mes_juanjo", 0)
-
-    def usd(x: float) -> str:
-        return f"{x:.2f}".replace(".", ",")
-
-    lineas = [
-        f"Hoy: {cuenta(h['preguntas'], 'pregunta', 'preguntas')} de {cuenta(h['personas'], 'persona', 'personas')} · "
-        f"{cuenta(h['documentos'], 'documento', 'documentos')} · "
-        f"{cuenta(h['recursos'], 'ficha de recurso', 'fichas de recursos')}.",
-        f"Este mes: {cuenta(e['preguntas_mes'] - e['preguntas_mes_juanjo'], 'pregunta', 'preguntas')} · "
-        f"{cuenta(pub, 'documento publicado', 'documentos publicados')} · "
-        f"{cuenta(rec, 'recurso publicado', 'recursos publicados')}.",
-        personas_mes(e),
-        valoraciones(e),
-        sin_resolver_de(e),
-        f"Gasto: {usd(e.get('usd_hoy', 0.0))} USD hoy · {usd(e['usd_mes'])} de {TOPE_MES_USD:.0f} este mes. "
-        f"Cupos a partir de {usd(FRENO_VECES * diario(e))} hoy" + (" (activos)." if frenado(e) else "."),
+    gente = sin_juanjo(e.get("dias_mes", {}))
+    desde = e.get("dias_mes_desde")
+    parcial = bool(desde) and desde[8:] != "01"
+    filas = [
+        ["Preguntas", h["preguntas"], e["preguntas_mes"] - e["preguntas_mes_juanjo"]],
+        ["Personas", h["personas"], f"{len(gente)}*" if parcial else len(gente)],
+        ["Han vuelto otro día", sum(1 for u in sin_juanjo(e["preguntas_hoy"]) if len(gente.get(u, [])) > 1),
+         sum(1 for d in gente.values() if len(d) > 1)],
+        ["Respuestas útiles 👍", e.get("utiles_hoy", 0), e.get("utiles_mes", 0)],
+        ["Respuestas no útiles 👎", e.get("no_utiles_hoy", 0), e.get("no_utiles_mes", 0)],
     ]
+    return filas, (f"* Personas contadas desde el {desde[8:10]}/{desde[5:7]}." if parcial else None)
+
+
+def tabla_dias(e: dict) -> list:
+    """Los últimos 7 días cerrados; las valoraciones, desde el 30-10-2026 (antes, «—»)."""
     dias = sorted(e.get("historial", {}).items())[-7:]
-    if dias:
-        lineas += ["", "Días anteriores (preguntas / personas)"]
-        lineas += [f"{d[8:10]}/{d[5:7]}: {x.get('preguntas', 0)} / {x.get('personas', 0)}" for d, x in reversed(dias)]
-    return "\n".join(lineas)
+    if not dias:
+        return []
+    filas = [[f"{d[8:10]}/{d[5:7]}", x.get("preguntas", 0), x.get("personas", 0), x.get("utiles", "—"),
+              x.get("no_utiles", "—")] for d, x in reversed(dias)]
+    return [("tabla", "Días anteriores", ["Día", "Preguntas", "Personas", "👍", "👎"], filas, None)]
+
+
+def bloques_estado(e: dict) -> list:
+    """/estado en tablas (Juanjo, 30-10-2026): el uso de los miembros, sin nada de Juanjo ni separar grupos."""
+    h = resumen_dia(e)
+    filas, nota = filas_uso(e)
+    filas += [
+        ["Documentos recibidos", h["documentos"], "—"],
+        ["Documentos publicados", "—", e["publicados_mes"] - e["publicados_mes_juanjo"]],
+        ["Fichas de recursos", h["recursos"], "—"],
+        ["Recursos publicados", "—", e["recursos_mes"] - e.get("recursos_mes_juanjo", 0)],
+        ["Gasto (USD)", usd(e.get("usd_hoy", 0.0)), f"{usd(e['usd_mes'])} de {usd(TOPE_MES_USD)}"],
+    ]
+    return [("tabla", "Uso", ["", "Hoy", "Este mes"], filas, nota),
+            ("texto", sin_resolver_de(e)),
+            ("texto", f"Cupos a partir de {usd(FRENO_VECES * diario(e))} USD hoy"
+                      + (" (activos)." if frenado(e) else "."))] + tabla_dias(e)
+
+
+def a_texto(bloques: list) -> str:
+    """Las tablas en texto, con las columnas alineadas: para la terminal y por si falla el mensaje enriquecido."""
+    partes = []
+    for b in bloques:
+        if b[0] == "texto":
+            partes.append(b[1])
+            continue
+        _, titulo, cabecera, filas, nota = b
+        todas = [[str(c) for c in f] for f in [cabecera] + filas]
+        anchos = [max(len(f[i]) for f in todas) for i in range(len(cabecera))]
+        lineas = [titulo] + ["  ".join(c.ljust(anchos[0]) if i == 0 else c.rjust(anchos[i]) for i, c in enumerate(f))
+                             for f in todas]
+        partes.append("\n".join(lineas + ([nota] if nota else [])))
+    return "\n\n".join(partes)
+
+
+def a_html(bloques: list) -> str:
+    """Las tablas como mensaje enriquecido de Telegram (Bot API 10.1, junio de 2026: <table> en rich HTML)."""
+    def fila(celdas: list, etiqueta: str) -> str:
+        return "<tr>" + "".join(f"<{etiqueta}>{html.escape(str(c), quote=False)}</{etiqueta}>" if i == 0 else
+                                f'<{etiqueta} align="right">{html.escape(str(c), quote=False)}</{etiqueta}>'
+                                for i, c in enumerate(celdas)) + "</tr>"
+
+    partes = []
+    for b in bloques:
+        if b[0] == "texto":
+            partes.append(f"<p>{html.escape(b[1], quote=False)}</p>")
+            continue
+        _, titulo, cabecera, filas, nota = b
+        partes.append(f"<table bordered striped compact><caption>{html.escape(titulo, quote=False)}</caption>"
+                      + fila(cabecera, "th") + "".join(fila(f, "td") for f in filas) + "</table>")
+        if nota:
+            partes.append(f"<p><i>{html.escape(nota, quote=False)}</i></p>")
+    return "".join(partes)
+
+
+def informe(e: dict) -> str:
+    return a_texto(bloques_estado(e))
 
 
 class Bot:
@@ -580,6 +624,11 @@ class Bot:
             guardar_estado(e)
         registrar(f"respuesta valorada: {'útil' if util else 'no útil'}")
 
+    def enviar_tablas(self, chat: int, bloques: list) -> None:
+        """/estado en tablas, como mensaje enriquecido; si Telegram no lo acepta, en texto."""
+        if not self.tg("sendRichMessage", chat_id=chat, rich_message={"html": a_html(bloques)}):
+            self.enviar(chat, a_texto(bloques))
+
     def esperar_seguidos(self, updates: list, **params) -> list:
         """Un reenvío de varios mensajes llega en varias entregas, con menos de un segundo entre ellas.
         Si lo último es una consulta en privado, se esperan JUNTAR_S segundos por si sigue."""
@@ -681,7 +730,7 @@ class Bot:
         if comando:
             self.espera.pop(uid, None)  # un comando deja lo que estuviera a medias
         if comando == "/estado" and uid == JUANJO:
-            return self.enviar(chat, informe(contabilidad(leer_estado())))
+            return self.enviar_tablas(chat, bloques_estado(contabilidad(leer_estado())))
         if comando in ("/start", "/ayuda"):
             return self.enviar(chat, self.ayuda(uid, suyos), "HTML")
         if comando == "/buscar":

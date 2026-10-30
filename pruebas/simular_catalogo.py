@@ -427,12 +427,15 @@ def main():
                         and "valoración negativa" in guardado and str(CHATGPT) not in guardado, [])
         estado = bot.informe(bot.contabilidad(e1))
         ok &= comprobar("/estado da valoraciones, personas que vuelven y la proporción sin resolver",
-                        "1 no útil" in estado and "han vuelto otro día" in estado and "% )" not in estado
+                        "Respuestas no útiles 👎" in estado and "Han vuelto otro día" in estado
                         and "de los últimos 60 días (" in estado, [(0, estado, 0)])
+        rico = bot.a_html(bot.bloques_estado(bot.contabilidad(e1)))
+        ok &= comprobar("/estado como tabla enriquecida", "<table" in rico and "<th" in rico, [(0, rico, 0)])
         prueba = {**e1, "dias_mes": {"1": ["2026-10-29", "2026-10-30"], "2": ["2026-10-30"],
                                      str(bot.JUANJO): ["2026-10-29", "2026-10-30"]}, "dias_mes_desde": None}
+        filas = {f[0]: f for f in bot.filas_uso(prueba)[0]}
         ok &= comprobar("vuelve quien pregunta en dos días; Juanjo no cuenta",
-                        bot.personas_mes(prueba) == "Personas este mes: 2; 1 ha vuelto otro día.", [(0, bot.personas_mes(prueba), 0)])
+                        filas["Personas"][2] == 2 and filas["Han vuelto otro día"][2] == 1, [(0, str(filas), 0)])
 
         # Quien solo es de EduMedia-IAG busca en todos, pero no añade a la Biblioteca ni al repositorio
         b.recientes.clear(); olvidar_lenguas(b)
