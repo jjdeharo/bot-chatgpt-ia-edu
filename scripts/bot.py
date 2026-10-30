@@ -70,6 +70,7 @@ FRENO_VECES = 2
 SEGUIDAS_HORA = int(os.environ.get("SEGUIDAS_HORA", "30"))
 TOPE_MES_USD = float(os.environ.get("TOPE_MES_USD", "38"))  # por debajo del tope del espacio de trabajo
 MEMORIA_MIN = 30  # minutos que el bot recuerda la conversación para preguntas de seguimiento
+INTERCAMBIOS = 4  # preguntas y respuestas anteriores que recuerda (Juanjo: 29-10-2026 en Karla, 30-10-2026 en los dos)
 DOCS_DIA = int(os.environ.get("DOCS_DIA", "3"))
 RECURSOS_DIA = int(os.environ.get("RECURSOS_DIA", "5"))
 COMPARTE_TU_APP = 7674  # tema «¡Comparte tu App!» de Vibe Coding Educativo
@@ -787,7 +788,7 @@ class Bot:
             historial = []
         hecho = self.escribiendo(chat)
         try:
-            r = self.consultor.responder(self.pregunta(texto, fotos, 1000), historial[-4:], self.ambito(uid),
+            r = self.consultor.responder(self.pregunta(texto, fotos, 1000), historial[-2 * INTERCAMBIOS:], self.ambito(uid),
                                          self.lenguas.get(uid, "es"))
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             registrar(f"error: {type(error).__name__}: {error}")
@@ -816,7 +817,7 @@ class Bot:
         if r.get("sin_resolver") and uid != JUANJO:  # las pruebas de Juanjo no cuentan
             guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"])
         # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.
-        self.memoria[uid] = (time.time(), historial[-2:] + [{"role": "user", "content": con_fotos(texto[:1000], fotos)},
+        self.memoria[uid] = (time.time(), historial[-2 * INTERCAMBIOS + 2:] + [{"role": "user", "content": con_fotos(texto[:1000], fotos)},
                                                           {"role": "assistant", "content": r["texto"]}])
         self.apuntar(r["uso"]["usd"], pregunta=uid)
         registrar(f"pregunta respondida: {len(r['uso']['llamadas'])} búsquedas, {r['uso']['usd']:.4f} USD")

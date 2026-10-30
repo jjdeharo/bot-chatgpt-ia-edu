@@ -45,7 +45,6 @@ DOCS = Path(os.environ.get("DOCS_INDICE", GRUPO.datos / "documentacion"))
 MODELO = os.environ.get("MODELO_KARLA", "claude-sonnet-5-5")
 MODELO_RESERVA = os.environ.get("MODELO_RESERVA", "claude-haiku-5-5")
 CAMBIO_USD = float(os.environ.get("CAMBIO_USD", "18"))  # desde aquí, Haiku hasta fin de mes
-INTERCAMBIOS = 4  # preguntas y respuestas anteriores que recuerda en una conversación (Juanjo, 29-10-2026)
 # Lo de bot.py, con los archivos y el tope de Karla, por debajo del de su espacio de trabajo.
 bot.ESTADO = bot.BASE / "datos" / "estado-karla.json"
 bot.SIN_RESOLVER = bot.BASE / "datos" / "sin-resolver-karla.jsonl"
@@ -631,7 +630,7 @@ class Karla(bot.Bot):
         try:
             # Con un repositorio de pruebas, solo Juanjo: Karla está abierta al grupo.
             abrir = INCIDENCIAS == "1" or ("/" in INCIDENCIAS and uid in bot.AUTORIZADOS)
-            r = self.consultora.responder(self.pregunta(texto, fotos, 1500), historial[-2 * INTERCAMBIOS:], modelo, abrir)
+            r = self.consultora.responder(self.pregunta(texto, fotos, 1500), historial[-2 * bot.INTERCAMBIOS:], modelo, abrir)
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             bot.registrar(f"error: {type(error).__name__}: {error}")
             if uid != bot.JUANJO:
@@ -648,7 +647,7 @@ class Karla(bot.Bot):
                                   bool(r.get("sin_resolver")))
         if r.get("sin_resolver") and uid != bot.JUANJO:  # las pruebas de Juanjo no cuentan
             bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"])
-        self.memoria[uid] = (time.time(), historial[-2 * INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},
+        self.memoria[uid] = (time.time(), historial[-2 * bot.INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},
                                                           {"role": "assistant", "content": r["texto"]}])
         self.apuntar(r["uso"]["usd"], pregunta=uid)
         bot.registrar(f"pregunta respondida con {modelo}: {len(r['uso']['llamadas'])} búsquedas, "
