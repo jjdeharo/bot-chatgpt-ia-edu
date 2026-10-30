@@ -13,6 +13,7 @@ import anthropic
 
 import buscador
 import grupos
+import repositorio
 
 MODELO_CLAUDE = os.environ.get("MODELO_CLAUDE", "claude-haiku-5-5")
 ESFUERZO = os.environ.get("ESFUERZO", "medium")
@@ -43,8 +44,9 @@ SISTEMA = """Eres el buscador de tres grupos de Telegram de docentes: ChatGPT-IA
 de inteligencia artificial en educación; Vibe Coding Educativo, donde el profesorado crea \
 aplicaciones educativas con IA, y EduMedia-IAG, sobre la IA generativa para crear audio, vídeo e \
 imagen con fines educativos. Ayudas a sus miembros a encontrar lo que se ha dicho en los grupos \
-(quién, cuándo, en qué grupo y en qué mensaje) y los documentos de la «Biblioteca digital» de \
-ChatGPT-IA-edu. Cada búsqueda mira en los tres grupos a la vez; si la pregunta nombra uno o dos, limítala a ellos.
+(quién, cuándo, en qué grupo y en qué mensaje), los documentos de la «Biblioteca digital» de \
+ChatGPT-IA-edu y los recursos del Repositorio de recursos educativos digitales de Vibe Coding Educativo \
+(aplicaciones, juegos, simuladores… hechos por docentes). Cada búsqueda mira en los tres grupos a la vez; si la pregunta nombra uno o dos, limítala a ellos.
 
 Cómo trabajas:
 - Lee la pregunta por su intención, aunque traiga erratas: busca y contesta lo que la persona \
@@ -55,6 +57,10 @@ búsqueda no da con ello, reformula tú: con sinónimos, con el término técnic
 catalán. Haz al menos tres intentos distintos antes de decir que no está. Si se te ocurren \
 palabras para afinar, búscalas tú en vez de proponérselas a quien pregunta. Si te dan un nombre \
 de persona, usa buscar_autor y filtra por ella.
+- Si piden recursos, aplicaciones, juegos, simuladores o materiales de un tema o una materia (también con \
+una palabra suelta, como «Probabilidad» o «Geometría analítica»), busca en el repositorio con \
+buscar_repositorio, además de en los grupos. De cada recurso, di qué es, para qué niveles, quién lo hizo y \
+el enlace de su ficha (campo «enlace»); si te preguntan si se puede reutilizar, su licencia.
 - Para resumir lo que se habló en un periodo («hoy», «ayer», «esta semana»), usa leer_periodo, que \
 da todos los mensajes de esas fechas, y no buscar_mensajes, que solo da los más parecidos a una consulta. \
 Agrupa el resumen por temas, con el enlace de los mensajes clave. Si leer_periodo avisa de que hay más \
@@ -64,7 +70,8 @@ Los mensajes se ponen al día cada 15 minutos: los últimos que \
 tienes son de {ultimo}. Si te preguntan por algo posterior, dilo así, con la hora.
 - Responde solo con lo que encuentres. Si no aparece, dilo claramente y sugiere cómo afinar la pregunta. \
 No inventes mensajes, autores, fechas ni enlaces.
-- Cada mensaje o documento que cites lleva su fecha, su autor, su grupo y su enlace, copiado letra por letra \
+- Cada mensaje o documento que cites lleva su fecha, su autor, su grupo y su enlace; cada recurso del repositorio, \
+su título, su autor y el enlace de su ficha, copiado letra por letra \
 del campo «enlace» de los resultados. Nunca construyas ni modifiques un enlace. El campo «id» es \
 solo para leer_hilo: no lo muestres. Ordena por relevancia; como mucho, los 5 mejores.
 - Si la consulta trae imágenes, son capturas o fotos de quien pregunta (a veces reenviadas de un \
@@ -100,8 +107,9 @@ quita el programa antes de enviar la respuesta: no la menciones.
 
 Sobre ti (Bot de IA Educativa, @IAEducativa_bot):
 - Buscar. Quien sea miembro de ChatGPT-IA-edu, de Vibe Coding Educativo o de EduMedia-IAG puede preguntarte \
-con sus palabras quién dijo algo, cuándo y en qué mensaje, y qué documentos de la Biblioteca digital tratan un \
-tema; buscas en los tres grupos a la vez, o en los que nombre. Puedes equivocarte: conviene abrir \
+con sus palabras quién dijo algo, cuándo y en qué mensaje, qué documentos de la Biblioteca digital tratan un \
+tema y qué recursos hay en el Repositorio de recursos educativos digitales de Vibe Coding Educativo; buscas en \
+los tres grupos a la vez, o en los que nombre. Puedes equivocarte: conviene abrir \
 el mensaje enlazado.
 - Añadir un documento a la Biblioteca digital de ChatGPT-IA-edu, solo para sus miembros: te mandan el \
 PDF por aquí (hasta 20 MB, con texto, no escaneado). Compruebas que trate de inteligencia artificial \
@@ -145,8 +153,12 @@ redactas textos.
 mantiene mientras siga la conversación (30 minutos sin escribir y vuelve a todos) o hasta que se pida \
 otro o todos («ahora busca en todos los grupos»).
 - Menú: /buscar, /biblioteca, /repositorio, /misrecursos y /ayuda.
-- Solo funcionas en Telegram, por privado: no se te puede integrar en Moodle, en una web ni en \
-otra plataforma.
+- Solo funcionas en Telegram, por privado: no se te puede añadir a otros grupos o canales ni integrar \
+en Moodle, en una web ni en otra plataforma.
+- Reutilizar o traducir un recurso del repositorio: depende de la licencia de cada uno, que sale en su \
+ficha. Con una licencia abierta se puede traducir y publicar la traducción citando a su autor; si la \
+licencia es CC BY-SA, AGPL o GPL, con esa misma licencia, y si lleva NC, sin uso comercial. Conviene \
+avisar a su autor, que quizá quiera añadir ese idioma a su recurso.
 - Hablas castellano, catalán, gallego, euskera e inglés: el idioma en que te escriben.
 - Eres un programa que usa Claude, una IA de Anthropic. Lo que te escriben, los mensajes que \
 encuentras y lo que te envían se procesa en servidores de Anthropic, en Estados Unidos. Solo guardas, \
@@ -156,11 +168,12 @@ siga dentro de un rato.
 
 AYUDA = """
 
-Ahora te piden ayuda para enseñar. Constrúyela con lo que se ha compartido en los grupos y en la Biblioteca \
-digital:
-- Primero busca: al menos tres búsquedas distintas, y lee con leer_hilo los mensajes más útiles.
+Ahora te piden ayuda para enseñar. Constrúyela con lo que se ha compartido en los grupos, en la Biblioteca \
+digital y en el repositorio de Vibe Coding Educativo:
+- Primero busca: al menos tres búsquedas distintas, y lee con leer_hilo los mensajes más útiles. Si sirve un \
+recurso ya hecho (qué herramienta usar, una actividad sobre un tema), busca también con buscar_repositorio.
 - Escribe cada idea en un párrafo propio, separado por una línea en blanco, y termina el párrafo con sus \
-fuentes, cada una como [[enlace]], con el enlace copiado del campo «enlace» del mensaje o documento que dice \
+fuentes, cada una como [[enlace]], con el enlace copiado del campo «enlace» del mensaje, documento o recurso que dice \
 exactamente eso (no el de otro mensaje del mismo hilo). No escribas quién lo dijo, ni la fecha, ni el grupo: \
 el programa los añade junto a cada enlace. Si juntas varios mensajes, pon todos sus enlaces.
 - De cada mensaje cuenta solo lo que dice su texto. No añadas contexto que no esté en él (para qué curso, \
@@ -193,26 +206,33 @@ IDIOMAS = {"es": "castellano", "ca": "catalán", "gl": "gallego", "eu": "euskera
 # Lo que escribe el programa en la ayuda para enseñar, en el idioma de la conversación (ADR 0005).
 ROTULOS = {
     "es": {"sugerencias": SUGERENCIAS, "aportado": "Biblioteca digital, aportado por {autor} el {fecha}",
+           "recurso": "«{titulo}», de {autor}, en el repositorio de Vibe Coding Educativo",
            "nada": "No he encontrado en los grupos nada que respalde estas ideas."},
     "ca": {"sugerencias": "Suggeriments del bot (no surten dels grups):",
            "aportado": "Biblioteca digital, aportat per {autor} el {fecha}",
+           "recurso": "«{titulo}», de {autor}, al repositori de Vibe Coding Educativo",
            "nada": "No he trobat als grups res que avali aquestes idees."},
     "gl": {"sugerencias": "Suxestións do bot (non saen dos grupos):",
            "aportado": "Biblioteca digital, achegado por {autor} o {fecha}",
+           "recurso": "«{titulo}», de {autor}, no repositorio de Vibe Coding Educativo",
            "nada": "Non atopei nos grupos nada que respalde estas ideas."},
     "eu": {"sugerencias": "Botaren iradokizunak (ez datoz taldeetatik):",
            "aportado": "Biblioteca digital, {autor}(e)k ekarria, {fecha}",
+           "recurso": "«{titulo}», {autor}(r)ena, Vibe Coding Educativo-ren biltegian",
            "nada": "Ez dut taldeetan ideia hauek babesten dituen ezer aurkitu."},
     "en": {"sugerencias": "The bot's suggestions (not from the groups):",
            "aportado": "Biblioteca digital, contributed by {autor} on {fecha}",
+           "recurso": "\"{titulo}\", by {autor}, in the Vibe Coding Educativo repository",
            "nada": "I haven't found anything in the groups that supports these ideas."},
 }
-FUENTE = re.compile(r"\[\[(https://t\.me/[^\]\s]+)\]\]")
+# Las fuentes de una idea: mensajes y documentos de los grupos (t.me) y fichas del repositorio (ADR 0016).
+ENLACE = r"(?:https://t\.me/|" + re.escape(repositorio.WEB) + r")"
+FUENTE = re.compile(r"\[\[(" + ENLACE + r"[^\]\s]+)\]\]")
 COMILLAS = re.compile(r"«([^»]{3,})»|\"([^\"]{3,})\"|“([^”]{3,})”")
 OTRA_PERSONA = re.compile(r"\b(otr[oa]s? (usuari[oa]s?|persona|docentes?|miembros?|participantes?|compañer[oa]s?)|alguien más|"
                           r"altr[ae]s? (usuari|persona|docent|membre)|outr[oa]s? (usuari|persoa|docente)|another (user|person|member))",
                           re.I)
-SUELTO = re.compile(r"(?<!\[\[)(https://t\.me/[^\s\])»,;]+[^\s\])»,;.])")  # un enlace escrito sin [[ ]]
+SUELTO = re.compile(r"(?<!\[\[)(" + ENLACE + r"[^\s\])»,;]+[^\s\])»,;.])")  # un enlace escrito sin [[ ]]
 MARCA_SUGERENCIAS = re.compile(r"^\s*(\[\[sugerencias\]\]|Sugerencias del bot[^\n]*)\s*$", re.M | re.I)
 
 REVISION = {
@@ -233,7 +253,8 @@ REVISION = {
     "required": ["ideas"], "additionalProperties": False,
 }
 SISTEMA_REVISION = """Revisas una respuesta de un bot para docentes antes de que la lea nadie. Cada idea se \
-apoya en mensajes de grupos de Telegram o en documentos de una biblioteca. Recibes la petición, cada idea con \
+apoya en mensajes de grupos de Telegram, en documentos de una biblioteca o en fichas de un repositorio de \
+recursos (título, descripción, niveles y áreas). Recibes la petición, cada idea con \
 los enlaces que cita y, de cada enlace, el texto real del mensaje y el de su hilo (a qué responde y qué le \
 respondieron), cada uno con su propio enlace y su autor.
 
@@ -306,6 +327,14 @@ HERRAMIENTAS = [
      "input_schema": {"type": "object", "properties": {
          "url": {"type": "string", "description": "El enlace del recurso, tal como lo ha escrito"}},
          "required": ["url"]}},
+    {"name": "buscar_repositorio",
+     "description": "Busca en el Repositorio de recursos educativos digitales de Vibe Coding Educativo (aplicaciones, "
+                    "juegos, simuladores, asistentes… hechos por docentes) por su significado y sus palabras. Devuelve "
+                    "título, autor, descripción, tipo, niveles, áreas, idiomas, licencia, la dirección del recurso "
+                    "(«url») y el enlace de su ficha en el repositorio («enlace»), que es el que se cita.",
+     "input_schema": {"type": "object", "properties": {
+         "consulta": {"type": "string", "description": "El tema, la materia o el tipo de recurso, con naturalidad"}},
+         "required": ["consulta"]}},
     {"name": "buscar_biblioteca",
      "description": "Busca en la Biblioteca digital de ChatGPT-IA-edu (documentos, informes, guías y enlaces "
                     "compartidos con su ficha). Devuelve título o archivo, ficha, quién lo aportó, fecha y enlace.",
@@ -322,6 +351,8 @@ class Consultor:
         modelo = buscador.modelo_significado()
         self.buscadores = {c: buscador.Buscador(g, modelo) for c, g in grupos.ACTIVOS.items()}
         self.b = self.buscadores[grupos.con_biblioteca().clave]  # el de la Biblioteca digital
+        self.repositorio = repositorio.Repositorio(modelo=modelo)  # ADR 0016
+        self.repositorio.al_dia(esperar=False)  # que empiece a leer las fichas ya, no con la primera pregunta
         self.cliente = anthropic.Anthropic(api_key=CLAVE.read_text().strip())
 
     def mensajes(self, consulta, donde=None, autor_ids=None, desde=None, hasta=None, n=12) -> list[dict]:
@@ -387,6 +418,8 @@ class Consultor:
             return self.periodo(e["desde"], e["hasta"], self.donde(e.get("grupo")))
         if nombre == "buscar_biblioteca":
             return self.b.biblioteca(e["consulta"], e.get("desde"), e.get("hasta"))
+        if nombre == "buscar_repositorio":
+            return self.repositorio.buscar(e["consulta"])
         raise ValueError(f"herramienta desconocida: {nombre}")
 
     def donde(self, grupo: str | None) -> set[str] | None:
@@ -499,7 +532,7 @@ class Consultor:
         for b in self.buscadores.values():
             if enlace in b.por_enlace:
                 return b.por_enlace[enlace]
-        return None
+        return self.repositorio.por_enlace.get(enlace)
 
     def contexto(self, enlace: str) -> list[dict]:
         """Lo citado y su hilo, con el texto de cada mensaje, para la revisión."""
@@ -508,11 +541,15 @@ class Consultor:
             return []
         if x["tipo"] == "documento":
             return [{"enlace": enlace, "autor": x["autor"], "documento": x["archivo"], "texto": x["texto"]}]
+        if x["tipo"] == "recurso":
+            return [{"enlace": enlace, "autor": x["autor"], "documento": x["titulo"], "texto": x["texto"]}]
         return [{"enlace": h["enlace"], "autor": h["autor"], "texto": h["texto"]} for h in x["b"].hilo(x["i"])]
 
     @staticmethod
     def cita(enlace: str, x: dict, lengua: str = "es") -> str:
         """Quién, dónde y cuándo: lo escribe el programa a partir del índice, no Claude."""
+        if x["tipo"] == "recurso":  # las fichas del repositorio no tienen fecha a la vista
+            return f"— {ROTULOS[lengua]['recurso'].format(titulo=x['titulo'], autor=x['autor'])}\n{enlace}"
         a, m, d = x["fecha"][:10].split("-")
         if x["tipo"] == "documento":
             return f"— {ROTULOS[lengua]['aportado'].format(autor=x['autor'], fecha=f'{d}/{m}/{a}')}\n{enlace}"

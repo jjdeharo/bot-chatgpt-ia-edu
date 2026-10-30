@@ -45,10 +45,12 @@ ES = {
     "inicio": ("Hola. Soy el bot de los grupos [ChatGPT-IA-edu](https://t.me/ChatGPTedu), "
                "[Vibe Coding Educativo](https://t.me/vceduca) y [EduMedia-IAG](https://t.me/EduMediaIAG). Te ayudo con esto:"),
     "ayuda_buscar": (
-        "🔍 Buscar en los grupos. Pregúntame con tus palabras quién dijo algo, cuándo, o qué documentos "
-        "de la Biblioteca digital de ChatGPT-IA-edu tratan un tema, y te respondo con el enlace a cada "
-        "mensaje. Busco en los tres grupos a la vez; si quieres solo uno o dos, nómbralos. Por ejemplo: "
-        "«¿quién habló de evaluar con IA el curso pasado?», «¿hay guías sobre IA en infantil?» o "
+        "🔍 Buscar en los grupos. Pregúntame con tus palabras quién dijo algo, cuándo, qué documentos "
+        "de la Biblioteca digital de ChatGPT-IA-edu o qué recursos del repositorio de Vibe Coding Educativo "
+        "tratan un tema, y te respondo con el enlace de cada uno. Busco en los tres grupos a la vez; si quieres "
+        "solo uno o dos, nómbralos. Por ejemplo: "
+        "«¿quién habló de evaluar con IA el curso pasado?», «¿hay guías sobre IA en infantil?», "
+        "«¿hay alguna aplicación para practicar probabilidad?» o "
         "«¿qué se ha dicho en Vibe Coding Educativo sobre publicar en GitHub Pages?»."),
     "ayuda_biblioteca": (
         "📄 Añadir un documento a la Biblioteca digital de ChatGPT-IA-edu. Envíame aquí el archivo en PDF "
@@ -240,10 +242,12 @@ CA = {
     "inicio": ("Hola. Soc el bot dels grups [ChatGPT-IA-edu](https://t.me/ChatGPTedu), "
                "[Vibe Coding Educativo](https://t.me/vceduca) i [EduMedia-IAG](https://t.me/EduMediaIAG). T'ajudo amb això:"),
     "ayuda_buscar": (
-        "🔍 Cercar als grups. Pregunta'm amb les teves paraules qui va dir alguna cosa, quan, o quins documents "
-        "de la Biblioteca digital de ChatGPT-IA-edu tracten un tema, i et responc amb l'enllaç a cada "
-        "missatge. Cerco als tres grups alhora; si en vols només un o dos, anomena'ls. Per exemple: "
-        "«qui va parlar d'avaluar amb IA el curs passat?», «hi ha guies sobre IA a infantil?» o "
+        "🔍 Cercar als grups. Pregunta'm amb les teves paraules qui va dir alguna cosa, quan, quins documents "
+        "de la Biblioteca digital de ChatGPT-IA-edu o quins recursos del repositori de Vibe Coding Educativo "
+        "tracten un tema, i et responc amb l'enllaç de cadascun. Cerco als tres grups alhora; si en vols només "
+        "un o dos, anomena'ls. Per exemple: "
+        "«qui va parlar d'avaluar amb IA el curs passat?», «hi ha guies sobre IA a infantil?», "
+        "«hi ha alguna aplicació per practicar probabilitat?» o "
         "«què s'ha dit a Vibe Coding Educativo sobre publicar a GitHub Pages?»."),
     "ayuda_biblioteca": (
         "📄 Afegir un document a la Biblioteca digital de ChatGPT-IA-edu. Envia'm aquí el fitxer en PDF "
@@ -417,10 +421,12 @@ GL = {
     "inicio": ("Ola. Son o bot dos grupos [ChatGPT-IA-edu](https://t.me/ChatGPTedu), "
                "[Vibe Coding Educativo](https://t.me/vceduca) e [EduMedia-IAG](https://t.me/EduMediaIAG). Axúdoche con isto:"),
     "ayuda_buscar": (
-        "🔍 Buscar nos grupos. Pregúntame coas túas palabras quen dixo algo, cando, ou que documentos "
-        "da Biblioteca dixital de ChatGPT-IA-edu tratan un tema, e respóndoche coa ligazón a cada "
-        "mensaxe. Busco nos tres grupos á vez; se queres só un ou dous, nómeaos. Por exemplo: "
-        "«quen falou de avaliar con IA o curso pasado?», «hai guías sobre IA en infantil?» ou "
+        "🔍 Buscar nos grupos. Pregúntame coas túas palabras quen dixo algo, cando, que documentos "
+        "da Biblioteca dixital de ChatGPT-IA-edu ou que recursos do repositorio de Vibe Coding Educativo "
+        "tratan un tema, e respóndoche coa ligazón de cada un. Busco nos tres grupos á vez; se queres só un "
+        "ou dous, nómeaos. Por exemplo: "
+        "«quen falou de avaliar con IA o curso pasado?», «hai guías sobre IA en infantil?», "
+        "«hai algunha aplicación para practicar probabilidade?» ou "
         "«que se dixo en Vibe Coding Educativo sobre publicar en GitHub Pages?»."),
     "ayuda_biblioteca": (
         "📄 Engadir un documento á Biblioteca dixital de ChatGPT-IA-edu. Envíame aquí o ficheiro en PDF "
@@ -594,10 +600,12 @@ EU = {
     "inicio": ("Kaixo. [ChatGPT-IA-edu](https://t.me/ChatGPTedu), "
                "[Vibe Coding Educativo](https://t.me/vceduca) eta [EduMedia-IAG](https://t.me/EduMediaIAG) taldeen bota naiz. Hauetan laguntzen dizut:"),
     "ayuda_buscar": (
-        "🔍 Taldeetan bilatu. Galdetu zure hitzekin nork esan zuen zerbait, noiz, edo ChatGPT-IA-edu "
-        "taldeko Liburutegi digitaleko zein dokumentuk jorratzen duten gai bat, eta mezu bakoitzaren "
-        "estekarekin erantzungo dizut. Hiru taldeetan bilatzen dut aldi berean; bat edo bi bakarrik nahi badituzu, aipatu. "
-        "Adibidez: «nork hitz egin zuen iaz IArekin ebaluatzeaz?», «ba al dago haur hezkuntzako IA gidarik?» "
+        "🔍 Taldeetan bilatu. Galdetu zure hitzekin nork esan zuen zerbait, noiz, ChatGPT-IA-edu "
+        "taldeko Liburutegi digitaleko zein dokumentuk edo Vibe Coding Educativo-ren biltegiko zein baliabidek "
+        "jorratzen duten gai bat, eta bakoitzaren estekarekin erantzungo dizut. Hiru taldeetan bilatzen dut aldi "
+        "berean; bat edo bi bakarrik nahi badituzu, aipatu. "
+        "Adibidez: «nork hitz egin zuen iaz IArekin ebaluatzeaz?», «ba al dago haur hezkuntzako IA gidarik?», "
+        "«ba al dago probabilitatea lantzeko aplikaziorik?» "
         "edo «zer esan da Vibe Coding Educativo taldean GitHub Pages-en argitaratzeaz?»."),
     "ayuda_biblioteca": (
         "📄 Dokumentu bat gehitu ChatGPT-IA-edu taldeko Liburutegi digitalera. Bidali hona PDF fitxategia "
@@ -773,10 +781,11 @@ EN = {
     "inicio": ("Hello. I'm the bot of the [ChatGPT-IA-edu](https://t.me/ChatGPTedu), "
                "[Vibe Coding Educativo](https://t.me/vceduca) and [EduMedia-IAG](https://t.me/EduMediaIAG) groups. I can help you with this:"),
     "ayuda_buscar": (
-        "🔍 Search the groups. Ask me in your own words who said something, when, or which documents in "
-        "the ChatGPT-IA-edu Digital Library cover a topic, and I'll answer with a link to each message. I "
-        "search all three groups at once; if you only want one or two, name them. For example: \"who talked about "
-        "assessing with AI last school year?\", \"are there guides on AI in early years?\" or \"what has "
+        "🔍 Search the groups. Ask me in your own words who said something, when, which documents in "
+        "the ChatGPT-IA-edu Digital Library or which resources in the Vibe Coding Educativo repository cover a "
+        "topic, and I'll answer with a link to each one. I search all three groups at once; if you only want one "
+        "or two, name them. For example: \"who talked about assessing with AI last school year?\", \"are there "
+        "guides on AI in early years?\", \"is there an app to practise probability?\" or \"what has "
         "been said in Vibe Coding Educativo about publishing on GitHub Pages?\"."),
     "ayuda_biblioteca": (
         "📄 Add a document to the ChatGPT-IA-edu Digital Library. Send me the PDF file here (up to 20 MB) "

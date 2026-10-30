@@ -31,13 +31,14 @@ from pathlib import Path
 
 import consultar
 import fichas
+import repositorio
 from grupos import DATOS
 
 CRED = Path(os.environ.get("CATALOGO_CRED", Path.home() / ".config/credenciales/catalogo-vce.json"))
 DUENOS = DATOS / "catalogo.json"
 AVISOS = DATOS / "avisos.json"  # la revisión del repositorio: qué le falta a cada recurso y hasta cuándo (ADR 0013)
 REVISIONES = DATOS / "revisiones.json"  # los rechazos que su autor pide revisar a mano (ADR 0004)
-WEB = "https://vibe-coding-educativo.github.io/app_edu/"
+WEB = repositorio.WEB
 MODELO = fichas.MODELO_FICHA
 MAX_CODIGO = 80_000      # caracteres del recurso que lee Claude
 MAX_DESCARGA = 3 * 1024 * 1024
