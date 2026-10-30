@@ -90,6 +90,7 @@ def responder_falso(texto, historial=None, ambito=None, lengua=None):
 
 def nuevo_bot(tmp: Path):
     catalogo.DUENOS = tmp / "catalogo.json"
+    catalogo.REVISIONES = tmp / "revisiones.json"
     bot.ESTADO = tmp / "estado.json"
     bot.SIN_RESOLVER = tmp / "sin-resolver.jsonl"
     bot.AUTORIZADOS = set()
@@ -100,7 +101,7 @@ def nuevo_bot(tmp: Path):
     b.recursos = catalogo.Fichas(anthropic.Anthropic(api_key=consultar.CLAVE.read_text().strip()))
     b.hoja = HojaFalsa()
     b.espera, b.fichas_rec, b.listas, b.lenguas, b.recientes, b.compartir = {}, {}, {}, {}, {}, {}
-    b.ambitos = {}
+    b.ambitos, b.rechazados = {}, {}
     b.consultor = type("C", (), {"cliente": b.recursos.cliente,  # para detectar el idioma
                                  "responder": lambda self, texto, *a: responder_falso(texto, *a)})()
     b.en_hilo = lambda f, *a: f(*a)  # sin hilos: la prueba sigue el orden
@@ -304,6 +305,46 @@ def main():
         d, _ = f.analizar("https://ejemplo.org/fr", base + "<p>Versión gratuita: 5 ejercicios al día. <a href='/pro'>"
                           "Hazte Pro por 4,99 €/mes</a> para ejercicios ilimitados.</p><!-- MIT --></body></html>")
         ok &= comprobar("freemium: de pago", d["de_pago"], [])
+
+        # El mínimo (Juanjo, 30-10-2026; ADR 0004): fuera lo que no se puede usar; un recurso sencillo entra.
+        agpl = "<!-- SPDX-License-Identifier: AGPL-3.0-or-later --></body></html>"
+        d, _ = f.analizar("https://ejemplo.org/fr", base + "<script>/* genera sumas y corrige */</script>" + agpl)
+        ok &= comprobar("un recurso sencillo y completo llega al mínimo", d["es_recurso_educativo"] and d["nivel_minimo"], [])
+        vacia = ("<html><head><title>Fracciones</title></head><body><h1>Practica fracciones</h1>"
+                 "<p>Próximamente: aquí irán los ejercicios.</p><button>Empezar</button>" + agpl)
+        d, _ = f.analizar("https://ejemplo.org/vacia", vacia)
+        ok &= comprobar("una página a medio hacer no llega al mínimo", d["suficiente"] and not d["nivel_minimo"], [])
+        d, _ = f.analizar("https://ejemplo.org/mal", base + "<h2>Soluciones</h2><ul><li>1/2 + 1/3 = 2/5</li>"
+                          "<li>1/4 + 1/4 = 2/8</li><li>2/3 + 1/3 = 3/6</li></ul>" + agpl)
+        ok &= comprobar("errores de bulto en lo que enseña: no llega al mínimo", not d["nivel_minimo"], [])
+        d, _ = f.admitir("https://ejemplo.org/vacia", vacia)
+        ok &= comprobar("un recurso que se muda a una página a medio hacer no entra", not d["nivel_minimo"], [])
+
+        # Pedir una revisión: el rechazo llega a Juanjo y «Cumple» sigue el alta.
+        de = {"id": VCE, "first_name": "Persona", "last_name": str(VCE)}
+        n = len(b.tg.enviados)
+        b.recurso(VCE, VCE, de, "https://ejemplo.org/vacia", vacia)
+        s = b.tg.enviados[n:]
+        ok &= comprobar("el rechazo ofrece «Pedir una revisión»", s and "rr" in str(s[-1][2]), s)
+        s = boton(b, VCE, "rr") + mensaje(b, VCE, "Los ejercicios se cargan al pulsar Empezar, ya funciona.")
+        a_juanjo = [x for x in b.tg.enviados if x[0] == bot.JUANJO and "jrc:" in str(x[2])]
+        ok &= comprobar("la petición llega a Juanjo con sus razones y los dos botones",
+                        a_juanjo and "ya funciona" in a_juanjo[-1][1] and "jrn:" in str(a_juanjo[-1][2])
+                        and any("revisión manual" in x[1] for x in s), s)
+        if a_juanjo:
+            ref = next(x["callback_data"] for fila in a_juanjo[-1][2]["inline_keyboard"] for x in fila
+                       if x["callback_data"].startswith("jrc:"))
+            n = len(b.tg.enviados)
+            b.revisar_rechazo(ref)
+            s = b.tg.enviados[n:]
+            ok &= comprobar("«Cumple» se lo dice a su autor y le enseña la ficha para publicarla",
+                            any(x[0] == VCE and "Revisado a mano" in x[1] for x in s)
+                            and any(x[0] == VCE and "rp" in str(x[2]) for x in s)
+                            and catalogo.leer_revisiones()["https://ejemplo.org/vacia"]["estado"] == "aprobado"
+                            and "contenido" not in catalogo.leer_revisiones()["https://ejemplo.org/vacia"], s)
+            b.revisar_rechazo(ref)
+            ok &= comprobar("pulsarlo otra vez no repite el alta", "ya no está" in b.tg.enviados[-1][1], [])
+        b.fichas_rec.pop(VCE, None)
 
         # Idioma: al principio, el de Telegram; en cuanto escribe una frase, el de la frase.
         olvidar_lenguas(b)

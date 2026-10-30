@@ -364,6 +364,7 @@ class Bot:
         self.lenguas = {}      # usuario -> idioma en que se le habla; solo en memoria (ADR 0005)
         self.recientes = {}    # usuario -> momentos de sus consultas de la última hora, contra el uso automático
         self.compartir = {}    # usuario -> mensaje para «¡Comparte tu App!» a la espera de su visto bueno
+        self.rechazados = {}   # usuario -> último recurso rechazado por su contenido, por si pide revisarlo
         self.ambitos = {}      # usuario -> (momento, grupos en que busca o None si todos); caduca con la conversación
 
     def grupos_de(self, uid: int) -> set[str]:
@@ -814,6 +815,8 @@ class Bot:
             return self.en_hilo(self.boton_recurso, uid, accion)
         if accion.startswith(("jc:", "jn:")) and uid == JUANJO:
             return self.en_hilo(self.revisar_aviso, accion)
+        if accion.startswith(("jrc:", "jrn:")) and uid == JUANJO:
+            return self.en_hilo(self.revisar_rechazo, accion)
         if accion == "bm":
             return self.enviar(uid, self.tx(uid, "mantenido"))
         if accion.startswith("bq:"):  # quitar de la Biblioteca lo que publicó el bot en su nombre
@@ -898,6 +901,9 @@ class Bot:
                 self.en_hilo(self.recurso, chat, uid, msg["from"], e["url"], None, texto[:3000])
         elif e["que"] == "cambio":
             self.en_hilo(self.cambiar_recurso, chat, uid, texto[:1000])
+        elif e["que"] == "razones":
+            self.espera.pop(uid, None)
+            self.en_hilo(self.pedir_revision, uid, texto[:1500])
         elif e["que"] == "cambio_compartir":
             self.en_hilo(self.redactar_compartir, uid, texto[:1000])
         elif e["que"] == "correo":
@@ -961,8 +967,24 @@ class Bot:
         if not f["suficiente"]:
             self.espera[uid] = {"que": "detalle", "url": url, "contenido": contenido, "momento": time.time()}
             return self.enviar(chat, self.tx(uid, "falta_info", motivo=f["motivo"].rstrip(".")))
-        if not f["es_recurso_educativo"]:
-            return self.enviar(chat, self.tx(uid, "no_educativo", motivo=f["motivo"].rstrip(".")))
+        f["url"] = url
+        aprobada = catalogo.leer_revisiones().get(catalogo.normalizar(url), {}).get("estado") == "aprobado"
+        if not (f["es_recurso_educativo"] and f["nivel_minimo"]) and not aprobada:
+            # Lo que el bot rechaza por su contenido se puede llevar a revisión manual (Juanjo, 30-10-2026).
+            self.rechazados[uid] = {"ficha": f, "contenido": contenido, "nota": nota, "momento": time.time(),
+                                    "de": {k: de.get(k) for k in ("first_name", "last_name", "username")}}
+            clave = "no_educativo" if not f["es_recurso_educativo"] else "sin_minimo"
+            registrar(f"recurso rechazado: {clave}")
+            return self.tg("sendMessage", chat_id=chat, link_preview_options={"is_disabled": True},
+                           text=self.tx(uid, clave, motivo=f["motivo"].rstrip(".")),
+                           reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_pedir_revision"),
+                                                               "callback_data": "rr"}]]})
+        registrar(f"recurso analizado: {usd:.4f} USD")
+        self.seguir_alta(chat, uid, de, f, contenido, nota)
+
+    def seguir_alta(self, chat: int, uid: int, de: dict, f: dict, contenido: str, nota: str) -> None:
+        """Lo que queda del alta cuando el recurso entra por su contenido: pago, licencia y la ficha para revisar."""
+        url = f["url"]
         # Solo recursos gratuitos y con el código bajo una licencia abierta, también NC (Juanjo, 27-10-2026; ADR 0004).
         if f["de_pago"]:
             return self.enviar(chat, self.tx(uid, "de_pago", detalle=f["pago_detalle"].rstrip(".")))
@@ -971,7 +993,6 @@ class Bot:
             if f["licencia"]:
                 return self.enviar(chat, self.tx(uid, "licencia_cerrada", licencia=f["licencia"]))
             return self.enviar(chat, self.tx(uid, "sin_licencia"))
-        f["url"] = url
         f["licencia"] = catalogo.componer_licencias(f["licencia"], f.pop("licencia_contenidos", ""))
         f["autor"] = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
         # Lo leído, para los cambios: puede venir de un archivo o de un repositorio, no solo del enlace.
@@ -979,7 +1000,56 @@ class Bot:
         self.fichas_rec[uid] = {"ficha": f, "modo": "alta", "momento": time.time(), "usuario": de.get("username"),
                                 "contenido": leido}
         self.ensenar_ficha(chat, f)
-        registrar(f"ficha de recurso preparada: {usd:.4f} USD")
+
+    def pedir_revision(self, uid: int, razones: str) -> None:
+        """Su autor pide que una persona revise el rechazo: el caso queda guardado (sobrevive a un reinicio) y
+        le llega a Juanjo con dos botones; «Cumple» sigue el alta donde la dejó el rechazo."""
+        r = self.rechazados.pop(uid, None)
+        if not r or time.time() - r["momento"] > CADUCA_FICHA_H * 3600:
+            return self.enviar(uid, self.tx(uid, "caducado_recurso"))
+        f, clave = r["ficha"], catalogo.normalizar(r["ficha"]["url"])
+        with CERROJO:
+            d = catalogo.leer_revisiones()
+            if d.get(clave, {}).get("estado") == "por_revisar":
+                return self.enviar(uid, self.tx(uid, "revision_ya_pedida"))
+            d[clave] = {**r, "estado": "por_revisar", "uid": uid, "motivo": f["motivo"], "razones": razones,
+                        "fecha": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            catalogo.guardar_revisiones(d)
+        autor = " ".join(x for x in (r["de"].get("first_name"), r["de"].get("last_name")) if x)
+        ref = self.ref_aviso(clave)
+        self.tg("sendMessage", chat_id=JUANJO, link_preview_options={"is_disabled": True},
+                text=self.tx(JUANJO, "rechazo_a_juanjo", titulo=f["titulo"], url=f["url"], autor=autor,
+                             motivo=f["motivo"].rstrip("."), razones=razones),
+                reply_markup={"inline_keyboard": [[{"text": self.tx(JUANJO, "b_cumple"), "callback_data": f"jrc:{ref}"},
+                                                   {"text": self.tx(JUANJO, "b_no_cumple"), "callback_data": f"jrn:{ref}"}]]})
+        registrar("rechazo de un recurso pasado a revisión manual")
+        self.enviar(uid, self.tx(uid, "revision_pedida"))
+
+    def revisar_rechazo(self, accion: str) -> None:
+        """Los botones del mensaje de pedir_revision. Los dos avisan al autor."""
+        orden, _, ref = accion.partition(":")
+        with CERROJO:
+            d = catalogo.leer_revisiones()
+            clave = next((k for k, r in d.items() if r.get("estado") == "por_revisar" and self.ref_aviso(k) == ref), None)
+            if not clave:
+                return self.enviar(JUANJO, self.tx(JUANJO, "revision_ya_no"))
+            r = dict(d[clave])
+            # Decidido, lo leído ya no hace falta guardarlo: solo ocupa (cada uno, hasta 80.000 caracteres).
+            d[clave] = {k: v for k, v in r.items() if k != "contenido"} | {
+                "estado": "aprobado" if orden == "jrc" else "rechazado"}
+            catalogo.guardar_revisiones(d)
+        uid, f = r["uid"], r["ficha"]
+        if orden == "jrn":
+            self.enviar(uid, self.tx(uid, "rechazo_revisado_no", titulo=f["titulo"]))
+            registrar("rechazo de un recurso revisado por Juanjo: no cumple")
+            return self.enviar(JUANJO, self.tx(JUANJO, "rechazo_no_hecho", titulo=f["titulo"]))
+        self.enviar(uid, self.tx(uid, "rechazo_revisado_si", titulo=f["titulo"]))
+        contenido = r.get("contenido")
+        if contenido is None:  # una copia recuperada del respaldo no lo lleva
+            contenido, _ = catalogo.leer_url(f["url"])
+        self.seguir_alta(uid, uid, r["de"], f, contenido, r.get("nota", ""))
+        registrar("rechazo de un recurso revisado por Juanjo: cumple")
+        self.enviar(JUANJO, self.tx(JUANJO, "rechazo_hecho", titulo=f["titulo"]))
 
     def recurso_de_archivo(self, chat: int, uid: int, msg: dict, espera: dict | None) -> None:
         """Un HTML o un ZIP: el código del recurso cuyo enlace ya dio, o el primer paso si aún no lo dio."""
@@ -1039,6 +1109,13 @@ class Bot:
                 otra, mas = self.recursos.cambiar({**p["ficha"], "url": url}, peticion, contenido)
                 otra.pop("url")
                 nueva, usd = otra, usd + mas
+                # Que lo que hay en el enlace nuevo siga entrando en el repositorio (Juanjo, 30-10-2026).
+                entra, mas = self.recursos.admitir(url, contenido)
+                usd += mas
+                if not (entra["es_recurso_educativo"] and entra["nivel_minimo"]):
+                    self.apuntar(usd)
+                    registrar("cambio de enlace no guardado: el recurso nuevo no entra")
+                    return self.enviar(chat, self.tx(uid, "mudanza_no_entra", motivo=entra["motivo"].rstrip(".")))
         except Exception as error:  # noqa: BLE001
             registrar(f"error al cambiar una ficha: {type(error).__name__}: {error}")
             return self.enviar(chat, self.tx(uid, "error_recurso"))
@@ -1073,6 +1150,11 @@ class Bot:
                     return self.enviar(uid, self.tx(uid, "caducado_recurso"))
                 self.espera[uid] = {"que": "cambio", "momento": time.time()}
                 return self.enviar(uid, self.tx(uid, "que_cambio"))
+            if orden == "rr":
+                if uid not in self.rechazados:
+                    return self.enviar(uid, self.tx(uid, "caducado_recurso"))
+                self.espera[uid] = {"que": "razones", "momento": time.time()}
+                return self.enviar(uid, self.tx(uid, "por_que_revision"))
             if orden == "rx":
                 self.fichas_rec.pop(uid, None)
                 self.espera.pop(uid, None)

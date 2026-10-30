@@ -118,6 +118,27 @@ de su grupo.
    publicarlo, el aviso lleva «Quitarlo del grupo» y «Mantenerlo»: Telegram deja
    a un bot borrar sus propios mensajes durante 48 horas; después, el bot remite
    a quien administra el grupo.
+5c. **Un mínimo, y revisión manual de lo que el bot rechaza** (Juanjo,
+   30-10-2026, al preguntar si el bot comprueba «que el recurso tenga un
+   mínimo de nivel y no acepta cualquier cosa», y después: «proporciona un
+   medio para impugnar esta decisión»). Además de ser educativo, el recurso
+   tiene que poder usarse en clase tal como está: fuera lo roto o a medio
+   hacer, las plantillas y páginas de prueba sin contenido propio y lo que
+   enseña con errores de bulto. No es una nota: no se juzga si es mejor que
+   otros ni si es sencillo, y en la duda entra. Lo decide Claude Sonnet en la
+   misma llamada de la ficha (`nivel_minimo`, criterio en
+   `catalogo.ADMISION`), sin coste añadido. Al rechazar un recurso por no ser
+   educativo o por el mínimo, el bot ofrece «Pedir una revisión»: la persona
+   cuenta en un mensaje por qué debería entrar, y a Juanjo le llega el recurso
+   con el motivo del bot, las razones de su autor y dos botones. «Cumple» lo
+   apunta como aprobado y sigue el alta donde la dejó el rechazo (pago,
+   licencia y ficha para publicar); «No cumple» se lo dice al autor. Los casos
+   se guardan en `datos/revisiones.json`, que sobrevive a un reinicio y va en
+   la copia diaria (sin lo leído del recurso, que se vuelve a leer); un
+   enlace aprobado no se vuelve a rechazar por su contenido. Cuando un recurso
+   publicado cambia de enlace, el bot comprueba también que lo que hay en el
+   nuevo sigue entrando (`Fichas.admitir`, Sonnet con el mismo criterio, unos
+   0,01 USD por mudanza); si no, no guarda el cambio y lo explica.
 6. **Se llama «repositorio»**, como lo titula su web («Repositorio de
    aplicaciones educativas») y como lo conoce la comunidad (Juanjo,
    27-10-2026). El comando era `/recurso` y los mensajes decían «catálogo»;
@@ -170,8 +191,33 @@ de su grupo.
 - Lo que se lee del recurso y lo que escribe la persona se procesa en
   Anthropic (Estados Unidos), como el resto del bot.
 - El CSV publicado tarda unos minutos en reflejar los cambios.
+- El mínimo solo ve lo que el bot puede leer. Los errores de lógica escondidos
+  en el código (una regla de cálculo mal planteada) no los detecta: con la
+  instrucción de comprobar cada error paso a paso deja de señalarlos, y sin
+  ella los señalaba con motivos en parte falsos (validación del 30-10-2026).
+  Se prefiere dejar pasar un error sutil a rechazar con un motivo inexacto.
+- El rechazo de una mudanza no ofrece revisión manual: el recurso sigue
+  publicado con su enlace anterior y su autor puede comentarlo en el grupo.
 
 ## Validación
+
+30-10-2026 (punto 5c):
+- 29 recursos del repositorio tomados al azar, con la primera versión del
+  criterio: el mínimo rechazó 2. En los dos había un error real (la práctica
+  de monotonía de funciones logarítmicas decide creciente o decreciente solo
+  por el signo de `a`; en el ajuste de reacciones, una ecuación con el hierro
+  sin igualar), pero el motivo del segundo daba por malas ecuaciones que
+  están bien. Con la instrucción de citar solo el error más claro y
+  comprobado, los dos pasan, y el resto ya pasaba con la versión más estricta.
+  Unos 0,03 USD por recurso.
+- Primero la comprobación de la mudanza iba en la instrucción de los cambios:
+  Haiku pasó a rehacer la descripción en 9 de 10 cambios que no la pedían
+  (antes, 0 de 10). Se sacó a una llamada aparte y volvió a 0 de 10.
+- `pruebas/simular_catalogo.py`: un recurso sencillo y completo entra; una
+  página con «Próximamente» y una con sumas de fracciones mal resueltas no;
+  tampoco una mudanza a una página a medio hacer; el rechazo ofrece «Pedir una
+  revisión», la petición llega a Juanjo con las razones y «Cumple» enseña la
+  ficha al autor, una sola vez. 76 comprobaciones bien en dos pasadas seguidas.
 
 27-10-2026:
 - Ficha de «Atzar a l'aula» (https://ja.cat/atzar) a partir de su página:

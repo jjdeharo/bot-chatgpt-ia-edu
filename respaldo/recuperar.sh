@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Trae de IONOS la copia más reciente y la deja en datos/ (catalogo.json,
-# estado-bot.json, avisos.json y equipo-exelearning.json), donde la lee el bot. Se ejecuta en la máquina que vaya a
+# estado-bot.json, avisos.json, equipo-exelearning.json y revisiones.json), donde la lee el bot. Se ejecuta en la máquina que vaya a
 # llevar el bot. Lo que haya ya en datos/ se guarda al lado con «.antes».
 #
 #   respaldo/recuperar.sh [DESTINO]     por defecto, la carpeta datos/ del repositorio
@@ -21,8 +21,8 @@ from pathlib import Path
 destino = Path(sys.argv[1])
 copia = json.load(sys.stdin)
 for clave, nombre in (("catalogo", "catalogo.json"), ("estado", "estado-bot.json"), ("avisos", "avisos.json"),
-                     ("equipo", "equipo-exelearning.json")):
-    if clave not in copia:  # las anteriores al 29-10-2026 no llevan avisos, ni las del 30-10 el equipo
+                     ("equipo", "equipo-exelearning.json"), ("revisiones", "revisiones.json")):
+    if clave not in copia:  # las anteriores al 29-10-2026 no llevan avisos, ni las del 30-10 el equipo ni las revisiones
         continue
     f = destino / nombre
     if f.exists():

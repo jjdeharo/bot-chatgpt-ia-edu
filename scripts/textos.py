@@ -116,7 +116,15 @@ ES = {
     "falta_info": ("No consigo ver qué hace el recurso desde el enlace ({motivo}). Envíame el archivo HTML o un "
                    "ZIP con el código, el enlace a su repositorio de GitHub, o cuéntame en un mensaje qué hace "
                    "y cómo se usa."),
-    "no_educativo": "No lo añado: el repositorio es para recursos educativos, y este no lo parece ({motivo}).",
+    "no_educativo": "No lo añado: el repositorio es para recursos educativos, y este no lo parece ({motivo}). Si crees que me equivoco, pulsa «Pedir una revisión» y lo mirará una persona.",
+    "sin_minimo": "Todavía no lo añado: el repositorio es para recursos que ya se puedan usar en clase, y a este le falta algo ({motivo}). Cuando lo tengas listo, vuelve a mandarme el enlace. Si crees que me equivoco, pulsa «Pedir una revisión» y lo mirará una persona.",
+    "b_pedir_revision": "Pedir una revisión",
+    "por_que_revision": "Cuéntame en un mensaje por qué crees que debería entrar. Lo leerá la persona que lo revise.",
+    "revision_pedida": "Hecho: pasa a revisión manual. Te avisaré cuando se decida.",
+    "revision_ya_pedida": "Este recurso ya está en revisión manual. Te avisaré cuando se decida.",
+    "rechazo_revisado_si": "Revisado a mano: «{titulo}» puede entrar en el repositorio. Sigo con el alta.",
+    "rechazo_revisado_no": "Revisado a mano: «{titulo}» no entra en el repositorio. Si lo cambias, puedes volver a mandarlo con /repositorio.",
+    "mudanza_no_entra": "No cambio el enlace: lo que hay en el nuevo no entra en el repositorio ({motivo}). La ficha sigue como estaba.",
     "vista_recurso": ("Esta es la ficha. Si te parece bien, la publico en el repositorio de Vibe Coding Educativo. "
                       "Si quieres cambiar algo, pulsa «Cambiar algo» y dímelo con tus palabras."),
     "que_cambio": ("Dime qué quieres cambiar, con tus palabras. Vuelvo a mirar el recurso, así que también puedo "
@@ -184,6 +192,9 @@ ES = {
     "revision_no_hecha": 'Hecho: el aviso de «{titulo}» sigue pendiente y se lo he dicho a su autor.',
     "revision_ya_no": 'Ese aviso ya no está por revisar.',
     "revision_sin_hoja": 'No he podido poner la licencia en la hoja: ponla a mano.',
+    "rechazo_a_juanjo": 'Revisión del repositorio: el bot ha rechazado «{titulo}», de {autor}, y su autor pide que lo mire una persona.\n{url}\n\nMotivo del bot: {motivo}.\nLo que dice su autor: {razones}\n\nMira si es un recurso educativo que ya se puede usar en clase. «Cumple» sigue el alta (pago, licencia y ficha).',
+    "rechazo_hecho": 'Hecho: «{titulo}» puede entrar y su autor sigue con el alta.',
+    "rechazo_no_hecho": 'Hecho: «{titulo}» queda fuera y se lo he dicho a su autor.',
     "b_si_quitar": "Sí, quitarlo",
     "b_no": "No",
     "b_nuevo_recurso": "Añadir un recurso nuevo",
@@ -295,7 +306,15 @@ CA = {
     "falta_info": ("No aconsegueixo veure què fa el recurs des de l'enllaç ({motivo}). Envia'm el fitxer HTML o "
                    "un ZIP amb el codi, l'enllaç al seu repositori de GitHub, o explica'm en un missatge què fa "
                    "i com es fa servir."),
-    "no_educativo": "No l'afegeixo: el repositori és per a recursos educatius, i aquest no ho sembla ({motivo}).",
+    "no_educativo": "No l'afegeixo: el repositori és per a recursos educatius, i aquest no ho sembla ({motivo}). Si creus que m'equivoco, prem «Demanar una revisió» i el mirarà una persona.",
+    "sin_minimo": "Encara no l'afegeixo: el repositori és per a recursos que ja es puguin fer servir a classe, i a aquest li falta alguna cosa ({motivo}). Quan el tinguis a punt, torna a enviar-me l'enllaç. Si creus que m'equivoco, prem «Demanar una revisió» i el mirarà una persona.",
+    "b_pedir_revision": "Demanar una revisió",
+    "por_que_revision": "Explica'm en un missatge per què creus que hauria d'entrar. Ho llegirà la persona que el revisi.",
+    "revision_pedida": "Fet: passa a revisió manual. T'avisaré quan es decideixi.",
+    "revision_ya_pedida": "Aquest recurs ja és en revisió manual. T'avisaré quan es decideixi.",
+    "rechazo_revisado_si": "Revisat a mà: «{titulo}» pot entrar al repositori. Continuo amb l'alta.",
+    "rechazo_revisado_no": "Revisat a mà: «{titulo}» no entra al repositori. Si el canvies, pots tornar a enviar-lo amb /repositorio.",
+    "mudanza_no_entra": "No canvio l'enllaç: el que hi ha al nou no entra al repositori ({motivo}). La fitxa continua com estava.",
     "vista_recurso": ("Aquesta és la fitxa, en castellà com tot el repositori. Si et sembla bé, la publico al "
                       "repositori de Vibe Coding Educativo. Si vols canviar alguna cosa, prem «Canviar alguna "
                       "cosa» i digues-m'ho amb les teves paraules."),
@@ -462,7 +481,15 @@ GL = {
     "falta_info": ("Non consigo ver que fai o recurso desde a ligazón ({motivo}). Envíame o ficheiro HTML ou un "
                    "ZIP co código, a ligazón ao seu repositorio de GitHub, ou cóntame nunha mensaxe que fai "
                    "e como se usa."),
-    "no_educativo": "Non o engado: o repositorio é para recursos educativos, e este non o parece ({motivo}).",
+    "no_educativo": "Non o engado: o repositorio é para recursos educativos, e este non o parece ({motivo}). Se cres que me equivoco, preme «Pedir unha revisión» e mirarao unha persoa.",
+    "sin_minimo": "Aínda non o engado: o repositorio é para recursos que xa se poidan usar na aula, e a este fáltalle algo ({motivo}). Cando o teñas listo, volve mandarme a ligazón. Se cres que me equivoco, preme «Pedir unha revisión» e mirarao unha persoa.",
+    "b_pedir_revision": "Pedir unha revisión",
+    "por_que_revision": "Cóntame nunha mensaxe por que cres que debería entrar. Lerao a persoa que o revise.",
+    "revision_pedida": "Feito: pasa a revisión manual. Avisareite cando se decida.",
+    "revision_ya_pedida": "Este recurso xa está en revisión manual. Avisareite cando se decida.",
+    "rechazo_revisado_si": "Revisado a man: «{titulo}» pode entrar no repositorio. Sigo coa alta.",
+    "rechazo_revisado_no": "Revisado a man: «{titulo}» non entra no repositorio. Se o cambias, podes volver mandalo con /repositorio.",
+    "mudanza_no_entra": "Non cambio a ligazón: o que hai na nova non entra no repositorio ({motivo}). A ficha segue como estaba.",
     "vista_recurso": ("Esta é a ficha, en castelán como todo o repositorio. Se che parece ben, publícoa no "
                       "repositorio de Vibe Coding Educativo. Se queres cambiar algo, preme «Cambiar algo» e "
                       "dímo coas túas palabras."),
@@ -631,7 +658,15 @@ EU = {
     "falta_info": ("Ezin dut estekatik ikusi baliabideak zer egiten duen ({motivo}). Bidali HTML fitxategia edo "
                    "kodea duen ZIP bat, haren GitHub biltegiaren esteka, edo kontatu mezu batean zer egiten "
                    "duen eta nola erabiltzen den."),
-    "no_educativo": "Ez dut gehitzen: biltegia baliabide hezitzaileetarako da, eta hau ez dirudi halakoa ({motivo}).",
+    "no_educativo": "Ez dut gehitzen: biltegia baliabide hezitzaileetarako da, eta hau ez dirudi halakoa ({motivo}). Oker nagoela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
+    "sin_minimo": "Oraindik ez dut gehitzen: biltegia ikasgelan dagoeneko erabil daitezkeen baliabideetarako da, eta honi zerbait falta zaio ({motivo}). Prest duzunean, bidali berriro esteka. Oker nagoela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
+    "b_pedir_revision": "Berrikusteko eskatu",
+    "por_que_revision": "Esan mezu batean zergatik uste duzun sartu beharko lukeela. Berrikusten duen pertsonak irakurriko du.",
+    "revision_pedida": "Eginda: eskuzko berrikuspenera doa. Erabakitzen denean jakinaraziko dizut.",
+    "revision_ya_pedida": "Baliabide hau eskuzko berrikuspenean dago jada. Erabakitzen denean jakinaraziko dizut.",
+    "rechazo_revisado_si": "Eskuz berrikusita: «{titulo}» biltegian sar daiteke. Altarekin jarraituko dut.",
+    "rechazo_revisado_no": "Eskuz berrikusita: «{titulo}» ez da biltegian sartzen. Aldatzen baduzu, berriro bidal dezakezu /repositorio erabiliz.",
+    "mudanza_no_entra": "Ez dut esteka aldatzen: esteka berrian dagoena ez da biltegian sartzen ({motivo}). Fitxak lehen bezala jarraitzen du.",
     "vista_recurso": ("Hau da fitxa, gaztelaniaz biltegi osoa bezala. Ados bazaude, Vibe Coding Educativo "
                       "biltegian argitaratuko dut. Zerbait aldatu nahi baduzu, sakatu «Zerbait aldatu» eta "
                       "esan zure hitzekin."),
@@ -798,7 +833,15 @@ EN = {
     "falta_info": ("I can't see what the resource does from the link ({motivo}). Send me the HTML file or a ZIP "
                    "with the code, the link to its GitHub repository, or tell me in a message what it does "
                    "and how it is used."),
-    "no_educativo": "I'm not adding it: the repository is for educational resources, and this doesn't look like one ({motivo}).",
+    "no_educativo": "I'm not adding it: the repository is for educational resources, and this doesn't look like one ({motivo}). If you think I'm wrong, press \"Request a review\" and a person will look at it.",
+    "sin_minimo": "I'm not adding it yet: the repository is for resources that can already be used in class, and this one is missing something ({motivo}). When it's ready, send me the link again. If you think I'm wrong, press \"Request a review\" and a person will look at it.",
+    "b_pedir_revision": "Request a review",
+    "por_que_revision": "Tell me in a message why you think it should be included. The person reviewing it will read it.",
+    "revision_pedida": "Done: it goes to manual review. I'll let you know when it's decided.",
+    "revision_ya_pedida": "This resource is already under manual review. I'll let you know when it's decided.",
+    "rechazo_revisado_si": "Reviewed by hand: \"{titulo}\" can go into the repository. I'll carry on with adding it.",
+    "rechazo_revisado_no": "Reviewed by hand: \"{titulo}\" doesn't go into the repository. If you change it, you can send it again with /repositorio.",
+    "mudanza_no_entra": "I'm not changing the link: what's at the new one doesn't go into the repository ({motivo}). The record stays as it was.",
     "vista_recurso": ("This is the record, in Spanish like the whole repository. If you agree, I'll publish it in "
                       "the Vibe Coding Educativo repository. If you want to change something, press \"Change "
                       "something\" and tell me in your own words."),
