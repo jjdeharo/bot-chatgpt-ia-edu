@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Los bots de los grupos en el NAS. Cuatro servicios con la misma imagen:
+#
+#   significado  el modelo de significado, una sola copia que usan los otros tres (ADR 0012);
+#                si se para, los bots siguen buscando solo por palabras
+#   bot          Bot de IA Educativa (ChatGPT-IA-edu, Vibe Coding Educativo y EduMedia-IAG); siempre en marcha
+#   karla        Karla bot, del grupo eXeLearning (ADR 0008); siempre en marcha
+#   indice       cada 15 minutos trae los mensajes nuevos de los cuatro grupos y pone al día sus
+#                índices y el de la documentación de eXeLearning; de madrugada los rehace
+#                enteros para retirar lo borrado
+#
+#   docker compose up -d --build      construir y arrancar
+#   docker compose logs -f bot        ver el bot
+#   docker exec bot-chatgpt-ia-edu python bot.py estado    gasto del mes
+services:
+  significado:
+    build:
+      context: ./repo
+      dockerfile: nas/Dockerfile
+    image: bot-chatgpt-ia-edu:local
+    container_name: bot-significado
+    restart: unless-stopped
+    user: "1000:10"
+    command: ["python", "significado.py"]
+    environment:
+      HOME: /home/jjdeharo
+      MALLOC_ARENA_MAX: "2"  # menos reservas de memoria por hilo: el pico al indexar baja de 1,2 a 0,9 GB (ADR 0012)
+    volumes:
+      - ./repo:/proyecto
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/salud', timeout=5)"]
+      interval: 60s
+      timeout: 10s
+      start_period: 120s
+
+  bot:
+    image: bot-chatgpt-ia-edu:local
+    container_name: bot-chatgpt-ia-edu
+    restart: unless-stopped
+    user: "1000:10"
+    command: ["python", "bot.py"]
+    environment: &entorno
+      SIGNIFICADO_URL: http://significado:8000
+      # Abierto a todo miembro del grupo desde el 24-10-2026 (antes, solo Juanjo).
+      ABIERTO: "1"
+      HOME: /home/jjdeharo
+      TG_CRED: /credenciales/telegram-cuenta.json
+      TG_SESION: /credenciales/telegram-cuenta.session
+      BOT_CRED: /credenciales/bot-chatgpt-ia-edu.json
+      CLAVE_ANTHROPIC: /credenciales/anthropic-bot.txt
+      CATALOGO_CRED: /credenciales/catalogo-vce.json
+      RESPALDO_CRED: /credenciales/respaldo-ionos.json
+    volumes: &volumenes
+      - ./repo:/proyecto
+      - ./credenciales:/credenciales
+    depends_on: [significado]
+
+  karla:
+    image: bot-chatgpt-ia-edu:local
+    container_name: karla-bot
+    restart: unless-stopped
+    user: "1000:10"
+    command: ["python", "karla.py"]
+    environment:
+      HOME: /home/jjdeharo
+      ABIERTO: "1"  # abierta al grupo eXeLearning desde el 27-10-2026
+      GRUPOS: exelearning
+      BOT_CRED: /credenciales/karla-bot.json
+      CLAVE_ANTHROPIC: /credenciales/anthropic-karla.txt
+      CLAVE_GITHUB: /credenciales/github-karla.txt
+      # Incidencias (ADR 0010): «dueño/repositorio» = pruebas, solo para Juanjo; «1» = al equipo de eXeLearning.
+      INCIDENCIAS: "1"  # abiertas para todo el grupo desde el 27-10-2026
+      SIGNIFICADO_URL: http://significado:8000
+    volumes: *volumenes
+    depends_on: [bot, significado]
+
+  indice:
+    image: bot-chatgpt-ia-edu:local
+    container_name: bot-chatgpt-ia-edu-indice
+    restart: unless-stopped
+    user: "1000:10"
+    command: ["bash", "/proyecto/nas/bucle.sh"]
+    environment:
+      <<: *entorno
+      GRUPOS: chatgpt,vce,exelearning,edumedia   # los bots eligen los suyos; el índice los pone al día todos
+      DOCS_FUENTES: /documentacion/fuentes /documentacion/material /proyecto/datos/exelearning/docs-extra
+    volumes:
+      - ./repo:/proyecto
+      - ./credenciales:/credenciales
+      # La documentación de eXeLearning, de donde la genera memoria-telegram (solo lectura).
+      - ../memoria-telegram/repo/material/exelearning:/documentacion/material:ro
+      - ../memoria-telegram/repo/fuentes:/documentacion/fuentes:ro
+    depends_on: [bot, significado]

@@ -1,0 +1,4 @@
+anthropic==2.3.0
+fastembed==0.9.0
+numpy==2.4.6
+Telethon==1.45.0

@@ -1,0 +1,5 @@
+datos/
+.venv/
+__pycache__/
+pruebas/*.log
+pruebas/respuestas-*.md

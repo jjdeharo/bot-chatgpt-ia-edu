@@ -1,0 +1,11 @@
+# Solo se puede llamar a recibir.php; las copias y el testigo no se sirven.
+<FilesMatch "\.(json|txt)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+Options -Indexes
