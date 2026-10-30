@@ -74,6 +74,12 @@ vez al día y no dice cuánto se usa ni qué no sabe responder.
   respondió peor que el cuaderno en 7 de 30 preguntas (citas mal etiquetadas,
   un «lo he probado» falso, un enlace roto).
 - **Un bot nuevo desde cero.** Duplicaría lo que ya resuelve `bot.py`.
+- **Un repositorio para cada bot.** Karla reutiliza casi todo `bot.py`
+  (Telegram, idioma, límites, cuentas) y el buscador. En repositorios
+  separados habría que copiar ese código o sacarlo a una biblioteca común,
+  y cada cambio tendría que llegar a los dos. En uno solo, una corrección
+  vale para los dos bots a la vez, y en el NAS comparten imagen, modelo de
+  significado (ADR 0012) y sesión de Telegram (decisión 5).
 
 ## Evidencia
 
