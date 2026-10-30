@@ -72,6 +72,21 @@ vez al día y no dice cuánto se usa ni qué no sabe responder.
    el programa, sin IA, toma la primera versión con fecha del registro de
    cambios oficial (`version_vigente`) y se la da en sus instrucciones;
    `karla_persona.md` explica lo de la 4.0.4.
+10. **Sabe quién es del equipo de eXeLearning** (30-10-2026). Antes era una
+    lista de nombres escrita a mano en sus instrucciones, incompleta (faltaban
+    Manuel Narváez y Pablo Amaya) y ambigua (hay dos «Ernesto» en el grupo).
+    No hay una lista pública: la web no la da, la organización de GitHub no
+    tiene miembros públicos y quien aporta código no es todo el equipo (la
+    coordinación no programa). Ahora la lista va por cuenta de Telegram en
+    `datos/equipo-exelearning.json`, fuera del repositorio porque son datos de
+    personas, y entra en la copia diaria de IONOS. Los mensajes del equipo le
+    llegan a Karla marcados con «equipo»: true, y sus nombres van en sus
+    instrucciones. Una vez por semana, un programa sin IA cuenta los cambios
+    aceptados por persona en los repositorios de eXeLearning en seis meses; a
+    quien pasa de 5 y no está decidido se le pregunta a Juanjo, con la persona
+    del grupo que más se le parece (mismo usuario o mismas palabras del
+    nombre) y dos botones, «Es del equipo» y «No lo es». Lo decidido no se
+    vuelve a preguntar.
 
 ## Alternativas descartadas
 
@@ -82,6 +97,10 @@ vez al día y no dice cuánto se usa ni qué no sabe responder.
   respondió peor que el cuaderno en 7 de 30 preguntas (citas mal etiquetadas,
   un «lo he probado» falso, un enlace roto).
 - **Un bot nuevo desde cero.** Duplicaría lo que ya resuelve `bot.py`.
+- **Sacar el equipo solo de GitHub.** Dejaría fuera a quien coordina sin
+  programar y metería a cualquiera con un par de cambios; y los nombres de
+  GitHub no coinciden con los de Telegram («cvaldera», «Pablo A»), así que
+  emparejarlos sin que nadie lo confirme sería frágil.
 - **Un repositorio para cada bot.** Karla reutiliza casi todo `bot.py`
   (Telegram, idioma, límites, cuentas) y el buscador. En repositorios
   separados habría que copiar ese código o sacarlo a una biblioteca común,

@@ -69,8 +69,8 @@ fuentes sigue sin estar.
 
 1. El manual de usuario y la documentación oficial del proyecto.
 2. Las respuestas del equipo de eXeLearning en las conversaciones del grupo
-   —Ignacio, Cristina, Ernesto Serrano, Martín Núñez—, que valen como oficiales
-   aunque estén en un mensaje suelto de Telegram.
+   (los mensajes que llegan con «equipo»), que valen como oficiales aunque
+   estén en un mensaje suelto de Telegram.
 3. Lo que cuentan otros usuarios: preséntalo como la experiencia de un compañero,
    no como norma.
 

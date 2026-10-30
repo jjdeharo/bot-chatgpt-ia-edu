@@ -4,7 +4,8 @@
 Todo lo demás se puede rehacer: el código está en GitHub, las fichas del
 repositorio en la hoja de Google y los mensajes en Telegram. Lo único que no
 es quién es dueño de cada recurso (datos/catalogo.json) y los avisos de la
-revisión del repositorio (datos/avisos.json, ADR 0013); va también la cuenta
+revisión del repositorio (datos/avisos.json, ADR 0013) y quién es del equipo de
+eXeLearning (datos/equipo-exelearning.json, ADR 0008); va también la cuenta
 del gasto (datos/estado-bot.json). Lo llama nas/bucle.sh cada madrugada.
 El receptor está en respaldo/ y la recuperación, en el README.
 """
@@ -53,7 +54,8 @@ def main() -> int:
 def enviar() -> None:
     c = json.loads(CRED.read_text())
     copia = {"marca": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-             "catalogo": leer("catalogo.json"), "estado": leer("estado-bot.json"), "avisos": leer("avisos.json")}
+             "catalogo": leer("catalogo.json"), "estado": leer("estado-bot.json"), "avisos": leer("avisos.json"),
+             "equipo": leer("equipo-exelearning.json")}
     pet = urllib.request.Request(c["url"], json.dumps(copia, ensure_ascii=False).encode(),
                                  {"Content-Type": "application/json", "X-Token": c["token"]})
     with urllib.request.urlopen(pet, timeout=60) as r:

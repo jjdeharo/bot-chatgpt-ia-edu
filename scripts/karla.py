@@ -22,9 +22,12 @@ import os
 import re
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections import Counter
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import anthropic
@@ -262,10 +265,55 @@ def abrir_incidencia(repositorio: str, titulo: str, cuerpo: str) -> str:
     return i["html_url"]
 
 
-def marcar(mensajes: list[dict]) -> list[dict]:
-    """Avisa en cada mensaje que habla de «Karla»: es el cuaderno anterior, no este bot.
-    En la prueba del 27-10-2026 el bot se disculpó por «la ruta que te di antes», que dio el cuaderno."""
+# Quién es del equipo de eXeLearning, por su cuenta de Telegram: sus respuestas en el grupo valen como oficiales.
+# No hay una lista pública: Juanjo la fijó y cada semana el bot le pregunta por quien empieza a aportar cambios
+# con regularidad en GitHub (Juanjo, 30-10-2026). Fuera del repositorio: son datos de personas.
+EQUIPO = bot.BASE / "datos" / "equipo-exelearning.json"
+EQUIPO_CAMBIOS = 5   # cambios aceptados en seis meses para preguntar si alguien es del equipo
+EQUIPO_DIAS = 7
+
+
+def leer_equipo() -> dict:
+    """{"equipo": [{"nombre", "telegram" (id o None), "github" (o None)}], "descartados": [cuentas de GitHub],
+    "preguntados": {cuenta de GitHub: {"nombre", "telegram", "autor", "cambios"}}, "revisado": fecha}"""
+    try:
+        e = json.loads(EQUIPO.read_text())
+    except (OSError, ValueError):
+        e = {}
+    return {"equipo": [], "descartados": [], "preguntados": {}, "revisado": "", **e}
+
+
+def guardar_equipo(e: dict) -> None:
+    tmp = EQUIPO.with_suffix(".tmp")
+    tmp.write_text(json.dumps(e, ensure_ascii=False, indent=1))
+    tmp.replace(EQUIPO)
+
+
+def sin_tildes(texto: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", texto.lower()) if unicodedata.category(c) != "Mn")
+
+
+def cambios_aceptados() -> Counter:
+    """Cambios aceptados por persona en los repositorios de eXeLearning en los últimos seis meses, sin los bots."""
+    desde = (date.today() - timedelta(days=183)).isoformat()
+    cuenta = Counter()
+    for pagina in range(1, 11):  # la búsqueda de GitHub da como mucho 1.000 resultados
+        r = github("/search/issues", q=f"org:{ORG} is:pr is:merged merged:>={desde}", per_page=100, page=pagina)
+        cuenta.update(i["user"]["login"] for i in r["items"] if i["user"]["type"] == "User")
+        if len(r["items"]) < 100:
+            break
+    return cuenta
+
+
+def marcar(mensajes: list[dict], grupo: "buscador.Buscador") -> list[dict]:
+    """Marca los mensajes del equipo de eXeLearning y avisa en cada mensaje que habla de «Karla»: es el cuaderno
+    anterior, no este bot. En la prueba del 27-10-2026 el bot se disculpó por «la ruta que te di antes», que dio
+    el cuaderno."""
+    equipo = {p["telegram"] for p in leer_equipo()["equipo"] if p.get("telegram")}
     for m in mensajes:
+        for d in (m, m.get("responde_a") or {}):
+            if d and grupo.ms.get(int(d["id"].rpartition(":")[2]), {}).get("autor_id") in equipo:
+                d["equipo"] = True
         textos = [m.get("texto", ""), (m.get("responde_a") or {}).get("texto", "")]
         if any(re.search(r"\bkarla\b", x, re.I) for x in textos):
             m["nota"] = ("«Karla» aquí es el cuaderno de NotebookLM anterior a este bot: lo que dijo no lo "
@@ -303,9 +351,9 @@ class Consultora:
         if nombre == "leer_documento":
             return self.docs.leer(e["documento"], e.get("apartado"))
         if nombre == "buscar_mensajes":
-            return marcar(self.grupo.mensajes(e["consulta"], None, e.get("desde"), e.get("hasta")))
+            return marcar(self.grupo.mensajes(e["consulta"], None, e.get("desde"), e.get("hasta")), self.grupo)
         if nombre == "leer_hilo":
-            return marcar(self.grupo.hilo(int(str(e["id"]).rpartition(":")[2])))
+            return marcar(self.grupo.hilo(int(str(e["id"]).rpartition(":")[2])), self.grupo)
         if nombre == "buscar_incidencias":
             return incidencias(e["consulta"], e.get("estado"))
         if nombre == "mis_incidencias":
@@ -327,6 +375,10 @@ class Consultora:
                         f"eXeLearning.\n\n{self.entorno}")
         if getattr(self, "administradores", ""):
             sistema += f"\n\nQuién administra el grupo (solo personas):\n{self.administradores}"
+        if equipo := leer_equipo()["equipo"]:
+            sistema += ("\n\n## El equipo de eXeLearning (al día)\n\nQuienes desarrollan eXeLearning: "
+                        + ", ".join(p["nombre"] for p in equipo) + ". En los resultados de buscar_mensajes y "
+                        "leer_hilo, sus mensajes llevan «equipo»: true; el de otra persona con el mismo nombre no.")
         if vigente := self.version_vigente():
             sistema += (f"\n\n## La última versión (del registro de cambios oficial, al día)\n\nLa última versión "
                         f"publicada de eXeLearning es la {vigente[0]}, del {vigente[1]}. Responde con esto, sin buscar, "
@@ -432,9 +484,70 @@ class Karla(bot.Bot):
                 reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_enviar"), "callback_data": "inc:si"},
                                                    {"text": self.tx(uid, "b_no_enviar"), "callback_data": "inc:no"}]]})
 
+    def parecido_en_grupo(self, cuenta: str, nombre: str) -> dict | None:
+        """Quién del grupo parece ser esa persona de GitHub: el mismo nombre de usuario o todas las palabras de su
+        nombre en el suyo. Solo es una propuesta: lo confirma Juanjo."""
+        autores = Counter((m["autor_id"], m["autor"] or "", m.get("usuario") or "")
+                          for m in self.consultora.grupo.ms.values() if m.get("autor_id"))
+        palabras = [w for w in re.split(r"\W+", sin_tildes(nombre)) if len(w) > 2]
+        for (aid, autor, usuario), _ in autores.most_common():
+            if usuario.lower() == cuenta.lower() or (len(palabras) > 1 and all(w in sin_tildes(autor) for w in palabras)):
+                return {"telegram": aid, "autor": autor, "usuario": usuario}
+        return None
+
+    def revisar_equipo(self) -> None:
+        """Una vez por semana: quien aporta cambios con regularidad en GitHub y no está en la lista ni se ha
+        descartado se le pregunta a Juanjo, con dos botones. Un programa normal, sin IA."""
+        e = leer_equipo()
+        if e["revisado"] and datetime.now(timezone.utc) - datetime.fromisoformat(e["revisado"]) < timedelta(days=EQUIPO_DIAS):
+            return
+        conocidos = {c.lower() for c in [p.get("github") or "" for p in e["equipo"]] + e["descartados"] + list(e["preguntados"])}
+        for cuenta, n in cambios_aceptados().items():
+            if n < EQUIPO_CAMBIOS or cuenta.lower() in conocidos:
+                continue
+            nombre = github(f"/users/{cuenta}").get("name") or cuenta
+            parecido = self.parecido_en_grupo(cuenta, nombre) or {"telegram": None, "autor": "", "usuario": ""}
+            e["preguntados"][cuenta] = {"nombre": nombre, "cambios": n, **parecido}
+            if parecido["telegram"]:
+                grupo = self.tx(bot.JUANJO, "equipo_parecido", autor=parecido["autor"],
+                                usuario=f" (@{parecido['usuario']})" if parecido["usuario"] else "")
+            else:
+                grupo = self.tx(bot.JUANJO, "equipo_sin_parecido")
+            self.tg("sendMessage", chat_id=bot.JUANJO, link_preview_options={"is_disabled": True},
+                    text=self.tx(bot.JUANJO, "equipo_pregunta", nombre=nombre, cuenta=cuenta, n=n, grupo=grupo),
+                    reply_markup={"inline_keyboard": [[{"text": self.tx(bot.JUANJO, "b_es_equipo"), "callback_data": f"eq:s:{cuenta}"},
+                                                       {"text": self.tx(bot.JUANJO, "b_no_equipo"), "callback_data": f"eq:n:{cuenta}"}]]})
+            bot.registrar(f"posible miembro nuevo del equipo de eXeLearning: {cuenta}")
+        e["revisado"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        guardar_equipo(e)
+
+    def revisar_equipo_sin_fallar(self) -> None:
+        try:
+            self.revisar_equipo()
+        except Exception as error:  # noqa: BLE001 — GitHub caído: se reintenta en la próxima vuelta
+            bot.registrar(f"error al revisar el equipo: {type(error).__name__}: {error}")
+
+    def decidir_equipo(self, accion: str, m: dict) -> None:
+        _, sino, cuenta = accion.split(":", 2)
+        if m:
+            self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
+                    reply_markup={"inline_keyboard": []})
+        e = leer_equipo()
+        p = e["preguntados"].pop(cuenta, None)
+        if not p:
+            return self.enviar(bot.JUANJO, self.tx(bot.JUANJO, "equipo_ya_no"))
+        if sino == "s":
+            e["equipo"].append({"nombre": p["nombre"], "telegram": p["telegram"], "github": cuenta})
+        else:
+            e["descartados"].append(cuenta)
+        guardar_equipo(e)
+        self.enviar(bot.JUANJO, self.tx(bot.JUANJO, "equipo_si" if sino == "s" else "equipo_no", nombre=p["nombre"]))
+
     def boton_karla(self, cq: dict) -> None:
         uid, accion, m = cq["from"]["id"], cq.get("data") or "", cq.get("message") or {}
         self.tg("answerCallbackQuery", callback_query_id=cq["id"])
+        if accion.startswith("eq:") and uid == bot.JUANJO:
+            return self.decidir_equipo(accion, m)
         if not accion.startswith("inc:"):
             return
         if m:  # los botones se quitan: una incidencia no se envía dos veces
@@ -579,11 +692,13 @@ class Karla(bot.Bot):
                                            {"command": "estado", "description": "Consultas y gasto"}],
                 scope={"type": "chat", "chat_id": bot.JUANJO})
         self.actualizar_entorno()
+        self.revisar_equipo_sin_fallar()
         siguiente = None
         tipos = {"allowed_updates": ["message", "edited_message", "chat_member", "callback_query"]}
         while True:
             if time.time() - getattr(self, "admin_momento", 0) > bot.ADMIN_HORAS * 3600:
                 self.actualizar_entorno()
+                self.revisar_equipo_sin_fallar()
             try:
                 updates = self.tg("getUpdates", espera=50, timeout=50, offset=siguiente, **tipos)
                 updates = self.esperar_seguidos(updates, **tipos) if updates else updates
