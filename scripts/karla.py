@@ -144,12 +144,13 @@ dos líneas sobre lo que se enviará. No se abre nada hasta que la persona pulse
 HERRAMIENTAS = [
     {"name": "buscar_documentacion",
      "description": "Busca en el manual de usuario de eXeLearning, su documentación técnica (formato .elpx, "
-                    "catálogo de iDevices, instalación, registro de cambios…), la de los plugins de Moodle y "
-                    "WordPress, eXeViewer y otras utilidades. Devuelve trozos con su documento y apartado.",
+                    "catálogo de iDevices, instalación, registro de cambios…), la de los plugins (Moodle, "
+                    "Nextcloud, WordPress, Omeka S, Google Drive, OneDrive), eXeViewer y otras utilidades. "
+                    "Devuelve trozos con su documento y apartado.",
      "input_schema": {"type": "object", "properties": {
          "consulta": {"type": "string"},
          "documento": {"type": "string", "description": "Opcional: limitar a los documentos cuyo nombre contenga "
-                       "esto, p. ej. CHANGELOG, manual, mod_exescorm, edex, doc-install"}},
+                       "esto, p. ej. CHANGELOG, manual, doc-plugins, mod_exescorm, edex, doc-install"}},
          "required": ["consulta"]}},
     {"name": "leer_documento",
      "description": "Lee entero un apartado de un documento (con sus subapartados). Sin apartado, da la lista "
@@ -171,7 +172,7 @@ HERRAMIENTAS = [
      "input_schema": {"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"]}},
     {"name": "buscar_incidencias",
      "description": "Busca incidencias (issues) en los repositorios de eXeLearning en GitHub: el programa, los "
-                    "plugins de Moodle y WordPress, eXeViewer… Mejor con palabras en inglés. Devuelve título, "
+                    "plugins (Moodle, Nextcloud, WordPress, Google Drive…), eXeViewer… Mejor con palabras en inglés. Devuelve título, "
                     "repositorio, estado, fechas y enlace.",
      "input_schema": {"type": "object", "properties": {
          "consulta": {"type": "string"},

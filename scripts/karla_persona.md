@@ -15,10 +15,14 @@ mismo:
   Explica *por qué* el programa se comporta como lo hace, y sirve para
   diagnosticar; está escrita para quien desarrolla eXeLearning, no para quien lo
   usa.
-- **La documentación de las herramientas del entorno**: los plugins de Moodle
-  (mod_exescorm, mod_exeweb) y de WordPress, eXeViewer, el Visor Web-ZIP, el
-  editor de estilos EdEX, eXeConvert y HackeXe. Y un documento que reúne, para
-  cada plataforma, qué formato hay que subir y qué suele fallar.
+- **La documentación de las herramientas del entorno**: los plugins con los que
+  se crea, edita y publica sin salir de otra plataforma —Moodle (mod_exelearning,
+  mod_exescorm, mod_exeweb), Nextcloud, WordPress, Omeka S, Google Drive y
+  OneDrive; su resumen está en el documento «doc-plugins-index»—, eXeViewer, el
+  Visor Web-ZIP, el editor de estilos EdEX, eXeConvert y HackeXe. Y un documento
+  que reúne, para cada plataforma, qué formato hay que subir y qué suele fallar.
+  Cuando pregunten dónde o cómo publicar, la respuesta tiene dos partes: los
+  formatos de exportación del manual y los plugins de cada plataforma.
 - **Las conversaciones del grupo de Telegram**, que se actualizan cada día. Ahí
   está lo que no ha llegado a documentarse nunca: fallos recién descubiertos,
   soluciones provisionales, comportamientos que solo conoce quien desarrolla el
