@@ -451,6 +451,7 @@ class Karla(bot.Bot):
         self.token = cred["token"]  # para bajar las imágenes
         self.memoria, self.miembros, self.lenguas, self.recientes = {}, {}, {}, {}
         self.borradores = {}  # usuario -> incidencia a la espera de que la envíe o no
+        self.valorables = {}  # usuario -> su última respuesta, la única con 👍/👎
 
     def actualizar_entorno(self) -> None:
         """Quién administra el grupo, su descripción y su mensaje fijado, con los enlaces, para que Karla
@@ -545,6 +546,8 @@ class Karla(bot.Bot):
 
     def boton_karla(self, cq: dict) -> None:
         uid, accion, m = cq["from"]["id"], cq.get("data") or "", cq.get("message") or {}
+        if accion.startswith("val:"):
+            return self.valorar(cq)
         self.tg("answerCallbackQuery", callback_query_id=cq["id"])
         if accion.startswith("eq:") and uid == bot.JUANJO:
             return self.decidir_equipo(accion, m)
@@ -647,7 +650,8 @@ class Karla(bot.Bot):
             r["texto"] = (r["texto"] + "\n[Borrador de incidencia preparado: " + r["incidencia"].get("titulo", "")
                           + "]").strip()
         else:
-            self.enviar(chat, bot.respuesta_html(r["texto"]), "HTML")
+            self.enviar_valorable(chat, uid, bot.respuesta_html(r["texto"]), bot.con_fotos(texto, fotos),
+                                  bool(r.get("sin_resolver")))
         if r.get("sin_resolver") and uid != bot.JUANJO:  # las pruebas de Juanjo no cuentan
             bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"])
         self.memoria[uid] = (time.time(), historial[-2 * INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},
@@ -661,9 +665,7 @@ class Karla(bot.Bot):
             e = bot.contabilidad(bot.leer_estado())
             antes = e["usd_mes"]
             if pregunta is not None:
-                e["preguntas_hoy"][str(pregunta)] = e["preguntas_hoy"].get(str(pregunta), 0) + 1
-                e["preguntas_mes"] += 1
-                e["preguntas_mes_juanjo"] += pregunta == bot.JUANJO
+                bot.contar_pregunta(e, pregunta)
             e["usd_mes"] = round(e["usd_mes"] + usd, 5)
             e["usd_hoy"] = round(e.get("usd_hoy", 0.0) + usd, 5)
             if bot.frenado(e) and e.get("aviso_freno") != e["dia"]:
@@ -747,7 +749,9 @@ def informe(e: dict) -> str:
         f"Hoy: {bot.cuenta(h['preguntas'], 'pregunta', 'preguntas')} de "
         f"{bot.cuenta(h['personas'], 'persona', 'personas')}.",
         f"Este mes: {bot.cuenta(e['preguntas_mes'] - e['preguntas_mes_juanjo'], 'pregunta', 'preguntas')}.",
-        f"Sin resolver (guardadas, de 60 días): {bot.cuantas_sin_resolver()}.",
+        bot.personas_mes(e),
+        bot.valoraciones(e),
+        bot.sin_resolver_de(e),
         resumen_incidencias(e),
         f"Gasto: {usd(e.get('usd_hoy', 0.0))} USD hoy · {usd(e['usd_mes'])} de {usd(bot.TOPE_MES_USD)} este mes. "
         f"Modelo: {modelo}; pasa a Haiku a los {CAMBIO_USD:.0f} USD.",

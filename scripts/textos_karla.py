@@ -22,7 +22,7 @@ ES = {
     "ayuda_final": ("ℹ️ Ten en cuenta: puedo equivocarme, así que comprueba lo importante en el mensaje o el "
                     "documento que cito. Lo que me escribes se procesa con Claude, una IA de Anthropic, en "
                     "servidores de Estados Unidos. Solo guardo, de forma anónima, las preguntas que no consigo "
-                    "responder, para mejorar, y las borro a los 60 días. Respondo a los miembros del grupo "
+                    "responder o que marcas con 👎, para mejorar, y las borro a los 60 días. Respondo a los miembros del grupo "
                     "eXeLearning. Me ha creado @jjdeharo."),
     "traduccion": "",
     "perfil": ("Soy Karla, una asistente para resolver dudas sobre eXeLearning. Busco en su manual, en la "
@@ -64,6 +64,8 @@ ES = {
     "incidencia_caducada": 'Este borrador ya no está disponible. Si quieres avisar del error, vuelve a contármelo.',
     "incidencia_tope": 'Hoy ya se han enviado {n} avisos de error al equipo, el máximo de un día. Prueba mañana o cuéntalo en el grupo eXeLearning.',
     "incidencia_error": 'No he podido enviar el aviso. Prueba más tarde o cuéntalo en el grupo eXeLearning.',
+    "valoracion_si": "¡Gracias!",
+    "valoracion_no": "Gracias. Guardo la pregunta, sin nada tuyo, para mejorar.",
 }
 
 CA = {
@@ -77,7 +79,7 @@ CA = {
     "ayuda_final": ("ℹ️ Tingues en compte: em puc equivocar, així que comprova el que sigui important al missatge "
                     "o al document que cito. El que m'escrius es processa amb Claude, una IA d'Anthropic, en "
                     "servidors dels Estats Units. Només guardo, de forma anònima, les preguntes que no aconsegueixo "
-                    "respondre, per millorar, i les esborro als 60 dies. Responc als membres del grup eXeLearning. "
+                    "respondre o que marques amb 👎, per millorar, i les esborro als 60 dies. Responc als membres del grup eXeLearning. "
                     "M'ha creat @jjdeharo."),
     "traduccion": "Traducció automàtica feta amb IA, sense revisió professional.",
     "perfil": ("Soc la Karla, una assistent per resoldre dubtes sobre eXeLearning. Cerco al seu manual, a la "
@@ -103,6 +105,8 @@ CA = {
     "incidencia_caducada": "Aquest esborrany ja no està disponible. Si vols avisar de l'error, torna-m'ho a explicar.",
     "incidencia_tope": "Avui ja s'han enviat {n} avisos d'error a l'equip, el màxim d'un dia. Prova-ho demà o explica-ho al grup eXeLearning.",
     "incidencia_error": "No he pogut enviar l'avís. Prova-ho més tard o explica-ho al grup eXeLearning.",
+    "valoracion_si": "Gràcies!",
+    "valoracion_no": "Gràcies. Guardo la pregunta, sense res teu, per millorar.",
 }
 
 GL = {
@@ -115,7 +119,7 @@ GL = {
                         "dígoche de onde sae cada cousa."),
     "ayuda_final": ("ℹ️ Ten en conta: podo equivocarme, así que comproba o importante na mensaxe ou no documento "
                     "que cito. O que me escribes procésase con Claude, unha IA de Anthropic, en servidores dos "
-                    "Estados Unidos. Só gardo, de forma anónima, as preguntas que non consigo responder, para "
+                    "Estados Unidos. Só gardo, de forma anónima, as preguntas que non consigo responder ou que marcas con 👎, para "
                     "mellorar, e bórroas aos 60 días. Respondo aos membros do grupo eXeLearning. Creoume @jjdeharo."),
     "traduccion": "Tradución automática feita con IA, sen revisión profesional.",
     "perfil": ("Son Karla, unha asistente para resolver dúbidas sobre eXeLearning. Busco no seu manual, na "
@@ -141,6 +145,8 @@ GL = {
     "incidencia_caducada": 'Este borrador xa non está dispoñible. Se queres avisar do erro, volve contarmo.',
     "incidencia_tope": 'Hoxe xa se enviaron {n} avisos de erro ao equipo, o máximo dun día. Proba mañá ou cóntao no grupo eXeLearning.',
     "incidencia_error": 'Non puiden enviar o aviso. Proba máis tarde ou cóntao no grupo eXeLearning.',
+    "valoracion_si": "Grazas!",
+    "valoracion_no": "Grazas. Gardo a pregunta, sen nada teu, para mellorar.",
 }
 
 EU = {
@@ -153,7 +159,7 @@ EU = {
                         "bilatzen dut, eta gauza bakoitza nondik datorren esaten dizut."),
     "ayuda_final": ("ℹ️ Kontuan izan: oker egon naiteke, beraz egiaztatu garrantzitsua aipatzen dudan mezuan edo "
                     "dokumentuan. Idazten didazuna Claude-rekin prozesatzen da, Anthropic-en IA bat, Estatu "
-                    "Batuetako zerbitzarietan. Erantzun ezin ditudan galderak bakarrik gordetzen ditut, modu "
+                    "Batuetako zerbitzarietan. Erantzun ezin ditudan galderak edo 👎 batekin markatzen dituzunak bakarrik gordetzen ditut, modu "
                     "anonimoan, hobetzeko, eta 60 egunera ezabatzen ditut. eXeLearning taldeko kideei erantzuten "
                     "diet. @jjdeharo-k sortu nau."),
     "traduccion": "IArekin egindako itzulpen automatikoa, berrikuspen profesionalik gabe.",
@@ -180,6 +186,8 @@ EU = {
     "incidencia_caducada": 'Zirriborro hau ez dago erabilgarri. Errorearen berri eman nahi baduzu, kontatu berriro.',
     "incidencia_tope": 'Gaur dagoeneko {n} errore-ohar bidali zaizkio taldeari, egun bateko gehienekoa. Saiatu bihar edo kontatu eXeLearning taldean.',
     "incidencia_error": 'Ezin izan dut oharra bidali. Saiatu geroago edo kontatu eXeLearning taldean.',
+    "valoracion_si": "Eskerrik asko!",
+    "valoracion_no": "Eskerrik asko. Galdera gordetzen dut, zure daturik gabe, hobetzeko.",
 }
 
 EN = {
@@ -192,7 +200,7 @@ EN = {
                         "where each answer comes from."),
     "ayuda_final": ("ℹ️ Please note: I can make mistakes, so check anything important in the message or document "
                     "I cite. What you write to me is processed with Claude, an AI by Anthropic, on servers in the "
-                    "United States. I only keep, anonymously, the questions I can't answer, to improve, and I delete "
+                    "United States. I only keep, anonymously, the questions I can't answer or that you mark with 👎, to improve, and I delete "
                     "them after 60 days. I answer members of the eXeLearning group. Created by @jjdeharo."),
     "traduccion": "Automatic translation made with AI, without professional review.",
     "perfil": ("I'm Karla, an assistant for questions about eXeLearning. I search its manual, the documentation of "
@@ -218,6 +226,8 @@ EN = {
     "incidencia_caducada": 'This draft is no longer available. If you want to report the bug, tell me about it again.',
     "incidencia_tope": '{n} bug reports have already been sent to the team today, the daily maximum. Try again tomorrow or tell the eXeLearning group.',
     "incidencia_error": "I couldn't send the report. Try again later or tell the eXeLearning group.",
+    "valoracion_si": "Thanks!",
+    "valoracion_no": "Thanks. I'm keeping the question, with nothing about you, to improve.",
 }
 
 TEXTOS = {"es": ES, "ca": CA, "gl": GL, "eu": EU, "en": EN}

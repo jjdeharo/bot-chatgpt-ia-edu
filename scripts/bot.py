@@ -55,6 +55,7 @@ BASE = Path(__file__).resolve().parent.parent
 ESTADO = BASE / "datos" / "estado-bot.json"
 SIN_RESOLVER = BASE / "datos" / "sin-resolver.jsonl"
 DIAS_SIN_RESOLVER = 60
+VALORAR = {"inline_keyboard": [[{"text": "👍", "callback_data": "val:+"}, {"text": "👎", "callback_data": "val:-"}]]}
 CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-chatgpt-ia-edu.json"))
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
@@ -192,11 +193,21 @@ def guardar_sin_resolver(pregunta: str, motivo: str) -> None:
         tmp.replace(SIN_RESOLVER)
 
 
-def cuantas_sin_resolver() -> int:
+def sin_resolver_de(e: dict) -> str:
+    """Las sin resolver frente a las preguntas de los mismos 60 días, para ver si acierta (Juanjo, 30-10-2026).
+    Las que fallaron por un error no se cuentan como respondidas, así que se suman a las preguntas."""
     try:
-        return sum(1 for l in SIN_RESOLVER.read_text().splitlines() if l.strip())
-    except OSError:
-        return 0
+        guardadas = [json.loads(l) for l in SIN_RESOLVER.read_text().splitlines() if l.strip()]
+    except (OSError, ValueError):
+        guardadas = []
+    desde = (datetime.now(ZONA) - timedelta(days=DIAS_SIN_RESOLVER)).strftime("%Y-%m-%d")
+    preguntas = (resumen_dia(e)["preguntas"] + sum(1 for g in guardadas if g.get("motivo") == "error")
+                 + sum(x.get("preguntas", 0) for d, x in e.get("historial", {}).items() if d >= desde))
+    n, total = len(guardadas), max(preguntas, len(guardadas))
+    if not total:
+        return "Sin resolver: ninguna en los últimos 60 días."
+    return (f"Sin resolver: {n} de {cuenta(total, 'pregunta', 'preguntas')} de los últimos 60 días "
+            f"({round(100 * n / total)} %).")
 
 
 def contabilidad(e: dict) -> dict:
@@ -210,22 +221,53 @@ def contabilidad(e: dict) -> dict:
         if e.get("dia") and e.get("preguntas_hoy"):
             e.setdefault("historial", {})[e["dia"]] = resumen_dia(e)
         e["dia"], e["preguntas_hoy"], e["usd_hoy"], e["documentos_hoy"], e["recursos_hoy"] = hoy, {}, 0.0, {}, {}
+        e["utiles_hoy"], e["no_utiles_hoy"] = 0, 0
     if e.get("mes") != mes:
         e["mes"], e["usd_mes"], e["preguntas_mes"], e["publicados_mes"] = mes, 0.0, 0, 0
         e["preguntas_mes_juanjo"], e["publicados_mes_juanjo"], e["recursos_mes"] = 0, 0, 0
         e["recursos_mes_juanjo"] = 0
+        e["dias_mes"], e["dias_mes_desde"], e["utiles_mes"], e["no_utiles_mes"] = {}, None, 0, 0
+    if "dias_mes" not in e:  # empezó a contarse el 30-10-2026: se parte de quien ha preguntado hoy
+        e["dias_mes"], e["dias_mes_desde"] = {u: [e["dia"]] for u in e["preguntas_hoy"]}, e["dia"]
     e.setdefault("documentos_hoy", {})
     e.setdefault("recursos_hoy", {})
     # Las cifras por grupo se dejaron el 30-10-2026: mucha gente está en los tres y no se distingue.
     e.pop("preguntas_hoy_g", None)
     e.pop("preguntas_mes_g", None)
-    for k in ("publicados_mes", "preguntas_mes_juanjo", "publicados_mes_juanjo", "recursos_mes", "recursos_mes_juanjo"):
+    for k in ("publicados_mes", "preguntas_mes_juanjo", "publicados_mes_juanjo", "recursos_mes", "recursos_mes_juanjo",
+              "utiles_hoy", "no_utiles_hoy", "utiles_mes", "no_utiles_mes"):
         e.setdefault(k, 0)
     return e
 
 
 def sin_juanjo(d: dict) -> dict:
     return {u: n for u, n in d.items() if u != str(JUANJO)}
+
+
+def contar_pregunta(e: dict, uid: int) -> None:
+    """Una pregunta respondida. Los días en que ha preguntado cada cuenta se guardan solo durante el mes,
+    para saber cuántas personas vuelven (Juanjo, 30-10-2026); al cambiar de mes se borran."""
+    e["preguntas_hoy"][str(uid)] = e["preguntas_hoy"].get(str(uid), 0) + 1
+    e["preguntas_mes"] += 1
+    e["preguntas_mes_juanjo"] += uid == JUANJO
+    dias = e["dias_mes"].setdefault(str(uid), [])
+    if e["dia"] not in dias:
+        dias.append(e["dia"])
+
+
+def personas_mes(e: dict) -> str:
+    """Cuántas personas han preguntado este mes y cuántas han vuelto otro día. Las de octubre de 2026
+    se cuentan desde el día 30, cuando empezó a guardarse, y lo dice para no mezclar periodos."""
+    gente = sin_juanjo(e.get("dias_mes", {}))
+    vuelven = sum(1 for d in gente.values() if len(d) > 1)
+    desde = e.get("dias_mes_desde")
+    periodo = f"desde el {desde[8:10]}/{desde[5:7]}" if desde and desde[8:] != "01" else "este mes"
+    return f"Personas {periodo}: {len(gente)}; {vuelven} {'ha vuelto' if vuelven == 1 else 'han vuelto'} otro día."
+
+
+def valoraciones(e: dict) -> str:
+    return (f"Respuestas valoradas este mes: {cuenta(e.get('utiles_mes', 0), 'útil', 'útiles')} y "
+            f"{cuenta(e.get('no_utiles_mes', 0), 'no útil', 'no útiles')}.")
 
 
 def resumen_dia(e: dict) -> dict:
@@ -235,6 +277,7 @@ def resumen_dia(e: dict) -> dict:
     return {"preguntas": sum(miembros.values()), "personas": len(miembros),
             "documentos": sum(sin_juanjo(e.get("documentos_hoy", {})).values()),
             "recursos": sum(sin_juanjo(e.get("recursos_hoy", {})).values()),
+            "utiles": e.get("utiles_hoy", 0), "no_utiles": e.get("no_utiles_hoy", 0),
             "usd": round(e.get("usd_hoy", 0.0), 4)}
 
 
@@ -311,7 +354,9 @@ def informe(e: dict) -> str:
         f"Este mes: {cuenta(e['preguntas_mes'] - e['preguntas_mes_juanjo'], 'pregunta', 'preguntas')} · "
         f"{cuenta(pub, 'documento publicado', 'documentos publicados')} · "
         f"{cuenta(rec, 'recurso publicado', 'recursos publicados')}.",
-        f"Sin resolver (guardadas, de 60 días): {cuantas_sin_resolver()}.",
+        personas_mes(e),
+        valoraciones(e),
+        sin_resolver_de(e),
         f"Gasto: {usd(e.get('usd_hoy', 0.0))} USD hoy · {usd(e['usd_mes'])} de {TOPE_MES_USD:.0f} este mes. "
         f"Cupos a partir de {usd(FRENO_VECES * diario(e))} hoy" + (" (activos)." if frenado(e) else "."),
     ]
@@ -344,6 +389,7 @@ class Bot:
         self.compartir = {}    # usuario -> mensaje para «¡Comparte tu App!» a la espera de su visto bueno
         self.rechazados = {}   # usuario -> último recurso rechazado por su contenido, por si pide revisarlo
         self.ambitos = {}      # usuario -> (momento, grupos en que busca o None si todos); caduca con la conversación
+        self.valorables = {}   # usuario -> su última respuesta, la única con 👍/👎
 
     def grupos_de(self, uid: int) -> set[str]:
         """Los grupos de los que es miembro. Con uno basta para buscar en todos (Juanjo, 27-10-2026);
@@ -490,6 +536,49 @@ class Bot:
             if hecho is None and formato == "HTML":  # una etiqueta partida al cortar: mejor sin formato que nada
                 self.tg("sendMessage", chat_id=chat, text=html.unescape(re.sub(r"<[^>]+>", "", trozo)),
                         link_preview_options={"is_disabled": True})
+
+    def enviar_valorable(self, chat: int, uid: int, texto_html: str, pregunta: str, guardada: bool) -> None:
+        """La respuesta con 👍/👎 debajo, solo en la última: los de la anterior se quitan (Juanjo, 30-10-2026).
+        Solo en memoria: tras reiniciar el bot, los botones de antes no se quitan solos y al tocarlos no cuentan."""
+        anterior = self.valorables.pop(uid, None)
+        if anterior:
+            self.tg("editMessageReplyMarkup", chat_id=anterior["chat"], message_id=anterior["id"],
+                    reply_markup={"inline_keyboard": []})
+        corte = max(len(texto_html) - 1, 0) // 4000 * 4000  # los mismos trozos que enviar(); botones en el último
+        if corte:
+            self.enviar(chat, texto_html[:corte], "HTML")
+        comun = {"chat_id": chat, "link_preview_options": {"is_disabled": True}, "reply_markup": VALORAR}
+        hecho = self.tg("sendMessage", text=texto_html[corte:], parse_mode="HTML", **comun)
+        if hecho is None:  # una etiqueta partida al cortar: mejor sin formato que nada
+            hecho = self.tg("sendMessage", text=html.unescape(re.sub(r"<[^>]+>", "", texto_html[corte:])), **comun)
+        if hecho:
+            self.valorables[uid] = {"chat": chat, "id": hecho["message_id"], "pregunta": pregunta, "guardada": guardada}
+
+    def valorar(self, cq: dict) -> None:
+        """👍/👎: se cuentan sin decir quién; con 👎, la pregunta va a las sin resolver, anónima.
+        Lo de Juanjo no cuenta, pero ve lo mismo que los demás."""
+        uid, m, util = cq["from"]["id"], cq.get("message") or {}, cq.get("data") == "val:+"
+        v = self.valorables.get(uid)
+        if v and v["id"] == m.get("message_id"):
+            del self.valorables[uid]
+        else:
+            v = None
+        self.tg("answerCallbackQuery", callback_query_id=cq["id"],
+                text=self.tx(uid, "valoracion_no" if not util and v else "valoracion_si"))
+        if m:
+            self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
+                    reply_markup={"inline_keyboard": []})
+        if uid == JUANJO or not v:  # sin v: botones de antes de reiniciar, o un segundo toque; no cuentan
+            return
+        if not util and not v["guardada"]:
+            guardar_sin_resolver(v["pregunta"], "valoración negativa")
+        with CERROJO:
+            e = contabilidad(leer_estado())
+            clave = "utiles" if util else "no_utiles"
+            e[clave + "_hoy"] += 1
+            e[clave + "_mes"] += 1
+            guardar_estado(e)
+        registrar(f"respuesta valorada: {'útil' if util else 'no útil'}")
 
     def esperar_seguidos(self, updates: list, **params) -> list:
         """Un reenvío de varios mensajes llega en varias entregas, con menos de un segundo entre ellas.
@@ -667,7 +756,8 @@ class Bot:
         busco = any(ll.startswith(("buscar_mensajes", "leer_periodo")) for ll in r["uso"]["llamadas"])
         aviso = (f"<i>{html.escape(self.tx(uid, 'buscando_en', grupos=nombres))}</i>\n\n"
                  if nombres and busco else "")  # solo si ha buscado: no en «¿quién administra…?»
-        self.enviar(chat, aviso + respuesta_html(r["texto"]), "HTML")
+        self.enviar_valorable(chat, uid, aviso + respuesta_html(r["texto"]), con_fotos(texto, fotos),
+                              bool(r.get("sin_resolver")))
         if r.get("sin_resolver") and uid != JUANJO:  # las pruebas de Juanjo no cuentan
             guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"])
         # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.
@@ -681,9 +771,7 @@ class Bot:
         with CERROJO:
             e = contabilidad(leer_estado())
             if pregunta is not None:
-                e["preguntas_hoy"][str(pregunta)] = e["preguntas_hoy"].get(str(pregunta), 0) + 1
-                e["preguntas_mes"] += 1
-                e["preguntas_mes_juanjo"] += pregunta == JUANJO
+                contar_pregunta(e, pregunta)
             if documento is not None:
                 e["documentos_hoy"][str(documento)] = e["documentos_hoy"].get(str(documento), 0) + 1
             if recurso is not None:
@@ -765,6 +853,8 @@ class Bot:
     def boton(self, cq: dict) -> None:
         uid, accion = cq["from"]["id"], cq.get("data")
         self.fijar_lengua(uid, cq["from"])
+        if accion.startswith("val:"):
+            return self.valorar(cq)
         self.tg("answerCallbackQuery", callback_query_id=cq["id"])
         m = cq.get("message") or {}
         if accion.startswith("g:"):  # casillas de /buscar: marcar o desmarcar un grupo (Juanjo, 27-10-2026)

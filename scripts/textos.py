@@ -64,7 +64,7 @@ ES = {
     "ayuda_final": (
         "Cómo funciono: soy un programa que usa Claude, una IA de Anthropic. Lo que me escribes, los "
         "mensajes de los grupos que encuentro y lo que me envías se procesan en servidores de "
-        "Anthropic, en Estados Unidos. Solo guardo, de forma anónima, las preguntas que no consigo responder, para mejorar el bot, y las borro a los 60 días. Puedo equivocarme: comprueba siempre "
+        "Anthropic, en Estados Unidos. Solo guardo, de forma anónima, las preguntas que no consigo responder o que marcas con 👎, para mejorar el bot, y las borro a los 60 días. Puedo equivocarme: comprueba siempre "
         "el mensaje enlazado. Te hablo en el idioma en que me escribes."),
     "traduccion": "",
     "buscar": 'Escríbeme lo que buscas, con tus palabras. Busco en los grupos marcados; toca uno para marcarlo o desmarcarlo. Lo mantendré mientras sigamos hablando.',
@@ -205,6 +205,8 @@ ES = {
     "c_repositorio": "Añadir al repositorio",
     "c_misrecursos": "Gestionar tus recursos",
     "c_ayuda": "Qué hago y cómo",
+    "valoracion_si": "¡Gracias!",
+    "valoracion_no": "Gracias. Guardo la pregunta, sin nada tuyo, para mejorar.",
 }
 
 CA = {
@@ -257,7 +259,7 @@ CA = {
     "ayuda_final": (
         "Com funciono: soc un programa que fa servir Claude, una IA d'Anthropic. El que m'escrius, els "
         "missatges dels grups que trobo i el que m'envies es processen en servidors d'Anthropic, als "
-        "Estats Units. Només guardo, de manera anònima, les preguntes que no aconsegueixo respondre, per millorar el bot, i les esborro al cap de 60 dies. Em puc equivocar: comprova sempre el missatge "
+        "Estats Units. Només guardo, de manera anònima, les preguntes que no aconsegueixo respondre o que marques amb 👎, per millorar el bot, i les esborro al cap de 60 dies. Em puc equivocar: comprova sempre el missatge "
         "enllaçat. Et parlo en l'idioma en què m'escrius."),
     "traduccion": "Textos traduïts automàticament amb IA, sense revisió professional.",
     "buscar": "Escriu-me el que cerques, amb les teves paraules. Cerco als grups marcats; toca'n un per marcar-lo o desmarcar-lo. Ho mantindré mentre continuem parlant.",
@@ -380,6 +382,8 @@ CA = {
     "c_repositorio": "Afegir al repositori",
     "c_misrecursos": "Els teus recursos",
     "c_ayuda": "Què faig i com",
+    "valoracion_si": "Gràcies!",
+    "valoracion_no": "Gràcies. Guardo la pregunta, sense res teu, per millorar.",
 }
 
 GL = {
@@ -432,7 +436,7 @@ GL = {
     "ayuda_final": (
         "Como funciono: son un programa que usa Claude, unha IA de Anthropic. O que me escribes, as "
         "mensaxes dos grupos que atopo e o que me envías procésanse en servidores de Anthropic, nos "
-        "Estados Unidos. Só gardo, de forma anónima, as preguntas que non consigo responder, para mellorar o bot, e bórroas aos 60 días. Podo equivocarme: comproba sempre a mensaxe "
+        "Estados Unidos. Só gardo, de forma anónima, as preguntas que non consigo responder ou que marcas con 👎, para mellorar o bot, e bórroas aos 60 días. Podo equivocarme: comproba sempre a mensaxe "
         "ligada. Fálote no idioma no que me escribes."),
     "traduccion": "Textos traducidos automaticamente con IA, sen revisión profesional.",
     "buscar": 'Escríbeme o que buscas, coas túas palabras. Busco nos grupos marcados; toca un para marcalo ou desmarcalo. Mantereino mentres sigamos falando.',
@@ -555,6 +559,8 @@ GL = {
     "c_repositorio": "Engadir ao repositorio",
     "c_misrecursos": "Os teus recursos",
     "c_ayuda": "Que fago e como",
+    "valoracion_si": "Grazas!",
+    "valoracion_no": "Grazas. Gardo a pregunta, sen nada teu, para mellorar.",
 }
 
 EU = {
@@ -608,7 +614,7 @@ EU = {
     "ayuda_final": (
         "Nola funtzionatzen dudan: Claude erabiltzen duen programa bat naiz, Anthropic-en IA bat. Idazten "
         "didazuna, taldeetan aurkitzen ditudan mezuak eta bidaltzen didazuna Anthropic-en zerbitzarietan "
-        "prozesatzen dira, Ameriketako Estatu Batuetan. Erantzun ezin ditudan galderak bakarrik gordetzen ditut, modu anonimoan, bota hobetzeko, eta 60 egunera ezabatzen ditut. Oker egon naiteke: "
+        "prozesatzen dira, Ameriketako Estatu Batuetan. Erantzun ezin ditudan galderak edo 👎 batekin markatzen dituzunak bakarrik gordetzen ditut, modu anonimoan, bota hobetzeko, eta 60 egunera ezabatzen ditut. Oker egon naiteke: "
         "egiaztatu beti estekatutako mezua. Idazten didazun hizkuntzan hitz egiten dizut."),
     "traduccion": "Testuak IArekin automatikoki itzuliak, berrikuspen profesionalik gabe.",
     "buscar": 'Idatzi zer bilatzen duzun, zure hitzekin. Markatutako taldeetan bilatzen dut; ukitu bat markatzeko edo desmarkatzeko. Hitz egiten jarraitzen dugun bitartean mantenduko dut.',
@@ -732,6 +738,8 @@ EU = {
     "c_repositorio": "Gehitu biltegira",
     "c_misrecursos": "Kudeatu zure baliabideak",
     "c_ayuda": "Zer egiten dudan eta nola",
+    "valoracion_si": "Eskerrik asko!",
+    "valoracion_no": "Eskerrik asko. Galdera gordetzen dut, zure daturik gabe, hobetzeko.",
 }
 
 EN = {
@@ -784,7 +792,7 @@ EN = {
     "ayuda_final": (
         "How I work: I'm a program that uses Claude, an AI by Anthropic. What you write to me, the group "
         "messages I find and what you send me are processed on Anthropic's servers in the United States. "
-        "I only keep, anonymously, the questions I can't answer, to improve the bot, and I delete them after 60 days. I can make mistakes: always check the linked message. I reply in "
+        "I only keep, anonymously, the questions I can't answer or that you mark with 👎, to improve the bot, and I delete them after 60 days. I can make mistakes: always check the linked message. I reply in "
         "the language you write to me in."),
     "traduccion": "Texts machine-translated with AI, without professional review.",
     "buscar": "Tell me what you're looking for, in your own words. I search the ticked groups; tap one to tick or untick it. I'll keep it while we keep talking.",
@@ -907,6 +915,8 @@ EN = {
     "c_repositorio": "Add to the repository",
     "c_misrecursos": "Manage your resources",
     "c_ayuda": "What I do and how",
+    "valoracion_si": "Thanks!",
+    "valoracion_no": "Thanks. I'm keeping the question, with nothing about you, to improve.",
 }
 
 TEXTOS = {"es": ES, "ca": CA, "gl": GL, "eu": EU, "en": EN}

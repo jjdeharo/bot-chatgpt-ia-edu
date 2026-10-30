@@ -101,7 +101,7 @@ def nuevo_bot(tmp: Path):
     b.recursos = catalogo.Fichas(anthropic.Anthropic(api_key=consultar.CLAVE.read_text().strip()))
     b.hoja = HojaFalsa()
     b.espera, b.fichas_rec, b.listas, b.lenguas, b.recientes, b.compartir = {}, {}, {}, {}, {}, {}
-    b.ambitos, b.rechazados = {}, {}
+    b.ambitos, b.rechazados, b.valorables = {}, {}, {}
     b.consultor = type("C", (), {"cliente": b.recursos.cliente,  # para detectar el idioma
                                  "responder": lambda self, texto, *a: responder_falso(texto, *a)})()
     b.en_hilo = lambda f, *a: f(*a)  # sin hilos: la prueba sigue el orden
@@ -406,6 +406,33 @@ def main():
         ok &= comprobar("la pregunta sin resolver se guarda, anónima",
                         "caracoles" in guardado and str(VCE) not in guardado and "Persona" not in guardado
                         and "sin resultado" in guardado, [])
+
+        # 👍/👎 solo bajo la última respuesta; con 👎 la pregunta va a las sin resolver (30-10-2026)
+        b.recientes.clear()
+        mensaje(b, CHATGPT, "primera consulta")
+        id1 = b.valorables[CHATGPT]["id"]
+        s = mensaje(b, CHATGPT, "segunda consulta sobre rúbricas")
+        ok &= comprobar("la respuesta lleva 👍/👎", bool(s) and s[-1][2] == bot.VALORAR, s)
+        ok &= comprobar("y la anterior los pierde", any(p.get("message_id") == id1 and p.get("reply_markup")
+                                                        == {"inline_keyboard": []} for p in b.tg.editados), [])
+        e0 = _json.loads(bot.ESTADO.read_text())
+        pulsar = {"id": "1", "from": {"id": CHATGPT}, "data": "val:-",
+                  "message": {"message_id": b.valorables[CHATGPT]["id"], "chat": {"id": CHATGPT}}}
+        b.boton(pulsar)
+        b.boton(pulsar)  # un segundo toque no cuenta dos veces
+        e1 = _json.loads(bot.ESTADO.read_text())
+        guardado = bot.SIN_RESOLVER.read_text()
+        ok &= comprobar("👎 cuenta una vez y guarda la pregunta, anónima",
+                        e1["no_utiles_mes"] - e0.get("no_utiles_mes", 0) == 1 and "segunda consulta sobre rúbricas" in guardado
+                        and "valoración negativa" in guardado and str(CHATGPT) not in guardado, [])
+        estado = bot.informe(bot.contabilidad(e1))
+        ok &= comprobar("/estado da valoraciones, personas que vuelven y la proporción sin resolver",
+                        "1 no útil" in estado and "han vuelto otro día" in estado and "% )" not in estado
+                        and "de los últimos 60 días (" in estado, [(0, estado, 0)])
+        prueba = {**e1, "dias_mes": {"1": ["2026-10-29", "2026-10-30"], "2": ["2026-10-30"],
+                                     str(bot.JUANJO): ["2026-10-29", "2026-10-30"]}, "dias_mes_desde": None}
+        ok &= comprobar("vuelve quien pregunta en dos días; Juanjo no cuenta",
+                        bot.personas_mes(prueba) == "Personas este mes: 2; 1 ha vuelto otro día.", [(0, bot.personas_mes(prueba), 0)])
 
         # Quien solo es de EduMedia-IAG busca en todos, pero no añade a la Biblioteca ni al repositorio
         b.recientes.clear(); olvidar_lenguas(b)
