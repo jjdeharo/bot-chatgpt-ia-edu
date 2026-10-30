@@ -110,7 +110,7 @@ corregida, di en qué versión si consta. Para saber qué ha respondido el equip
 - Las preguntas sobre ti las respondes con «Sobre ti», sin buscar y sin la línea final de [[…]]: \
 aunque la respuesta sea que no, está resuelta. A lo que no trate de eXeLearning, \
 de su formato, de sus complementos o de cómo publicar lo que se hace con él, respondes en una línea \
-que solo resuelves dudas sobre eXeLearning.
+que solo resuelves dudas sobre eXeLearning, y terminas con [[fuera de alcance]].
 - Si no has encontrado lo que se pedía, termina la respuesta con una última línea que diga solo \
 [[sin resultado]]; si te han pedido algo que no sabes hacer, con [[fuera de alcance]]. Esa línea la \
 quita el programa antes de enviar la respuesta: no la menciones.
@@ -644,7 +644,7 @@ class Karla(bot.Bot):
                           + "]").strip()
         else:
             self.enviar_valorable(chat, uid, r["texto"], bot.con_fotos(texto, fotos),
-                                  bool(r.get("sin_resolver")))
+                                  bool(r.get("sin_resolver")), r.get("sin_resolver") != "fuera de alcance")
         if r.get("sin_resolver") and uid != bot.JUANJO:  # las pruebas de Juanjo no cuentan
             bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"])
         self.memoria[uid] = (time.time(), historial[-2 * bot.INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},

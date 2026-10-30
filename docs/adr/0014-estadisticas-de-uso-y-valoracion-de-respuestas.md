@@ -26,7 +26,13 @@ vuelven, proporción de preguntas sin resolver y 👍/👎 bajo la última respu
    resuelto la duda), así que van en toda respuesta a una pregunta, pero al
    llegar la siguiente se quitan de la anterior: nunca hay más de una fila a la
    vista. No las llevan la ayuda, los avisos, los menús, las fichas ni el
-   borrador de una incidencia de Karla. Al pulsar, los botones desaparecen y un
+   borrador de una incidencia de Karla, ni, desde el 30-10-2026, la respuesta a
+   lo que queda fuera de lo que hace el bot (marcada «fuera de alcance»): no
+   hay nada que valorar (Juanjo, ante un «Solo resuelvo dudas sobre
+   eXeLearning…» con los botones: «aquí no deberían aparecer las manos»). En ese
+   caso la respuesta anterior conserva los suyos. Para que la marca no falle,
+   las instrucciones de los dos bots piden terminar con ella toda negativa por
+   estar fuera de tema. Al pulsar, los botones desaparecen y un
    aviso breve da las gracias. Se cuentan sin decir quién; con 👎, la pregunta
    pasa a las sin resolver (anónima, motivo «valoración negativa»), salvo que ya
    estuviera. La ayuda de los dos bots lo dice en los cinco idiomas.

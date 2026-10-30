@@ -582,27 +582,30 @@ class Bot:
                 self.tg("sendMessage", chat_id=chat, text=html.unescape(re.sub(r"<[^>]+>", "", trozo)),
                         link_preview_options={"is_disabled": True})
 
-    def enviar_valorable(self, chat: int, uid: int, texto_md: str, pregunta: str, guardada: bool) -> None:
+    def enviar_valorable(self, chat: int, uid: int, texto_md: str, pregunta: str, guardada: bool,
+                         valorable: bool = True) -> None:
         """La respuesta, como mensaje enriquecido en Markdown (Bot API 10.1: negrita, listas, tablas…), con 👍/👎
         debajo, solo en la última: los de la anterior se quitan (Juanjo, 30-10-2026). Si Telegram no acepta el
         Markdown, va como antes, en HTML. Solo en memoria: tras reiniciar el bot, los botones de antes no se
-        quitan solos y al tocarlos no cuentan."""
-        anterior = self.valorables.pop(uid, None)
+        quitan solos y al tocarlos no cuentan. Lo que no es valorable (la pregunta queda fuera de lo que hace el
+        bot) va sin botones, y la respuesta anterior conserva los suyos (Juanjo, 30-10-2026, ADR 0014)."""
+        botones = VALORAR if valorable else None
+        anterior = self.valorables.pop(uid, None) if valorable else None
         if anterior:
             self.tg("editMessageReplyMarkup", chat_id=anterior["chat"], message_id=anterior["id"],
                     reply_markup={"inline_keyboard": []})
-        hecho = self.tg("sendRichMessage", chat_id=chat, rich_message={"markdown": texto_md}, reply_markup=VALORAR)
+        hecho = self.tg("sendRichMessage", chat_id=chat, rich_message={"markdown": texto_md}, reply_markup=botones)
         if hecho is None:
             registrar("mensaje enriquecido rechazado: va en HTML")
             texto_html = respuesta_html(texto_md)
             corte = max(len(texto_html) - 1, 0) // 4000 * 4000  # los mismos trozos que enviar(); botones en el último
             if corte:
                 self.enviar(chat, texto_html[:corte], "HTML")
-            comun = {"chat_id": chat, "link_preview_options": {"is_disabled": True}, "reply_markup": VALORAR}
+            comun = {"chat_id": chat, "link_preview_options": {"is_disabled": True}, "reply_markup": botones}
             hecho = self.tg("sendMessage", text=texto_html[corte:], parse_mode="HTML", **comun)
             if hecho is None:  # una etiqueta partida al cortar: mejor sin formato que nada
                 hecho = self.tg("sendMessage", text=html.unescape(re.sub(r"<[^>]+>", "", texto_html[corte:])), **comun)
-        if hecho:
+        if hecho and valorable:
             self.valorables[uid] = {"chat": chat, "id": hecho["message_id"], "pregunta": pregunta, "guardada": guardada}
 
     def valorar(self, cq: dict) -> None:
@@ -813,7 +816,7 @@ class Bot:
         aviso = (f"_{self.tx(uid, 'buscando_en', grupos=nombres)}_\n\n"
                  if nombres and busco else "")  # solo si ha buscado: no en «¿quién administra…?»
         self.enviar_valorable(chat, uid, aviso + r["texto"], con_fotos(texto, fotos),
-                              bool(r.get("sin_resolver")))
+                              bool(r.get("sin_resolver")), r.get("sin_resolver") != "fuera de alcance")
         if r.get("sin_resolver") and uid != JUANJO:  # las pruebas de Juanjo no cuentan
             guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"])
         # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.
