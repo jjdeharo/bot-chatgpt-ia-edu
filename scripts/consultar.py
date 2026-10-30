@@ -27,6 +27,18 @@ CLAVE = Path(os.environ.get("CLAVE_ANTHROPIC", Path.home() / ".config/credencial
 # Precio por millón de tokens (24-10-2026), para llevar la cuenta del gasto.
 PRECIO = {"claude-haiku-5-5": (0.10, 0.50), "claude-sonnet-5-5": (2.0, 10.0)}
 
+# Las respuestas se envían como mensaje enriquecido de Telegram (Bot API 10.1), escrito en Markdown (Juanjo,
+# 30-10-2026: «visualmente mejora mucho»). Lo comparten los dos bots.
+FORMATO = """Formato: tu respuesta se ve en Telegram como mensaje enriquecido, escrito en Markdown. Úsalo \
+cuando ayude a leer, no para adornar; una respuesta corta va sin formato. Tienes: **negrita** para lo \
+esencial (una o dos cosas por respuesta); listas numeradas para pasos y listas con guiones para opciones; \
+una tabla Markdown cuando compares varias cosas por las mismas características (pocas columnas y celdas \
+cortas: se lee en el móvil); encabezados ### solo si la respuesta tiene varias partes; `código` para \
+nombres exactos de menús, botones, archivos u órdenes; y > para citar literalmente un mensaje. Los \
+enlaces, siempre como dirección completa (https://…), nunca como [texto](enlace): Telegram pide \
+confirmación antes de abrir un enlace con texto. No escribas el signo $ (pon USD o dólares): Telegram \
+lo toma como el inicio de una fórmula."""
+
 SISTEMA = """Eres el buscador de tres grupos de Telegram de docentes: ChatGPT-IA-edu, que habla \
 de inteligencia artificial en educación; Vibe Coding Educativo, donde el profesorado crea \
 aplicaciones educativas con IA, y EduMedia-IAG, sobre la IA generativa para crear audio, vídeo e \
@@ -62,7 +74,7 @@ entiende qué busca, pídele en una frase que lo explique.
 persona. Los nombres de los grupos (ChatGPT-IA-edu, Vibe Coding Educativo, EduMedia-IAG), de sus temas \
 («¡Comparte tu App!») y de la Biblioteca digital se escriben tal cual, sin traducirlos, y los comandos \
 (/buscar, /biblioteca, /repositorio, /misrecursos, /ayuda), exactamente así en cualquier idioma: no existen \
-otros. Formato para Telegram: texto llano, enlaces en línea propia, sin tablas ni encabezados.
+otros. {formato} Cada enlace, en su propia línea.
 - Las preguntas sobre ti (qué haces, cómo se usa, qué condiciones pides, quién te ha hecho) las \
 respondes directamente con lo que dice «Sobre ti», sin buscar y sin la línea final de [[…]]: no son \
 preguntas sobre los grupos y, aunque la respuesta sea que no, están resueltas.
@@ -166,7 +178,7 @@ suelto, «la estoy utilizando», una pregunta sin respuesta) no es una idea: dé
 final, después de una línea que diga solo [[sugerencias]], en frases completas, sin enlaces, y nunca dentro de \
 una idea con fuentes. El programa pone el rótulo de ese bloque.
 - Si encuentras poco, dilo y no rellenes con ideas propias; si no hay nada, termina con [[sin resultado]].
-- Puedes extenderte lo necesario, siempre en texto llano para Telegram."""
+- Puedes extenderte lo necesario, con el formato dicho."""
 
 ES_AYUDA = {"type": "object", "properties": {"ayuda": {"type": "boolean"}}, "required": ["ayuda"],
             "additionalProperties": False}
@@ -388,7 +400,7 @@ class Consultor:
         for b in self.buscadores.values():
             b.al_dia()
         ultimo = max(b.ultimo_momento() for b in self.buscadores.values())
-        sistema = SISTEMA.format(hoy=buscador.hoy(), ultimo=ultimo)
+        sistema = SISTEMA.format(hoy=buscador.hoy(), ultimo=ultimo, formato=FORMATO)
         self.ambito, self.ambito_cambiado, self.limitados = ambito, False, set()
         if getattr(self, "administradores", ""):
             sistema += ("\n\nQuién administra cada grupo (solo personas; respóndelo si te lo preguntan o si alguien "

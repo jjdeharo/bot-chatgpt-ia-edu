@@ -16,5 +16,6 @@
 | [0012](0012-modelo-de-significado-compartido.md) | Una sola copia del modelo de significado para los dos bots y el índice | aceptado |
 | [0013](0013-avisos-de-la-revision-del-repositorio-y-ya-lo-he-corregido.md) | Avisos de la revisión del repositorio y «Ya lo he corregido» | aceptado |
 | [0014](0014-estadisticas-de-uso-y-valoracion-de-respuestas.md) | Estadísticas de uso y valoración de las respuestas | aceptado |
+| [0015](0015-respuestas-con-formato-enriquecido.md) | Respuestas con formato enriquecido | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

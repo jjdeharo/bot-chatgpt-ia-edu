@@ -38,11 +38,14 @@ class TelegramFalso:
             return {"status": "member"} if clave in suyo else None
         if metodo in ("sendMessage",):
             self.enviados.append((p["chat_id"], p["text"], p.get("reply_markup")))
+        if metodo == "sendRichMessage":  # respuestas y /estado (Bot API 10.1)
+            r = p["rich_message"]
+            self.enviados.append((p["chat_id"], r.get("markdown") or r.get("html"), p.get("reply_markup")))
         if metodo in ("editMessageText", "editMessageReplyMarkup"):
             self.editados.append(p)
         if metodo == "deleteMessage":
             self.borrados.append(p)
-        if metodo in ("sendMessage", "sendDocument"):
+        if metodo in ("sendMessage", "sendDocument", "sendRichMessage"):
             self.ultimo_id = getattr(self, "ultimo_id", 100) + 1
             return {"message_id": self.ultimo_id}
         return {"message_id": 1}
@@ -467,12 +470,12 @@ def main():
         ok &= comprobar("no deja desmarcar el último", s and "al menos un grupo" in s[-1][1]
                         and b.ambito(AMBOS) == {"vce"}, s)
         s = mensaje(b, AMBOS, "consulta")
-        ok &= comprobar("la respuesta recuerda dónde busca", s and s[-1][1].startswith("<i>Buscando en: Vibe"), s)
+        ok &= comprobar("la respuesta recuerda dónde busca", s and s[-1][1].startswith("_Buscando en: Vibe"), s)
         s = mensaje(b, AMBOS, "consulta")
         ok &= comprobar("y se mantiene en la pregunta siguiente", s and "Buscando en: Vibe" in s[-1][1], s)
         boton(b, AMBOS, "g:chatgpt")
         s = mensaje(b, AMBOS, "consulta")
-        ok &= comprobar("con dos de tres, los nombra", s and s[-1][1].startswith("<i>Buscando en: ChatGPT-IA-edu, Vibe"), s)
+        ok &= comprobar("con dos de tres, los nombra", s and s[-1][1].startswith("_Buscando en: ChatGPT-IA-edu, Vibe"), s)
         boton(b, AMBOS, "g:edumedia")
         s = mensaje(b, AMBOS, "consulta")
         ok &= comprobar("con todos marcados, sin aviso", b.ambito(AMBOS) is None and s and "Buscando en" not in s[-1][1], s)

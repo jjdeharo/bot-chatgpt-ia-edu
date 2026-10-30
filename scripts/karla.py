@@ -366,7 +366,7 @@ class Consultora:
                   abrir: bool = False) -> dict:
         """«abrir»: si puede ofrecer una incidencia nueva; si no, solo busca las que hay."""
         self.al_dia()
-        sistema = PERSONA + COMO.format(hoy=buscador.hoy(), ultimo=self.grupo.ultimo_momento(),
+        sistema = PERSONA + "\n\n## Formato\n\n" + consultar.FORMATO + "\n" + COMO.format(hoy=buscador.hoy(), ultimo=self.grupo.ultimo_momento(),
                                         abrir=ABRIR if abrir else "")
         if getattr(self, "entorno", ""):
             sistema += ("\n\n## Tu grupo (datos de Telegram, al día)\n\nResponde con esto, sin buscar, a las "
@@ -650,7 +650,7 @@ class Karla(bot.Bot):
             r["texto"] = (r["texto"] + "\n[Borrador de incidencia preparado: " + r["incidencia"].get("titulo", "")
                           + "]").strip()
         else:
-            self.enviar_valorable(chat, uid, bot.respuesta_html(r["texto"]), bot.con_fotos(texto, fotos),
+            self.enviar_valorable(chat, uid, r["texto"], bot.con_fotos(texto, fotos),
                                   bool(r.get("sin_resolver")))
         if r.get("sin_resolver") and uid != bot.JUANJO:  # las pruebas de Juanjo no cuentan
             bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"])
