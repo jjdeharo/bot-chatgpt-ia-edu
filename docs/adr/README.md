@@ -18,5 +18,6 @@
 | [0014](0014-estadisticas-de-uso-y-valoracion-de-respuestas.md) | Estadísticas de uso y valoración de las respuestas | aceptado |
 | [0015](0015-respuestas-con-formato-enriquecido.md) | Respuestas con formato enriquecido | aceptado |
 | [0016](0016-busqueda-en-el-repositorio-de-recursos.md) | Búsqueda en el Repositorio de recursos | aceptado |
+| [0017](0017-cache-de-prompts.md) | Caché de prompts en las preguntas de los dos bots | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

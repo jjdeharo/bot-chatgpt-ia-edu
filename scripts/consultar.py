@@ -27,6 +27,16 @@ LARGO_PERIODO = 220   # caracteres de cada mensaje en leer_periodo
 CLAVE = Path(os.environ.get("CLAVE_ANTHROPIC", Path.home() / ".config/credenciales/anthropic-bot.txt"))
 # Precio por millón de tokens (24-10-2026), para llevar la cuenta del gasto.
 PRECIO = {"claude-haiku-5-5": (0.10, 0.50), "claude-sonnet-5-5": (2.0, 10.0)}
+# La caché de las rondas de una pregunta (ADR 0017): escribir cuesta 1,25 veces la entrada y leer, 0,1 veces
+# en Haiku 5.5 y 0,05 en Sonnet 5.5 (tabla de precios de la caché, 30-10-2026).
+ESCRITURA_CACHE = 1.25
+LECTURA_CACHE = {"claude-haiku-5-5": 0.1, "claude-sonnet-5-5": 0.05}
+CACHE = {"type": "ephemeral"}  # caché automática: la marca avanza sola hasta el último bloque de cada ronda
+
+
+def en_cache(sistema: str) -> list[dict]:
+    """El sistema con su propia marca: la pregunta que llega a menos de 5 minutos de otra lo lee de la caché."""
+    return [{"type": "text", "text": sistema, "cache_control": CACHE}]
 
 # Las respuestas se envían como mensaje enriquecido de Telegram (Bot API 10.1), escrito en Markdown (Juanjo,
 # 30-10-2026: «visualmente mejora mucho»). Lo comparten los dos bots.
@@ -455,8 +465,8 @@ class Consultor:
             herramientas = [h for h in HERRAMIENTAS if h["name"] != "anadir_recurso"]
         for _ in range(VUELTAS + 1):
             r = self.cliente.messages.create(
-                model=modelo, max_tokens=8000, system=sistema, tools=herramientas,
-                messages=mensajes, output_config={"effort": ESFUERZO})
+                model=modelo, max_tokens=8000, system=en_cache(sistema), tools=herramientas,
+                messages=mensajes, output_config={"effort": ESFUERZO}, cache_control=CACHE)
             self.apuntar(uso, r.usage, modelo)
             if r.stop_reason != "tool_use":
                 break
@@ -502,13 +512,15 @@ class Consultor:
 
     @staticmethod
     def apuntar(uso: dict, u, modelo: str) -> None:
-        """Tokens y gasto de una llamada, con el precio de su modelo."""
-        entrada = u.input_tokens + (getattr(u, "cache_read_input_tokens", 0) or 0) \
-            + (getattr(u, "cache_creation_input_tokens", 0) or 0)
+        """Tokens y gasto de una llamada, con el precio de su modelo: lo leído de la caché y lo escrito en ella,
+        con el suyo (ADR 0017)."""
+        leido = getattr(u, "cache_read_input_tokens", 0) or 0
+        escrito = getattr(u, "cache_creation_input_tokens", 0) or 0
         pe, ps = PRECIO.get(modelo, (0, 0))
-        uso["entrada"] += entrada
+        uso["entrada"] += u.input_tokens + leido + escrito
         uso["salida"] += u.output_tokens
-        uso["usd"] += (entrada * pe + u.output_tokens * ps) / 1e6
+        uso["usd"] += ((u.input_tokens + escrito * ESCRITURA_CACHE) * pe + leido * LECTURA_CACHE.get(modelo, 0.1) * pe
+                       + u.output_tokens * ps) / 1e6
 
     # --- ayuda para enseñar: revisión y citas (ADR 0011) ----------------------
     def es_ayuda(self, pregunta, historial: list | None, uso: dict) -> bool:

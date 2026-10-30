@@ -199,7 +199,6 @@ PREPARAR = {
         "titulo": {"type": "string", "description": "Título en inglés, concreto"},
         "cuerpo": {"type": "string", "description": "Texto en inglés, en Markdown, con sus apartados"}},
         "required": ["repositorio", "titulo", "cuerpo"]}}
-PRECIO = {**consultar.PRECIO, "claude-sonnet-5-5": (2.0, 10.0)}
 
 
 def github(ruta: str, datos: dict | None = None, **params):
@@ -385,22 +384,18 @@ class Consultora:
                         f"publicada de eXeLearning es la {vigente[0]}, del {vigente[1]}. Responde con esto, sin buscar, "
                         "a qué versión es la última; para saber qué trae, búscalo en el registro de cambios.")
         mensajes = list(historial or []) + [{"role": "user", "content": pregunta}]
-        uso = {"entrada": 0, "salida": 0, "llamadas": [], "modelo": modelo}
+        uso = {"entrada": 0, "salida": 0, "llamadas": [], "modelo": modelo, "usd": 0.0}
         r = None
         for _ in range(consultar.VUELTAS + 1):
             r = self.cliente.messages.create(
-                model=modelo, max_tokens=8000, system=sistema,
+                model=modelo, max_tokens=8000, system=consultar.en_cache(sistema),
                 tools=HERRAMIENTAS + ([PREPARAR] if abrir else []),
-                messages=mensajes, output_config={"effort": consultar.ESFUERZO})
-            uso["entrada"] += r.usage.input_tokens + (r.usage.cache_read_input_tokens or 0) \
-                + (r.usage.cache_creation_input_tokens or 0)
-            uso["salida"] += r.usage.output_tokens
+                messages=mensajes, output_config={"effort": consultar.ESFUERZO}, cache_control=consultar.CACHE)
+            consultar.Consultor.apuntar(uso, r.usage, modelo)
             if r.stop_reason != "tool_use":
                 break
             borrador = next((b for b in r.content if b.type == "tool_use" and b.name == "preparar_incidencia"), None)
             if borrador:  # no es una búsqueda: el bot la enseña con sus botones y la persona decide
-                pe, ps = PRECIO.get(modelo, (0, 0))
-                uso["usd"] = (uso["entrada"] * pe + uso["salida"] * ps) / 1e6
                 uso["llamadas"].append("preparar_incidencia")
                 return {"texto": "\n".join(x.text for x in r.content if x.type == "text").strip(),
                         "incidencia": dict(borrador.input), "uso": uso, "sin_resolver": None}
@@ -424,8 +419,6 @@ class Consultora:
         if r.stop_reason == "tool_use":
             texto = texto or "No he podido terminar la búsqueda. Prueba a concretar más la pregunta."
             sin_resolver = sin_resolver or "sin resultado"
-        pe, ps = PRECIO.get(modelo, (0, 0))
-        uso["usd"] = (uso["entrada"] * pe + uso["salida"] * ps) / 1e6
         return {"texto": texto, "uso": uso, "sin_resolver": sin_resolver}
 
 
