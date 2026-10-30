@@ -32,7 +32,14 @@ vuelven, proporción de preguntas sin resolver y 👍/👎 bajo la última respu
    eXeLearning…» con los botones: «aquí no deberían aparecer las manos»). En ese
    caso la respuesta anterior conserva los suyos. Para que la marca no falle,
    las instrucciones de los dos bots piden terminar con ella toda negativa por
-   estar fuera de tema. Al pulsar, los botones desaparecen y un
+   estar fuera de tema. Tampoco los lleva la respuesta a un mensaje que no pide
+   nada (un saludo, un «gracias»), que Claude marca con `[[sin pregunta]]` y
+   que no se guarda como sin resolver (Juanjo: «es la respuesta a un hola»).
+   Las marcas las quita `consultar.quitar_marcas`, común a los dos bots.
+   Al quitar los botones, el primer despliegue mandaba `reply_markup` vacío y
+   Telegram rechazaba el mensaje entero: durante unos minutos, las respuestas
+   fuera de tema no llegaron. Desde entonces, `Telegram.__call__` no manda los
+   parámetros sin valor. Al pulsar, los botones desaparecen y un
    aviso breve da las gracias. Se cuentan sin decir quién; con 👎, la pregunta
    pasa a las sin resolver (anónima, motivo «valoración negativa»), salvo que ya
    estuviera. La ayuda de los dos bots lo dice en los cinco idiomas.

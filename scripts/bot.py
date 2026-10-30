@@ -147,8 +147,9 @@ class Telegram:
         self.url = f"https://api.telegram.org/bot{token}/"
 
     def __call__(self, metodo, espera=30, **params):
+        # Un parámetro a None no se manda: Telegram rechaza el mensaje entero (reply_markup=None, 30-10-2026).
         datos = urllib.parse.urlencode({k: json.dumps(v) if isinstance(v, (dict, list)) else v
-                                        for k, v in params.items()}).encode()
+                                        for k, v in params.items() if v is not None}).encode()
         try:
             with urllib.request.urlopen(self.url + metodo, datos, timeout=espera + 10) as r:
                 return json.load(r).get("result")
@@ -816,7 +817,7 @@ class Bot:
         aviso = (f"_{self.tx(uid, 'buscando_en', grupos=nombres)}_\n\n"
                  if nombres and busco else "")  # solo si ha buscado: no en «¿quién administra…?»
         self.enviar_valorable(chat, uid, aviso + r["texto"], con_fotos(texto, fotos),
-                              bool(r.get("sin_resolver")), r.get("sin_resolver") != "fuera de alcance")
+                              bool(r.get("sin_resolver")), r.get("valorable", True))
         if r.get("sin_resolver") and uid != JUANJO:  # las pruebas de Juanjo no cuentan
             guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"])
         # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.

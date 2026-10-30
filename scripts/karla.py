@@ -112,8 +112,9 @@ aunque la respuesta sea que no, está resuelta. A lo que no trate de eXeLearning
 de su formato, de sus complementos o de cómo publicar lo que se hace con él, respondes en una línea \
 que solo resuelves dudas sobre eXeLearning, y terminas con [[fuera de alcance]].
 - Si no has encontrado lo que se pedía, termina la respuesta con una última línea que diga solo \
-[[sin resultado]]; si te han pedido algo que no sabes hacer, con [[fuera de alcance]]. Esa línea la \
-quita el programa antes de enviar la respuesta: no la menciones.
+[[sin resultado]]; si te han pedido algo que no sabes hacer, con [[fuera de alcance]]; si el mensaje no \
+pide nada (un saludo, un «gracias», un «vale»), contesta en una línea y termina con [[sin pregunta]]. Esa \
+línea la quita el programa antes de enviar la respuesta: no la menciones.
 
 ## Sobre ti
 
@@ -412,13 +413,11 @@ class Consultora:
                                        "content": f"Error: {error}", "is_error": True})
             mensajes.append({"role": "user", "content": resultados})
         texto = "\n".join(x.text for x in r.content if x.type == "text").strip()
-        marca = re.search(r"\[\[(sin resultado|fuera de alcance)\]\]\s*$", texto)
-        sin_resolver = marca.group(1) if marca else None
-        texto = re.sub(r"\s*\[\[(sin resultado|fuera de alcance)\]\]\s*", "\n", texto).strip()
+        texto, sin_resolver, valorable = consultar.quitar_marcas(texto)
         if r.stop_reason == "tool_use":
             texto = texto or "No he podido terminar la búsqueda. Prueba a concretar más la pregunta."
             sin_resolver = sin_resolver or "sin resultado"
-        return {"texto": texto, "uso": uso, "sin_resolver": sin_resolver}
+        return {"texto": texto, "uso": uso, "sin_resolver": sin_resolver, "valorable": valorable}
 
 
 def con_enlaces(texto: str, entidades: list) -> str:
@@ -644,7 +643,7 @@ class Karla(bot.Bot):
                           + "]").strip()
         else:
             self.enviar_valorable(chat, uid, r["texto"], bot.con_fotos(texto, fotos),
-                                  bool(r.get("sin_resolver")), r.get("sin_resolver") != "fuera de alcance")
+                                  bool(r.get("sin_resolver")), r.get("valorable", True))
         if r.get("sin_resolver") and uid != bot.JUANJO:  # las pruebas de Juanjo no cuentan
             bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"])
         self.memoria[uid] = (time.time(), historial[-2 * bot.INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},
