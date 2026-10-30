@@ -290,6 +290,13 @@ class Consultora:
             self.docs = documentacion.Documentacion(DOCS, self.grupo.modelo)
             self.docs_firma = firma
 
+    def version_vigente(self) -> tuple[str, str] | None:
+        """La primera versión con fecha del registro de cambios oficial. La búsqueda no sabe qué apartado es el
+        último, y Karla daba por última la 4.0.3 (Juanjo, 30-10-2026): se lo da el programa, sin IA."""
+        texto = self.docs.textos.get("exelearning-public-CHANGELOG.md", "")
+        m = re.search(r"^## v(\d[\w.-]*) [–-] (\d{4})-(\d{2})-(\d{2})", texto, re.M)
+        return (m[1], f"{m[4]}-{m[3]}-{m[2]}") if m else None
+
     def herramienta(self, nombre: str, e: dict):
         if nombre == "buscar_documentacion":
             return self.docs.buscar(e["consulta"], documento=e.get("documento"))
@@ -320,6 +327,10 @@ class Consultora:
                         f"eXeLearning.\n\n{self.entorno}")
         if getattr(self, "administradores", ""):
             sistema += f"\n\nQuién administra el grupo (solo personas):\n{self.administradores}"
+        if vigente := self.version_vigente():
+            sistema += (f"\n\n## La última versión (del registro de cambios oficial, al día)\n\nLa última versión "
+                        f"publicada de eXeLearning es la {vigente[0]}, del {vigente[1]}. Responde con esto, sin buscar, "
+                        "a qué versión es la última; para saber qué trae, búscalo en el registro de cambios.")
         mensajes = list(historial or []) + [{"role": "user", "content": pregunta}]
         uso = {"entrada": 0, "salida": 0, "llamadas": [], "modelo": modelo}
         r = None

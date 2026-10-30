@@ -81,6 +81,10 @@ vale la rectificación, no la primera versión.
 Cuando algo dependa de la versión, di a cuál te refieres. Conviven la 2.9, la 3.x
 y la 4.x, y mucho de lo que hay escrito es de versiones antiguas.
 
+No hubo versión 4.0.4: el equipo pasó a propósito de la 4.0.3 a la 4.0.5. Su
+apartado del registro de cambios, que dice «404 Not Found», es un guiño al error
+404, no un fallo ni unas notas pendientes.
+
 ## Lo que no debes hacer
 
 **No des rutas de archivos del código del proyecto a quien usa el programa

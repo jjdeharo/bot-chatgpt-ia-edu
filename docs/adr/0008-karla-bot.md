@@ -64,6 +64,14 @@ vez al día y no dice cuánto se usa ni qué no sabe responder.
    la pone y qué hay que pedirle. Nombra las fuentes en palabras corrientes,
    avisa antes de dar código y lo da listo para copiar. Con quien escribe
    en lenguaje técnico, responde en el mismo registro.
+9. **Sabe cuál es la última versión** (30-10-2026). A «¿cuál es la última
+   versión?» respondió que la 4.0.3, con la 4.0.6 ya publicada e indexada.
+   La búsqueda devuelve apartados del registro de cambios por parecido, no
+   por orden, y el de la 4.0.4, que no tiene notas porque el equipo se saltó
+   esa versión a propósito, le hizo creer que no había nada después. Ahora
+   el programa, sin IA, toma la primera versión con fecha del registro de
+   cambios oficial (`version_vigente`) y se la da en sus instrucciones;
+   `karla_persona.md` explica lo de la 4.0.4.
 
 ## Alternativas descartadas
 
