@@ -130,7 +130,7 @@ persona solo entran el día que se gasta más del doble de lo que toca, y quien
 hace más de 30 consultas en una hora tiene que esperar (ADR 0006).
 Juanjo ve las consultas y el gasto escribiendo `/estado` al bot (solo a él le responde), o con
 `docker exec bot-chatgpt-ia-edu python bot.py estado` en el NAS. Del uso solo se
-guardan cifras por día y grupo. Las preguntas que el bot no consigue responder se
+guardan cifras por día, sin separar grupos (ADR 0003). Las preguntas que el bot no consigue responder se
 guardan de forma anónima, sin nada de quién pregunta, en `datos/sin-resolver.jsonl`,
 y se borran a los 60 días (ADR 0007).
 

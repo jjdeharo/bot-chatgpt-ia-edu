@@ -92,6 +92,17 @@ Antes solo había esa consulta, y un administrador retirado siguió saliendo
 durante horas. El aviso no añade carga al NAS: llega por la misma espera de
 mensajes que ya tenía el bot y solo cuando cambia un cargo.
 
+## Estadísticas de uso, sin separar grupos
+
+Del 27 al 30-10-2026, `/estado` daba las preguntas de cada grupo, contando a
+quien está en varios en cada uno. Juanjo lo retiró el 30-10-2026: mucha gente
+está en los tres grupos y no se sabe desde cuál pregunta, así que las cifras
+por grupo eran sobre todo falsas. Desde entonces `/estado` da un solo total de
+los miembros (preguntas, personas, documentos y recursos) y no guarda cifras por
+grupo; los días anteriores ya guardados conservan las suyas, que no se
+muestran. Tampoco dice nada de Juanjo: ni sus preguntas ni que no se cuentan
+(sus consultas siguen fuera de las cifras). Lo mismo en Karla bot.
+
 ## Resúmenes de un periodo
 
 Cada búsqueda da los 12 mensajes más parecidos, que no bastan para «resúmeme lo

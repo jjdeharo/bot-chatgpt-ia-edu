@@ -385,19 +385,19 @@ def main():
         s = mensaje(b, VCE, "consulta")
         ok &= comprobar(f"más de {bot.SEGUIDAS_HORA} consultas en una hora: pide pausa", s and "seguidas" in s[0][1], s)
 
-        # /estado por grupos: quien está en los dos cuenta en ambos
+        # /estado: un total de los miembros, sin separar grupos ni decir nada de Juanjo (30-10-2026)
         import json as _json
         e0 = _json.loads(bot.ESTADO.read_text()) if bot.ESTADO.exists() else {}
-        antes = {c: sum(d.values()) for c, d in e0.get("preguntas_hoy_g", {}).items()}
+        antes = sum(bot.sin_juanjo(e0.get("preguntas_hoy", {})).values())
         b.recientes.clear()
         mensaje(b, AMBOS, "consulta")
         mensaje(b, VCE, "consulta")
         e1 = _json.loads(bot.ESTADO.read_text())
-        ahora = {c: sum(d.values()) for c, d in e1["preguntas_hoy_g"].items()}
-        ok &= comprobar("una pregunta cuenta en los grupos de quien la hace",
-                        ahora.get("chatgpt", 0) - antes.get("chatgpt", 0) == 1
-                        and ahora.get("vce", 0) - antes.get("vce", 0) == 2, [])
-        ok &= comprobar("/estado separa los grupos", "· Vibe Coding Educativo:" in bot.informe(bot.contabilidad(e1)), [])
+        ok &= comprobar("quien está en varios grupos cuenta una vez",
+                        sum(bot.sin_juanjo(e1["preguntas_hoy"]).values()) - antes == 2, [])
+        estado = bot.informe(bot.contabilidad(e1))
+        ok &= comprobar("/estado no separa grupos ni habla de Juanjo",
+                        not any(x in estado for x in ("Vibe Coding", "ChatGPT-IA-edu", "Tú", "contarte")), estado)
 
         # Preguntas sin resolver: se guardan sin nada de quién pregunta
         b.recientes.clear()

@@ -210,15 +210,15 @@ def contabilidad(e: dict) -> dict:
         if e.get("dia") and e.get("preguntas_hoy"):
             e.setdefault("historial", {})[e["dia"]] = resumen_dia(e)
         e["dia"], e["preguntas_hoy"], e["usd_hoy"], e["documentos_hoy"], e["recursos_hoy"] = hoy, {}, 0.0, {}, {}
-        e["preguntas_hoy_g"] = {}
     if e.get("mes") != mes:
         e["mes"], e["usd_mes"], e["preguntas_mes"], e["publicados_mes"] = mes, 0.0, 0, 0
         e["preguntas_mes_juanjo"], e["publicados_mes_juanjo"], e["recursos_mes"] = 0, 0, 0
-        e["recursos_mes_juanjo"], e["preguntas_mes_g"] = 0, {}
+        e["recursos_mes_juanjo"] = 0
     e.setdefault("documentos_hoy", {})
     e.setdefault("recursos_hoy", {})
-    e.setdefault("preguntas_hoy_g", {})
-    e.setdefault("preguntas_mes_g", {})
+    # Las cifras por grupo se dejaron el 30-10-2026: mucha gente está en los tres y no se distingue.
+    e.pop("preguntas_hoy_g", None)
+    e.pop("preguntas_mes_g", None)
     for k in ("publicados_mes", "preguntas_mes_juanjo", "publicados_mes_juanjo", "recursos_mes", "recursos_mes_juanjo"):
         e.setdefault(k, 0)
     return e
@@ -229,16 +229,11 @@ def sin_juanjo(d: dict) -> dict:
 
 
 def resumen_dia(e: dict) -> dict:
-    """Las cifras de los grupos van sin las de Juanjo, que se cuentan aparte; el gasto, todo junto.
-    Una pregunta cuenta en cada grupo de quien la hace: quien está en varios, en cada uno."""
-    grupo = sin_juanjo(e["preguntas_hoy"])
-    docs = e.get("documentos_hoy", {})
-    return {"preguntas": sum(grupo.values()), "personas": len(grupo),
-            "tuyas": e["preguntas_hoy"].get(str(JUANJO), 0),
-            "grupos": {c: {"preguntas": sum(sin_juanjo(d).values()), "personas": len(sin_juanjo(d))}
-                       for c, d in e.get("preguntas_hoy_g", {}).items()},
-            "documentos": sum(sin_juanjo(docs).values()),
-            "documentos_tuyos": docs.get(str(JUANJO), 0),
+    """Solo lo de los miembros, sin las consultas de Juanjo; el gasto, todo junto. Sin separar por grupos:
+    mucha gente está en los tres y no se sabe desde cuál pregunta (Juanjo, 30-10-2026)."""
+    miembros = sin_juanjo(e["preguntas_hoy"])
+    return {"preguntas": sum(miembros.values()), "personas": len(miembros),
+            "documentos": sum(sin_juanjo(e.get("documentos_hoy", {})).values()),
             "recursos": sum(sin_juanjo(e.get("recursos_hoy", {})).values()),
             "usd": round(e.get("usd_hoy", 0.0), 4)}
 
@@ -300,47 +295,30 @@ def cuenta(n: int, una: str, varias: str) -> str:
 
 
 def informe(e: dict) -> str:
-    """/estado: el uso de cada grupo, sin contar a Juanjo, en pocas líneas (Juanjo, 27-10-2026)."""
+    """/estado: el uso de los miembros en pocas líneas, sin nada de Juanjo ni separar por grupos
+    (Juanjo, 30-10-2026)."""
     h = resumen_dia(e)
-    hoy_g, mes_g = h["grupos"], e.get("preguntas_mes_g", {})
     pub = e["publicados_mes"] - e["publicados_mes_juanjo"]
     rec = e["recursos_mes"] - e.get("recursos_mes_juanjo", 0)
-
-    def preguntas(d: dict) -> str:
-        if not d.get("preguntas"):
-            return "0 preguntas"
-        return (f"{cuenta(d['preguntas'], 'pregunta', 'preguntas')} de "
-                f"{cuenta(d.get('personas', 0), 'persona', 'personas')}")
 
     def usd(x: float) -> str:
         return f"{x:.2f}".replace(".", ",")
 
-    c, v = hoy_g.get("chatgpt", {}), hoy_g.get("vce", {})
     lineas = [
-        "Uso, sin contarte (quien está en varios grupos cuenta en cada uno)",
-        "",
-        "Hoy",
-        f"· ChatGPT-IA-edu: {preguntas(c)} · {cuenta(h['documentos'], 'documento', 'documentos')}",
-        f"· Vibe Coding Educativo: {preguntas(v)} · {cuenta(h['recursos'], 'ficha de recurso', 'fichas de recursos')}",
-        "",
-        "Este mes",
-        f"· ChatGPT-IA-edu: {cuenta(mes_g.get('chatgpt', 0), 'pregunta', 'preguntas')} · "
-        f"{cuenta(pub, 'documento publicado', 'documentos publicados')}",
-        f"· Vibe Coding Educativo: {cuenta(mes_g.get('vce', 0), 'pregunta', 'preguntas')} · "
-        f"{cuenta(rec, 'recurso publicado', 'recursos publicados')}",
-        "",
-        f"Tú: {cuenta(h['tuyas'], 'pregunta', 'preguntas')} hoy, {e['preguntas_mes_juanjo']} este mes.",
+        f"Hoy: {cuenta(h['preguntas'], 'pregunta', 'preguntas')} de {cuenta(h['personas'], 'persona', 'personas')} · "
+        f"{cuenta(h['documentos'], 'documento', 'documentos')} · "
+        f"{cuenta(h['recursos'], 'ficha de recurso', 'fichas de recursos')}.",
+        f"Este mes: {cuenta(e['preguntas_mes'] - e['preguntas_mes_juanjo'], 'pregunta', 'preguntas')} · "
+        f"{cuenta(pub, 'documento publicado', 'documentos publicados')} · "
+        f"{cuenta(rec, 'recurso publicado', 'recursos publicados')}.",
         f"Sin resolver (guardadas, de 60 días): {cuantas_sin_resolver()}.",
         f"Gasto: {usd(e.get('usd_hoy', 0.0))} USD hoy · {usd(e['usd_mes'])} de {TOPE_MES_USD:.0f} este mes. "
         f"Cupos a partir de {usd(FRENO_VECES * diario(e))} hoy" + (" (activos)." if frenado(e) else "."),
     ]
     dias = sorted(e.get("historial", {}).items())[-7:]
     if dias:
-        lineas += ["", "Días anteriores (preguntas en ChatGPT-IA-edu / VCE)"]
-        for d, x in reversed(dias):
-            g = x.get("grupos") or {"chatgpt": x}  # antes del 27-10-2026 solo había ChatGPT-IA-edu
-            lineas.append(f"{d[8:10]}/{d[5:7]}: {g.get('chatgpt', {}).get('preguntas', 0)} / "
-                          f"{g.get('vce', {}).get('preguntas', 0)}")
+        lineas += ["", "Días anteriores (preguntas / personas)"]
+        lineas += [f"{d[8:10]}/{d[5:7]}: {x.get('preguntas', 0)} / {x.get('personas', 0)}" for d, x in reversed(dias)]
     return "\n".join(lineas)
 
 
@@ -695,23 +673,17 @@ class Bot:
         # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.
         self.memoria[uid] = (time.time(), historial[-2:] + [{"role": "user", "content": con_fotos(texto[:1000], fotos)},
                                                           {"role": "assistant", "content": r["texto"]}])
-        self.apuntar(r["uso"]["usd"], pregunta=uid, grupos_pregunta=suyos)
+        self.apuntar(r["uso"]["usd"], pregunta=uid)
         registrar(f"pregunta respondida: {len(r['uso']['llamadas'])} búsquedas, {r['uso']['usd']:.4f} USD")
 
     def apuntar(self, usd: float, pregunta: int | None = None, documento: int | None = None,
-                publicado: int | None = None, recurso: int | None = None, recurso_publicado: int | None = None,
-                grupos_pregunta: set[str] | None = None) -> None:
+                publicado: int | None = None, recurso: int | None = None, recurso_publicado: int | None = None) -> None:
         with CERROJO:
             e = contabilidad(leer_estado())
             if pregunta is not None:
                 e["preguntas_hoy"][str(pregunta)] = e["preguntas_hoy"].get(str(pregunta), 0) + 1
                 e["preguntas_mes"] += 1
                 e["preguntas_mes_juanjo"] += pregunta == JUANJO
-                for c in grupos_pregunta or ():
-                    d = e["preguntas_hoy_g"].setdefault(c, {})
-                    d[str(pregunta)] = d.get(str(pregunta), 0) + 1
-                    if pregunta != JUANJO:
-                        e["preguntas_mes_g"][c] = e["preguntas_mes_g"].get(c, 0) + 1
             if documento is not None:
                 e["documentos_hoy"][str(documento)] = e["documentos_hoy"].get(str(documento), 0) + 1
             if recurso is not None:

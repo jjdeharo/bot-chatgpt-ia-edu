@@ -739,19 +739,17 @@ def resumen_incidencias(e: dict) -> str:
 
 
 def informe(e: dict) -> str:
-    """/estado: preguntas y gasto, sin contar las de Juanjo, en pocas líneas."""
+    """/estado: preguntas de los miembros y gasto, en pocas líneas, sin nada de Juanjo (Juanjo, 30-10-2026)."""
     h = bot.resumen_dia(e)
     usd = lambda x: f"{x:.2f}".replace(".", ",")  # noqa: E731
     modelo = "Sonnet" if e["usd_mes"] < CAMBIO_USD else "Haiku (reserva)"
     lineas = [
-        "Karla bot, sin contarte",
         f"Hoy: {bot.cuenta(h['preguntas'], 'pregunta', 'preguntas')} de "
         f"{bot.cuenta(h['personas'], 'persona', 'personas')}.",
         f"Este mes: {bot.cuenta(e['preguntas_mes'] - e['preguntas_mes_juanjo'], 'pregunta', 'preguntas')}.",
-        f"Tú: {h['tuyas']} hoy, {e['preguntas_mes_juanjo']} este mes.",
         f"Sin resolver (guardadas, de 60 días): {bot.cuantas_sin_resolver()}.",
         resumen_incidencias(e),
-        f"Gasto: {usd(e.get('usd_hoy', 0.0))} USD hoy · {usd(e['usd_mes'])} de {bot.TOPE_MES_USD:.1f} este mes. "
+        f"Gasto: {usd(e.get('usd_hoy', 0.0))} USD hoy · {usd(e['usd_mes'])} de {usd(bot.TOPE_MES_USD)} este mes. "
         f"Modelo: {modelo}; pasa a Haiku a los {CAMBIO_USD:.0f} USD.",
     ]
     dias = sorted(e.get("historial", {}).items())[-7:]
