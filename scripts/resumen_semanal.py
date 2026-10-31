@@ -2,8 +2,9 @@
 """El resumen de cada viernes que los bots publican en su grupo (Juanjo, 31-10-2026).
 
 Para que el grupo recuerde que el bot existe con algo que le sirva, no con un anuncio:
-- eXeLearning (Karla bot): las dudas resueltas en el grupo esa semana, con el enlace a la
-  respuesta. Las elige Claude leyendo los mensajes de la semana.
+- eXeLearning (Karla bot): un resumen corto de la semana, con las novedades (una versión nueva,
+  un manual) y las dudas resueltas más útiles, cada una con su enlace y con tope de palabras. Lo
+  elige Claude leyendo los mensajes de la semana.
 - Vibe Coding Educativo (Bot de IA Educativa): las aplicaciones añadidas esa semana al
   repositorio, por la «Marca temporal» de la hoja, que es la fecha de alta y no cambia al
   modificar un recurso (api.gs).
@@ -112,35 +113,53 @@ def texto_vce(apps: list[dict], desde: datetime, hasta: datetime, usuario: str) 
 
 
 # --- eXeLearning ------------------------------------------------------------
-DUDAS = {
-    "name": "dudas_resueltas",
-    "description": "Las dudas sobre eXeLearning que se resolvieron en el grupo esa semana.",
-    "input_schema": {
-        "type": "object",
-        "properties": {"dudas": {"type": "array", "items": {
+# Un resumen corto de la semana, no un boletín: como mucho 3 novedades y las 3 dudas resueltas más
+# útiles, y un tope de palabras para que no sea un mensaje kilométrico (Juanjo, 31-10-2026).
+MAX_NOVEDADES, MAX_DUDAS, MAX_PALABRAS = 3, 3, 120
+
+ESQUEMA = {
+    "type": "object",
+    "properties": {
+        "novedades": {"type": "array", "items": {
             "type": "object",
             "properties": {
-                "tema": {"type": "string", "description": "La duda como un título breve en castellano, sin "
-                         "nombres de personas, que diga de qué trata: «Exportar a SCORM para Moodle»."},
+                "titulo": {"type": "string", "description": "La novedad en pocas palabras: «Sale eXeLearning 4.0.6»."},
+                "detalle": {"type": "string", "description": "Lo principal que aporta, en 15 palabras como "
+                            "mucho, o vacío si el título basta."},
+                "mensaje": {"type": "integer", "description": "id del mensaje que la anuncia"},
+            },
+            "required": ["titulo", "detalle", "mensaje"], "additionalProperties": False}},
+        "dudas": {"type": "array", "items": {
+            "type": "object",
+            "properties": {
+                "tema": {"type": "string", "description": "La duda como un título breve, sin nombres de "
+                         "personas, que diga de qué trata: «Exportar a SCORM para Moodle»."},
                 "pregunta": {"type": "integer", "description": "id del mensaje que plantea la duda"},
                 "respuesta": {"type": "integer", "description": "id del mensaje que la resuelve"},
             },
-            "required": ["tema", "pregunta", "respuesta"], "additionalProperties": False}}},
-        "required": ["dudas"], "additionalProperties": False},
+            "required": ["tema", "pregunta", "respuesta"], "additionalProperties": False}},
+    },
+    "required": ["novedades", "dudas"], "additionalProperties": False,
 }
 
 SISTEMA = f"""Lees los mensajes de una semana del grupo de Telegram de eXeLearning, un programa libre \
-para crear materiales educativos, y eliges las dudas sobre el programa que quedaron resueltas en el \
-grupo: alguien preguntó o contó un problema y otra persona dio una respuesta que lo resuelve o que \
-dice con claridad qué hacer. Cuentan también las preguntas de información (si el programa tiene o \
-permite algo, dónde está, cómo se llama) contestadas con el dato o con un enlace, aunque la \
-respuesta no esté marcada como respuesta al mensaje. Para cada una, el mensaje de la duda y el de la respuesta que la \
-resuelve (si la solución se reparte en varios, el principal).
+para crear materiales educativos, y eliges lo que merece un resumen corto de la semana para quien no \
+ha podido seguir el grupo. Todo en castellano.
 
-No incluyas: dudas sin respuesta o con respuestas que no la resuelven, avisos, novedades, \
-opiniones, saludos, agradecimientos, spam ni mensajes de bots. Si dos hilos tratan de lo mismo, \
-uno solo. Como mucho {MAX_DUDAS}, las más útiles para otras personas. Si no hay ninguna, la lista \
-vacía."""
+Novedades (como mucho {MAX_NOVEDADES}, de más a menos importante): lo nuevo sobre eXeLearning que se \
+ha anunciado o compartido: versiones del programa, manuales o documentación, complementos, plantillas \
+o herramientas para usar con eXeLearning, cursos o eventos. Una versión nueva va siempre la primera. \
+No son novedades las opiniones, los agradecimientos ni las preguntas.
+
+Dudas resueltas (como mucho {MAX_DUDAS}, las más útiles para otras personas): alguien preguntó o \
+contó un problema y otra persona dio una respuesta que lo resuelve o que dice con claridad qué hacer. \
+Cuentan también las preguntas de información (si el programa tiene o permite algo, dónde está) \
+contestadas con el dato o con un enlace, aunque la respuesta no esté marcada como respuesta al \
+mensaje. Para cada una, el mensaje de la duda y el de la respuesta (si la solución se reparte en \
+varios, el principal). No incluyas dudas sin resolver.
+
+Nada de spam ni de mensajes de bots. Entre títulos y detalles, {MAX_PALABRAS} palabras como mucho. \
+Si no hay nada, las listas vacías."""
 
 
 def mensajes_de_la_semana(ruta, desde: datetime, hasta: datetime) -> list[dict]:
@@ -153,60 +172,78 @@ def mensajes_de_la_semana(ruta, desde: datetime, hasta: datetime) -> list[dict]:
     return semana
 
 
-def dudas_de_la_semana(cliente, modelo: str, mensajes: list[dict]) -> tuple[list[dict], object]:
-    """Las dudas resueltas, comprobadas contra los mensajes, y el uso de la llamada."""
+def palabras(resumen: dict) -> int:
+    return sum(len(f"{n['titulo']} {n['detalle']}".split()) for n in resumen["novedades"]) \
+        + sum(len(d["tema"].split()) for d in resumen["dudas"])
+
+
+def resumen_de_la_semana(cliente, modelo: str, mensajes: list[dict]) -> tuple[dict, object]:
+    """Novedades y dudas resueltas, comprobadas contra los mensajes, y el uso de la llamada."""
+    vacio = {"novedades": [], "dudas": []}
     if not mensajes:
-        return [], None
+        return vacio, None
     texto = "\n\n".join(
         f"[{m['id']}] {m['fecha'][:16]} {m.get('autor') or 'anónimo'}"
         + (f" (responde a {m['responde_a']})" if m.get("responde_a") else "") + f":\n{m['texto'][:2500]}"
         for m in mensajes)
     # Respuesta con esquema fijo (structured outputs): Sonnet 5.5 no admite forzar una herramienta.
     r = cliente.messages.create(model=modelo, max_tokens=3000, system=SISTEMA,
-                                output_config={"format": {"type": "json_schema", "schema": DUDAS["input_schema"]}},
+                                output_config={"format": {"type": "json_schema", "schema": ESQUEMA}},
                                 messages=[{"role": "user", "content": texto}])
     datos = json.loads(next((b.text for b in r.content if b.type == "text"), "") or "{}")
     por_id = {m["id"]: m for m in mensajes}
+    # Lo que no se puede situar se quita: cada enlace tiene que ser un mensaje de la semana.
+    novedades = [{"titulo": n["titulo"].strip().rstrip("."), "detalle": n["detalle"].strip().rstrip("."),
+                  "enlace": por_id[n["mensaje"]]["enlace"]}
+                 for n in datos.get("novedades", []) if n.get("mensaje") in por_id][:MAX_NOVEDADES]
     dudas, vistas = [], set()
     for d in datos.get("dudas", []):
         p, s = por_id.get(d.get("pregunta")), por_id.get(d.get("respuesta"))
-        # Lo que no se puede situar se quita: la respuesta tiene que existir y ser posterior.
         if not (p and s and s["id"] > p["id"] and s["autor_id"] != p["autor_id"]) or s["id"] in vistas:
             continue
         vistas.add(s["id"])
         dudas.append({"tema": d["tema"].strip().rstrip("."), "enlace": s["enlace"]})
-    return dudas[:MAX_DUDAS], r.usage
+    resumen = {"novedades": novedades, "dudas": dudas[:MAX_DUDAS]}
+    while palabras(resumen) > MAX_PALABRAS:  # el tope manda: fuera lo último de la lista más larga
+        resumen["dudas" if len(resumen["dudas"]) >= len(resumen["novedades"]) else "novedades"].pop()
+    return resumen, r.usage
 
 
 ENTRADAS_EXE = [
-    "Dudas resueltas esta semana en el grupo ({periodo}):",
-    "Lo que se ha resuelto esta semana en el grupo ({periodo}):",
-    "Por si os sirven, estas dudas quedaron resueltas en el grupo esta semana ({periodo}):",
-    "Resumen de la semana ({periodo}): dudas que se resolvieron en el grupo.",
+    "Resumen de la semana en el grupo ({periodo}).",
+    "Lo más destacado de la semana en el grupo ({periodo}).",
+    "Así ha ido la semana en el grupo ({periodo}).",
+    "Por si os lo perdisteis, lo más útil de la semana en el grupo ({periodo}).",
 ]
 CIERRES_EXE = [
     "Soy Karla bot. Si os queda alguna duda con eXeLearning, preguntadme por privado y os respondo con el "
     "manual, la documentación y lo hablado aquí, con el enlace a cada fuente: {bot}",
-    "¿Tenéis una duda que no está en la lista? Preguntadme por privado. Soy Karla bot y busco en el manual de "
-    "eXeLearning, en su documentación y en este grupo; si es un fallo del programa, preparo el aviso para el "
-    "equipo: {bot}",
+    "¿Tenéis alguna duda con eXeLearning? Preguntadme por privado. Soy Karla bot y busco en el manual, en la "
+    "documentación y en este grupo; si es un fallo del programa, preparo el aviso para el equipo: {bot}",
     "Soy Karla bot, la asistente de eXeLearning. Por privado resuelvo dudas de uso, explico cómo publicar en "
     "Moodle u otras plataformas y, si encontráis un error, os ayudo a avisar al equipo: {bot}",
     "Recordad que podéis preguntarme por privado cualquier duda sobre eXeLearning, también con una captura de "
     "pantalla. Soy Karla bot y os digo de dónde sale cada respuesta: {bot}",
-    "Soy Karla bot. Estas dudas y muchas más las podéis consultar conmigo por privado: busco en el manual, en "
-    "la documentación de eXeLearning y en todo lo hablado en el grupo: {bot}",
+    "Soy Karla bot. Cualquier duda sobre eXeLearning la podéis consultar conmigo por privado: busco en el "
+    "manual, en la documentación y en todo lo hablado en el grupo: {bot}",
     "Si necesitáis una respuesta rápida sobre eXeLearning, escribidme por privado. Soy Karla bot: respondo con "
     "el manual y las conversaciones del grupo, y si dais con un error, preparo el aviso para el equipo: {bot}",
 ]
 
 
-def texto_exelearning(dudas: list[dict], desde: datetime, hasta: datetime, usuario: str) -> str | None:
-    if not dudas:
+def texto_exelearning(resumen: dict, desde: datetime, hasta: datetime, usuario: str) -> str | None:
+    if not resumen["novedades"] and not resumen["dudas"]:
         return None
     semana = hasta.astimezone(MADRID).isocalendar().week
-    lineas = [ENTRADAS_EXE[semana % len(ENTRADAS_EXE)].format(periodo=periodo(desde, hasta)), ""]
-    lineas += [f"• {enlace(d['enlace'], d['tema'])}" for d in dudas]
+    lineas = [ENTRADAS_EXE[semana % len(ENTRADAS_EXE)].format(periodo=periodo(desde, hasta))]
+    if resumen["novedades"]:
+        lineas += ["", "Novedades:"]
+        lineas += [f"• {enlace(n['enlace'], n['titulo'])}" + (f": {html.escape(n['detalle'], quote=False)}"
+                                                             if n["detalle"] else "")
+                   for n in resumen["novedades"]]
+    if resumen["dudas"]:
+        lineas += ["", "Dudas resueltas:"]
+        lineas += [f"• {enlace(d['enlace'], d['tema'])}" for d in resumen["dudas"]]
     lineas += ["", CIERRES_EXE[semana % len(CIERRES_EXE)].format(bot=f"https://t.me/{usuario}")]
     return "\n".join(lineas)
 
@@ -227,13 +264,13 @@ if __name__ == "__main__":
         texto = texto_vce(apps_de_la_semana(catalogo.Hoja().filas(), desde, hasta), desde, hasta, usuario)
     else:
         cliente = anthropic.Anthropic(api_key=karla.CLAVE.read_text().strip())
-        dudas, u = dudas_de_la_semana(cliente, karla.MODELO,
-                                      mensajes_de_la_semana(karla.GRUPO.datos / "mensajes.jsonl", desde, hasta))
+        resumen, u = resumen_de_la_semana(cliente, karla.MODELO,
+                                          mensajes_de_la_semana(karla.GRUPO.datos / "mensajes.jsonl", desde, hasta))
         if u:
             uso = {"entrada": 0, "salida": 0, "usd": 0.0}
             consultar.Consultor.apuntar(uso, u, karla.MODELO)
             print(f"Claude: {uso['entrada']} + {uso['salida']} tokens, {uso['usd']:.4f} USD", file=sys.stderr)
-        texto = texto_exelearning(dudas, desde, hasta, usuario)
+        texto = texto_exelearning(resumen, desde, hasta, usuario)
     print(texto or "(nada esta semana)")
     if texto and ejemplo:
         tg("sendMessage", chat_id=bot.JUANJO, text=texto, parse_mode="HTML",
