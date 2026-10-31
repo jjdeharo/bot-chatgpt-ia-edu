@@ -72,10 +72,10 @@ def apps_de_la_semana(filas: list[dict], desde: datetime, hasta: datetime) -> li
 # Entradilla y cierre cambian de una semana a otra, para que no parezca un mensaje automático
 # repetido (Juanjo, 31-10-2026), y el cierre recuerda en pocas palabras todo lo que hace el bot.
 ENTRADAS_VCE = [
-    "Aplicaciones añadidas esta semana al {repositorio} ({periodo}):",
-    "Novedades de la semana en el {repositorio} ({periodo}):",
-    "Esta semana han entrado estas aplicaciones en el {repositorio} ({periodo}):",
-    "Por si os sirven en clase, las aplicaciones nuevas del {repositorio} ({periodo}):",
+    "Aplicaciones añadidas esta semana al {repositorio}",
+    "Novedades de la semana en el {repositorio}",
+    "Aplicaciones que han entrado esta semana en el {repositorio}",
+    "Lo nuevo del {repositorio}, por si os sirve en clase",
 ]
 CIERRES_VCE = [
     "Soy el Bot de IA Educativa. Por privado busco lo que se ha dicho en este grupo, en ChatGPT-IA-edu y en "
@@ -103,12 +103,12 @@ def texto_vce(apps: list[dict], desde: datetime, hasta: datetime, usuario: str) 
         return None
     semana = hasta.astimezone(MADRID).isocalendar().week
     entrada = ENTRADAS_VCE[semana % len(ENTRADAS_VCE)]
-    lineas = [entrada.format(repositorio=enlace(catalogo.WEB, "repositorio de Vibe Coding Educativo"),
-                             periodo=periodo(desde, hasta)), ""]
+    titulo = entrada.format(repositorio=enlace(catalogo.WEB, "repositorio de Vibe Coding Educativo"))
+    lineas = [f"📱 <b>{titulo}</b> ({periodo(desde, hasta)})", ""]
     for a in apps:
         autor = f", de {html.escape(a['autor'], quote=False)}" if a["autor"] else ""
         lineas.append(f"• {enlace(catalogo.enlace_catalogo(a['url']), a['titulo'] or a['url'])}{autor}")
-    lineas += ["", CIERRES_VCE[semana % len(CIERRES_VCE)].format(bot=f"https://t.me/{usuario}")]
+    lineas += ["", f"<i>{CIERRES_VCE[semana % len(CIERRES_VCE)].format(bot=f'https://t.me/{usuario}')}</i>"]
     return "\n".join(lineas)
 
 
@@ -218,10 +218,10 @@ def resumen_de_la_semana(cliente, modelo: str, mensajes: list[dict]) -> tuple[di
 
 
 ENTRADAS_EXE = [
-    "Resumen de la semana en el grupo ({periodo}).",
-    "Lo más destacado de la semana en el grupo ({periodo}).",
-    "Así ha ido la semana en el grupo ({periodo}).",
-    "Por si os lo perdisteis, lo más útil de la semana en el grupo ({periodo}).",
+    "Resumen de la semana en el grupo",
+    "Lo más destacado de la semana en el grupo",
+    "Así ha ido la semana en el grupo",
+    "Lo más útil de la semana en el grupo",
 ]
 CIERRES_EXE = [
     "Soy Karla bot. Si os queda alguna duda con eXeLearning, preguntadme por privado y os respondo con el "
@@ -251,16 +251,16 @@ def componer_exelearning(resumen: dict, desde: datetime, hasta: datetime, usuari
     if not resumen["novedades"] and not resumen["dudas"]:
         return None
     semana = hasta.astimezone(MADRID).isocalendar().week
-    lineas = [ENTRADAS_EXE[semana % len(ENTRADAS_EXE)].format(periodo=periodo(desde, hasta))]
+    lineas = [f"<b>{ENTRADAS_EXE[semana % len(ENTRADAS_EXE)]}</b> ({periodo(desde, hasta)})"]
     if resumen["novedades"]:
-        lineas += ["", "Novedades:"]
+        lineas += ["", "🆕 <b>Novedades</b>"]
         lineas += [f"• {enlace(n['enlace'], n['titulo'])}" + (f": {html.escape(n['detalle'], quote=False)}"
                                                              if n["detalle"] else "")
                    for n in resumen["novedades"]]
     if resumen["dudas"]:
-        lineas += ["", "Dudas resueltas:"]
+        lineas += ["", "✅ <b>Dudas resueltas</b>"]
         lineas += [f"• {enlace(d['enlace'], d['tema'])}" for d in resumen["dudas"]]
-    lineas += ["", CIERRES_EXE[semana % len(CIERRES_EXE)].format(bot=f"https://t.me/{usuario}")]
+    lineas += ["", f"<i>{CIERRES_EXE[semana % len(CIERRES_EXE)].format(bot=f'https://t.me/{usuario}')}</i>"]
     return "\n".join(lineas)
 
 
