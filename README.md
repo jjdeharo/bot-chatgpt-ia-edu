@@ -56,6 +56,12 @@ El porqué de cada decisión está en [docs/adr](docs/adr/).
 5. `scripts/karla.py` atiende a Karla bot; `scripts/documentacion.py` trocea por
    apartados la documentación de eXeLearning para que pueda buscar en ella.
 
+Cada vez que alguien publica algo con un bot, ese bot se lo cuenta a Juanjo
+por privado con el enlace, para que pueda verlo: un documento nuevo en la
+Biblioteca digital, un recurso nuevo en el repositorio de Vibe Coding
+Educativo (no los cambios) o una incidencia abierta en GitHub desde Karla.
+Lo que publica él mismo no se avisa.
+
 ## Probar
 
 ```bash

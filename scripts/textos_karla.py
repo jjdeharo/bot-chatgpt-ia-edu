@@ -45,6 +45,7 @@ ES = {
                     "para no pasar del tope del mes ({diario:.2f} USD). Hasta mañana, {cupo} preguntas por persona."),
     "aviso_80": ("Aviso de Karla bot: este mes se han gastado {usd:.2f} USD de los {tope:.0f} del tope "
                  "({n} preguntas)."),
+    "nueva_incidencia": ("Karla bot ha abierto una incidencia en GitHub a petición de {autor}: «{titulo}»\n{url}"),
     "aviso_reserva": ("Aviso de Karla bot: este mes se han gastado {usd:.2f} USD. Desde ahora responde con "
                       "Claude Haiku, más barato, hasta el día 1."),
     "incidencia_vista": '📝 Este es el aviso de error que enviaría al equipo que desarrolla eXeLearning. Se publica como «incidencia» (issue, en inglés) en GitHub, la web donde el equipo apunta los fallos del programa para corregirlos. Es pública y va en inglés, la lengua del proyecto. No lleva tu nombre ni ningún dato tuyo: la envío yo, Karla bot. Sirve para avisar de errores del programa, no para resolver dudas de uso.\n\nRevísala y, si está bien, pulsa «Enviar al equipo». Si no la envías, no se publica nada.',

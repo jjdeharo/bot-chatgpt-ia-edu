@@ -192,6 +192,8 @@ ES = {
     "revision_ya_no": 'Ese aviso ya no está por revisar.',
     "revision_sin_hoja": 'No he podido poner la licencia en la hoja: ponla a mano.',
     "rechazo_a_juanjo": 'Revisión del repositorio: el bot ha rechazado «{titulo}», de {autor}, y su autor pide que lo mire una persona.\n{url}\n\nMotivo del bot: {motivo}.\nLo que dice su autor: {razones}\n\nMira si es un recurso educativo que ya se puede usar en clase. «Cumple» sigue el alta (pago, licencia y ficha).',
+    "nuevo_biblioteca": "Nuevo documento en la Biblioteca digital, aportado por {autor}: «{titulo}»\n{enlace}",
+    "nuevo_recurso": "Nuevo recurso en el repositorio de Vibe Coding Educativo, de {autor}: «{titulo}»\n{enlace}",
     "rechazo_hecho": 'Hecho: «{titulo}» puede entrar y su autor sigue con el alta.',
     "rechazo_no_hecho": 'Hecho: «{titulo}» queda fuera y se lo he dicho a su autor.',
     "b_si_quitar": "Sí, quitarlo",

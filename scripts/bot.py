@@ -671,6 +671,16 @@ class Bot:
         bloques.append({"type": "text", "text": texto[:largo] or "(Sin texto: solo las imágenes.)"})
         return bloques
 
+    def avisar_juanjo(self, uid: int, clave: str, **datos) -> None:
+        """Le cuenta a Juanjo lo que alguien ha publicado con el bot, para verlo (Juanjo, 31-10-2026).
+        Lo suyo no: ya lo sabe. Si el aviso falla, lo publicado sigue igual."""
+        if uid == JUANJO:
+            return
+        try:
+            self.enviar(JUANJO, self.tx(JUANJO, clave, **datos))
+        except Exception as error:  # noqa: BLE001
+            registrar(f"no se pudo avisar a Juanjo ({clave}): {type(error).__name__}: {error}")
+
     def solo_privado(self, chat: int, uid: int, msg: dict) -> None:
         """Responde en el grupo que se le escriba por privado, con freno (Juanjo, 27-10-2026): si no, quien
         lo mencionara una y otra vez llenaría el grupo de avisos iguales. Pasado el freno, calla."""
@@ -969,6 +979,7 @@ class Bot:
                     {"text": self.tx(uid, "b_quitar_biblioteca"), "callback_data": f"bq:{destino}:{'-'.join(map(str, ids))}"},
                     {"text": self.tx(uid, "b_mantener"), "callback_data": "bm"}]]})
         registrar("documento publicado en la biblioteca")
+        self.avisar_juanjo(uid, "nuevo_biblioteca", autor=p["autor"], titulo=fichas.titulo(p["ficha"]), enlace=enlace)
 
     def publicar(self, p: dict) -> tuple[str, int, list[int]]:
         """Como lo hace Juanjo: el documento con el título en mayúsculas y, en respuesta, la ficha.
@@ -1468,6 +1479,8 @@ class Bot:
         if p["modo"] == "alta":
             self.apuntar(0.0, recurso_publicado=uid)
             self.enviar(uid, self.tx(uid, "publicado_recurso", enlace=enlace))
+            self.avisar_juanjo(uid, "nuevo_recurso", titulo=f["titulo"], enlace=catalogo.enlace_catalogo(f["url"]),
+                               autor=f.get("autor", "") + (f" (@{p['usuario']})" if p.get("usuario") else ""))
             # Ofrecer presentarlo en el grupo: nada se publica sin que vea antes el mensaje (Juanjo, 27-10-2026).
             self.compartir[uid] = {"ficha": f, "usuario": p.get("usuario"), "texto": "", "momento": time.time()}
             self.tg("sendMessage", chat_id=uid, text=self.tx(uid, "pregunta_compartir"),

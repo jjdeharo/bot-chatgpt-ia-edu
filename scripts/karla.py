@@ -575,6 +575,10 @@ class Karla(bot.Bot):
             bot.guardar_estado(e)
         bot.registrar(f"incidencia abierta: {url}")
         self.enviar(uid, self.tx(uid, "incidencia_abierta", url=url))
+        de = cq["from"]
+        quien = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
+        self.avisar_juanjo(uid, "nueva_incidencia", titulo=inc["titulo"], url=url,
+                           autor=quien + (f" (@{de['username']})" if de.get("username") else ""))
 
     def tx(self, uid: int, clave: str, **datos) -> str:
         return textos_karla.texto(self.lenguas.get(uid, "es"), clave, **datos)
