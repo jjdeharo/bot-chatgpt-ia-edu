@@ -85,8 +85,8 @@ ES = {
     "aviso_80": ("Aviso del Bot de IA Educativa: este mes se han gastado {usd:.2f} USD de los {tope:.0f} del tope "
                  "({n} preguntas). Al llegar al tope dejaré de responder hasta el día 1. Para subirlo: "
                  "TOPE_MES_USD en el compose del NAS y el límite del espacio de trabajo en la Console."),
-    "solo_privado": "Hola, {nombre}. Soy el Bot de IA Educativa. En el grupo no puedo contestarte, pero por privado sí: escríbeme aquí https://t.me/{usuario}",
-    "solo_privado_comando": "Hola, {nombre}. Soy el Bot de IA Educativa. Esto no funciona en el grupo, pero por privado sí: ábrelo aquí https://t.me/{usuario}?start={comando}",
+    "solo_privado": "Hola, {nombre}. Soy el Bot de IA Educativa. En el grupo no puedo contestarte, pero por privado sí. Escríbeme aquí: https://t.me/{usuario}",
+    "solo_privado_comando": "Hola, {nombre}. Soy el Bot de IA Educativa. Esto no funciona en el grupo, pero por privado sí. Ábrelo aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Para añadir un documento a la Biblioteca digital, envíamelo en PDF.",
     "grande": ("Este archivo pesa {mb:.0f} MB y Telegram solo deja a los bots descargar archivos de hasta "
                "20 MB, así que no puedo leerlo. Puedes subirlo tú directamente a la Biblioteca digital "
@@ -279,8 +279,8 @@ CA = {
     "tope": "Aquest mes s'ha esgotat el pressupost del bot. Tornarà a funcionar el dia 1.",
     "error": "Alguna cosa ha fallat en cercar. Torna-ho a provar d'aquí a un moment.",
     "solo_texto": "Escriu-me la pregunta en text.",
-    "solo_privado": "Hola, {nombre}. Soc el Bot de IA Educativa. Al grup no et puc respondre, però en privat sí: escriu-me aquí https://t.me/{usuario}",
-    "solo_privado_comando": "Hola, {nombre}. Soc el Bot de IA Educativa. Això no funciona al grup, però en privat sí: obre-ho aquí https://t.me/{usuario}?start={comando}",
+    "solo_privado": "Hola, {nombre}. Soc el Bot de IA Educativa. Al grup no et puc respondre, però en privat sí. Escriu-me aquí: https://t.me/{usuario}",
+    "solo_privado_comando": "Hola, {nombre}. Soc el Bot de IA Educativa. Això no funciona al grup, però en privat sí. Obre-ho aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Per afegir un document a la Biblioteca digital, envia-me'l en PDF.",
     "grande": ("Aquest fitxer pesa {mb:.0f} MB i Telegram només deixa als bots baixar fitxers de fins a "
                "20 MB, així que no el puc llegir. El pots pujar tu directament a la Biblioteca digital "
@@ -458,8 +458,8 @@ GL = {
     "tope": "Este mes esgotouse o orzamento do bot. Volverá funcionar o día 1.",
     "error": "Algo fallou ao buscar. Proba outra vez nun momento.",
     "solo_texto": "Escríbeme a pregunta en texto.",
-    "solo_privado": "Ola, {nombre}. Son o Bot de IA Educativa. No grupo non podo contestarche, pero en privado si: escríbeme aquí https://t.me/{usuario}",
-    "solo_privado_comando": "Ola, {nombre}. Son o Bot de IA Educativa. Isto non funciona no grupo, pero en privado si: ábreo aquí https://t.me/{usuario}?start={comando}",
+    "solo_privado": "Ola, {nombre}. Son o Bot de IA Educativa. No grupo non podo contestarche, pero en privado si. Escríbeme aquí: https://t.me/{usuario}",
+    "solo_privado_comando": "Ola, {nombre}. Son o Bot de IA Educativa. Isto non funciona no grupo, pero en privado si. Ábreo aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Para engadir un documento á Biblioteca dixital, envíamo en PDF.",
     "grande": ("Este ficheiro pesa {mb:.0f} MB e Telegram só deixa aos bots descargar ficheiros de ata "
                "20 MB, así que non podo lelo. Podes subilo ti directamente á Biblioteca dixital "
@@ -638,8 +638,8 @@ EU = {
     "tope": "Hilabete honetan botaren aurrekontua agortu da. Hilaren 1ean berriro ibiliko da.",
     "error": "Zerbait gaizki atera da bilatzean. Saiatu berriro une batean.",
     "solo_texto": "Idatzi galdera testuan.",
-    "solo_privado": "Kaixo, {nombre}. IA Educativa bota naiz. Taldean ezin dizut erantzun, baina pribatuan bai: idatzi hemen https://t.me/{usuario}",
-    "solo_privado_comando": "Kaixo, {nombre}. IA Educativa bota naiz. Hau ez dabil taldean, baina pribatuan bai: ireki hemen https://t.me/{usuario}?start={comando}",
+    "solo_privado": "Kaixo, {nombre}. IA Educativa bota naiz. Taldean ezin dizut erantzun, baina pribatuan bai. Idatzi hemen: https://t.me/{usuario}",
+    "solo_privado_comando": "Kaixo, {nombre}. IA Educativa bota naiz. Hau ez dabil taldean, baina pribatuan bai. Ireki hemen: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Liburutegi digitalera dokumentu bat gehitzeko, bidali PDFn.",
     "grande": ("Fitxategi honek {mb:.0f} MB ditu, eta Telegramek 20 MB arteko fitxategiak bakarrik uzten "
                "dizkie botei deskargatzen; beraz, ezin dut irakurri. Zuk zeuk igo dezakezu Liburutegi "
@@ -817,8 +817,8 @@ EN = {
     "tope": "The bot's budget for this month has run out. It will work again on the 1st.",
     "error": "Something went wrong while searching. Please try again in a moment.",
     "solo_texto": "Please write your question as text.",
-    "solo_privado": "Hi, {nombre}. I'm the IA Educativa Bot. I can't answer you in the group, but I can in private: write to me here https://t.me/{usuario}",
-    "solo_privado_comando": "Hi, {nombre}. I'm the IA Educativa Bot. This doesn't work in the group, but it does in private: open it here https://t.me/{usuario}?start={comando}",
+    "solo_privado": "Hi, {nombre}. I'm the IA Educativa Bot. I can't answer you in the group, but I can in private. Write to me here: https://t.me/{usuario}",
+    "solo_privado_comando": "Hi, {nombre}. I'm the IA Educativa Bot. This doesn't work in the group, but it does in private. Open it here: https://t.me/{usuario}?start={comando}",
     "no_pdf": "To add a document to the Digital Library, send it to me as a PDF.",
     "grande": ("This file is {mb:.0f} MB and Telegram only lets bots download files of up to 20 MB, so I "
                "can't read it. You can upload it yourself to the Digital Library "
