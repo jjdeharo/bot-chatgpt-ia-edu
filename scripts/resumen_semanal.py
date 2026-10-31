@@ -96,8 +96,8 @@ DUDAS = {
                 "pregunta": {"type": "integer", "description": "id del mensaje que plantea la duda"},
                 "respuesta": {"type": "integer", "description": "id del mensaje que la resuelve"},
             },
-            "required": ["tema", "pregunta", "respuesta"]}}},
-        "required": ["dudas"]},
+            "required": ["tema", "pregunta", "respuesta"], "additionalProperties": False}}},
+        "required": ["dudas"], "additionalProperties": False},
 }
 
 SISTEMA = f"""Lees los mensajes de una semana del grupo de Telegram de eXeLearning, un programa libre \
@@ -109,7 +109,7 @@ resuelve (si la solución se reparte en varios, el principal).
 No incluyas: dudas sin respuesta o con respuestas que no la resuelven, avisos, novedades, \
 opiniones, saludos, agradecimientos, spam ni mensajes de bots. Si dos hilos tratan de lo mismo, \
 uno solo. Como mucho {MAX_DUDAS}, las más útiles para otras personas. Si no hay ninguna, la lista \
-vacía. Responde solo con la herramienta dudas_resueltas."""
+vacía."""
 
 
 def mensajes_de_la_semana(ruta, desde: datetime, hasta: datetime) -> list[dict]:
@@ -130,10 +130,11 @@ def dudas_de_la_semana(cliente, modelo: str, mensajes: list[dict]) -> tuple[list
         f"[{m['id']}] {m['fecha'][:16]} {m.get('autor') or 'anónimo'}"
         + (f" (responde a {m['responde_a']})" if m.get("responde_a") else "") + f":\n{m['texto'][:2500]}"
         for m in mensajes)
-    r = cliente.messages.create(model=modelo, max_tokens=3000, system=SISTEMA, tools=[DUDAS],
-                                tool_choice={"type": "tool", "name": "dudas_resueltas"},
+    # Respuesta con esquema fijo (structured outputs): Sonnet 5.5 no admite forzar una herramienta.
+    r = cliente.messages.create(model=modelo, max_tokens=3000, system=SISTEMA,
+                                output_config={"format": {"type": "json_schema", "schema": DUDAS["input_schema"]}},
                                 messages=[{"role": "user", "content": texto}])
-    datos = next((b.input for b in r.content if b.type == "tool_use"), {}) or {}
+    datos = json.loads(next((b.text for b in r.content if b.type == "text"), "") or "{}")
     por_id = {m["id"]: m for m in mensajes}
     dudas, vistas = [], set()
     for d in datos.get("dudas", []):
