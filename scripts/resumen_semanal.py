@@ -16,17 +16,17 @@ para escribir las fechas.
     python resumen_semanal.py vce|exelearning [--ejemplo]
 
 Con --ejemplo lo manda a Juanjo por privado en lugar de al grupo, con la semana que acabó
-el último viernes.
+el último viernes; con --atras N, la de N semanas antes.
 """
 import html
 import json
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 MADRID = ZoneInfo("Europe/Madrid")
 DIA, HORA = 4, 18  # viernes a las 18:00, hora de Madrid
-MAX_DUDAS = 10
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
          "octubre", "noviembre", "diciembre"]
 
@@ -113,9 +113,10 @@ def texto_vce(apps: list[dict], desde: datetime, hasta: datetime, usuario: str) 
 
 
 # --- eXeLearning ------------------------------------------------------------
-# Un resumen corto de la semana, no un boletín: como mucho 3 novedades y las 3 dudas resueltas más
-# útiles, y un tope de palabras para que no sea un mensaje kilométrico (Juanjo, 31-10-2026).
-MAX_NOVEDADES, MAX_DUDAS, MAX_PALABRAS = 3, 3, 120
+# Un resumen corto de la semana, no un boletín: como mucho 3 novedades y, hasta completar 6
+# elementos, las dudas resueltas más útiles; el mensaje entero, 150 palabras como mucho, lo que cabe
+# en una pantalla de móvil (Juanjo, 31-10-2026).
+MAX_NOVEDADES, MAX_ELEMENTOS, MAX_PALABRAS = 3, 6, 150
 
 ESQUEMA = {
     "type": "object",
@@ -151,7 +152,7 @@ ha anunciado o compartido: versiones del programa, manuales o documentación, co
 o herramientas para usar con eXeLearning, cursos o eventos. Una versión nueva va siempre la primera. \
 No son novedades las opiniones, los agradecimientos ni las preguntas.
 
-Dudas resueltas (como mucho {MAX_DUDAS}, las más útiles para otras personas): alguien preguntó o \
+Dudas resueltas (como mucho {MAX_ELEMENTOS} menos el número de novedades, las más útiles para otras personas): alguien preguntó o \
 contó un problema y otra persona dio una respuesta que lo resuelve o que dice con claridad qué hacer. \
 Cuentan también las preguntas de información (si el programa tiene o permite algo, dónde está) \
 contestadas con el dato o con un enlace, aunque la respuesta no esté marcada como respuesta al \
@@ -159,7 +160,7 @@ mensaje. Para cada una, el mensaje de la duda y el de la respuesta (si la soluci
 varios, el principal). No incluyas dudas sin resolver.
 
 Nada de spam, ni de mensajes de bots, ni sobre Karla bot (el resumen lo publica ella y ya habla de sí \
-misma al final). Entre títulos y detalles, {MAX_PALABRAS} palabras como mucho. \
+misma al final). Entre títulos y detalles, 90 palabras como mucho. \
 Si no hay nada, las listas vacías."""
 
 
@@ -182,9 +183,9 @@ NOMBRES = {"Moodle", "WordPress", "Nextcloud", "NextCloud", "Drive", "Google", "
            "Linux", "Chrome", "Firefox", "Procomún", "INTEF", "CEDEC", "eXeLearning", "eXe"}
 
 
-def palabras(resumen: dict) -> int:
-    return sum(len(f"{n['titulo']} {n['detalle']}".split()) for n in resumen["novedades"]) \
-        + sum(len(d["tema"].split()) for d in resumen["dudas"])
+def palabras(texto: str) -> int:
+    """Las palabras que se leen: sin etiquetas; una dirección cuenta como una."""
+    return len(re.sub(r"<[^>]+>", "", texto).split())
 
 
 def resumen_de_la_semana(cliente, modelo: str, mensajes: list[dict]) -> tuple[dict, object]:
@@ -213,10 +214,7 @@ def resumen_de_la_semana(cliente, modelo: str, mensajes: list[dict]) -> tuple[di
             continue
         vistas.add(s["id"])
         dudas.append({"tema": d["tema"].strip().rstrip("."), "enlace": s["enlace"]})
-    resumen = {"novedades": novedades, "dudas": dudas[:MAX_DUDAS]}
-    while palabras(resumen) > MAX_PALABRAS:  # el tope manda: fuera lo último de la lista más larga
-        resumen["dudas" if len(resumen["dudas"]) >= len(resumen["novedades"]) else "novedades"].pop()
-    return resumen, r.usage
+    return {"novedades": novedades, "dudas": dudas[:MAX_ELEMENTOS - len(novedades)]}, r.usage
 
 
 ENTRADAS_EXE = [
@@ -242,6 +240,14 @@ CIERRES_EXE = [
 
 
 def texto_exelearning(resumen: dict, desde: datetime, hasta: datetime, usuario: str) -> str | None:
+    """El mensaje, con el tope de palabras: si se pasa, fuera lo último de la lista más larga."""
+    resumen = {k: list(v) for k, v in resumen.items()}
+    while (texto := componer_exelearning(resumen, desde, hasta, usuario)) and palabras(texto) > MAX_PALABRAS:
+        resumen["dudas" if len(resumen["dudas"]) >= len(resumen["novedades"]) else "novedades"].pop()
+    return texto
+
+
+def componer_exelearning(resumen: dict, desde: datetime, hasta: datetime, usuario: str) -> str | None:
     if not resumen["novedades"] and not resumen["dudas"]:
         return None
     semana = hasta.astimezone(MADRID).isocalendar().week
@@ -260,7 +266,8 @@ def texto_exelearning(resumen: dict, desde: datetime, hasta: datetime, usuario: 
 
 if __name__ == "__main__":
     grupo, ejemplo = sys.argv[1], "--ejemplo" in sys.argv
-    hasta = ultimo_cierre()
+    atras = int(sys.argv[sys.argv.index("--atras") + 1]) if "--atras" in sys.argv else 0  # semanas antes
+    hasta = ultimo_cierre() - timedelta(days=7 * atras)
     desde = hasta - timedelta(days=7)
     if grupo == "exelearning":
         import anthropic
