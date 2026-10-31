@@ -125,7 +125,7 @@ ESQUEMA = {
             "properties": {
                 "titulo": {"type": "string", "description": "La novedad en pocas palabras: «Sale eXeLearning 4.0.6»."},
                 "detalle": {"type": "string", "description": "Lo principal que aporta, en 15 palabras como "
-                            "mucho, o vacío si el título basta."},
+                            "mucho y empezando en minúscula, o vacío si el título basta."},
                 "mensaje": {"type": "integer", "description": "id del mensaje que la anuncia"},
             },
             "required": ["titulo", "detalle", "mensaje"], "additionalProperties": False}},
@@ -158,7 +158,8 @@ contestadas con el dato o con un enlace, aunque la respuesta no esté marcada co
 mensaje. Para cada una, el mensaje de la duda y el de la respuesta (si la solución se reparte en \
 varios, el principal). No incluyas dudas sin resolver.
 
-Nada de spam ni de mensajes de bots. Entre títulos y detalles, {MAX_PALABRAS} palabras como mucho. \
+Nada de spam, ni de mensajes de bots, ni sobre Karla bot (el resumen lo publica ella y ya habla de sí \
+misma al final). Entre títulos y detalles, {MAX_PALABRAS} palabras como mucho. \
 Si no hay nada, las listas vacías."""
 
 
@@ -170,6 +171,15 @@ def mensajes_de_la_semana(ruta, desde: datetime, hasta: datetime) -> list[dict]:
             if desde <= datetime.fromisoformat(m["fecha"]) < hasta and (m.get("texto") or "").strip():
                 semana.append(m)
     return semana
+
+
+def minuscula(texto: str) -> str:
+    """Tras los dos puntos, minúscula; salvo una sigla o un nombre propio que empiece por dos mayúsculas."""
+    return texto[:1].lower() + texto[1:] if texto[1:2].islower() and texto.split()[0] not in NOMBRES else texto
+
+
+NOMBRES = {"Moodle", "WordPress", "Nextcloud", "NextCloud", "Drive", "Google", "GitHub", "Telegram", "Windows",
+           "Linux", "Chrome", "Firefox", "Procomún", "INTEF", "CEDEC", "eXeLearning", "eXe"}
 
 
 def palabras(resumen: dict) -> int:
@@ -193,7 +203,7 @@ def resumen_de_la_semana(cliente, modelo: str, mensajes: list[dict]) -> tuple[di
     datos = json.loads(next((b.text for b in r.content if b.type == "text"), "") or "{}")
     por_id = {m["id"]: m for m in mensajes}
     # Lo que no se puede situar se quita: cada enlace tiene que ser un mensaje de la semana.
-    novedades = [{"titulo": n["titulo"].strip().rstrip("."), "detalle": n["detalle"].strip().rstrip("."),
+    novedades = [{"titulo": n["titulo"].strip().rstrip("."), "detalle": minuscula(n["detalle"].strip().rstrip(".")),
                   "enlace": por_id[n["mensaje"]]["enlace"]}
                  for n in datos.get("novedades", []) if n.get("mensaje") in por_id][:MAX_NOVEDADES]
     dudas, vistas = [], set()
