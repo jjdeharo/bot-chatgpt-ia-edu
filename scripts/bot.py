@@ -682,10 +682,12 @@ class Bot:
         personas[uid] = ahora
         self.avisos_grupo = recientes + [ahora]
         comando = self.comando_en_grupo(msg)
+        # Saluda por su nombre y dice quién es, para que no suene seco (Juanjo, 31-10-2026).
+        nombre = msg["from"].get("first_name", "").strip()  # obligatorio en Telegram
         if comando in COMANDOS:  # el enlace abre el bot ya en ese comando
-            texto = self.tx(uid, "solo_privado_comando", usuario=self.usuario, comando=comando)
+            texto = self.tx(uid, "solo_privado_comando", usuario=self.usuario, comando=comando, nombre=nombre)
         else:
-            texto = self.tx(uid, "solo_privado", usuario=self.usuario)
+            texto = self.tx(uid, "solo_privado", usuario=self.usuario, nombre=nombre)
         self.tg("sendMessage", chat_id=chat, text=texto,
                 reply_parameters={"message_id": msg["message_id"]}, link_preview_options={"is_disabled": True})
 

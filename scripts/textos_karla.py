@@ -34,7 +34,8 @@ ES = {
     "no_miembro": ("Solo respondo a los miembros del grupo eXeLearning (https://t.me/exelearning). Entrar es "
                    "libre: únete y vuelve a escribirme."),
     "no_autorizado": "Todavía estoy en pruebas. Pronto estaré abierta al grupo eXeLearning.",
-    "solo_privado": "Solo respondo por privado: escríbeme en https://t.me/{usuario}",
+    "solo_privado": "Hola, {nombre}. Soy Karla bot, la asistente de eXeLearning. En el grupo no puedo contestarte, pero por privado sí: escríbeme aquí https://t.me/{usuario}",
+    "solo_privado_comando": "Hola, {nombre}. Soy Karla bot, la asistente de eXeLearning. Esto no funciona en el grupo, pero por privado sí: ábrelo aquí https://t.me/{usuario}?start={comando}",
     "solo_texto": "Escríbeme la pregunta en texto.",
     "error": "Algo ha fallado al buscar. Prueba otra vez en un momento.",
     "cupo": "Has llegado a las {cupo} preguntas de hoy. Mañana podrás seguir.",
@@ -91,7 +92,8 @@ CA = {
     "no_miembro": ("Només responc als membres del grup eXeLearning (https://t.me/exelearning). Entrar-hi és "
                    "lliure: uneix-t'hi i torna'm a escriure."),
     "no_autorizado": "Encara estic en proves. Aviat estaré oberta al grup eXeLearning.",
-    "solo_privado": "Només responc en privat: escriu-me a https://t.me/{usuario}",
+    "solo_privado": "Hola, {nombre}. Soc la Karla bot, l'assistent d'eXeLearning. Al grup no et puc respondre, però en privat sí: escriu-me aquí https://t.me/{usuario}",
+    "solo_privado_comando": "Hola, {nombre}. Soc la Karla bot, l'assistent d'eXeLearning. Això no funciona al grup, però en privat sí: obre-ho aquí https://t.me/{usuario}?start={comando}",
     "solo_texto": "Escriu-me la pregunta en text.",
     "error": "Alguna cosa ha fallat en cercar. Torna-ho a provar d'aquí a una estona.",
     "cupo": "Has arribat a les {cupo} preguntes d'avui. Demà podràs continuar.",
@@ -131,7 +133,8 @@ GL = {
     "no_miembro": ("Só respondo aos membros do grupo eXeLearning (https://t.me/exelearning). Entrar é libre: "
                    "únete e volve escribirme."),
     "no_autorizado": "Aínda estou en probas. Pronto estarei aberta ao grupo eXeLearning.",
-    "solo_privado": "Só respondo por privado: escríbeme en https://t.me/{usuario}",
+    "solo_privado": "Ola, {nombre}. Son Karla bot, a asistente de eXeLearning. No grupo non podo contestarche, pero en privado si: escríbeme aquí https://t.me/{usuario}",
+    "solo_privado_comando": "Ola, {nombre}. Son Karla bot, a asistente de eXeLearning. Isto non funciona no grupo, pero en privado si: ábreo aquí https://t.me/{usuario}?start={comando}",
     "solo_texto": "Escríbeme a pregunta en texto.",
     "error": "Algo fallou ao buscar. Proba outra vez nun momento.",
     "cupo": "Chegaches ás {cupo} preguntas de hoxe. Mañá poderás seguir.",
@@ -172,7 +175,8 @@ EU = {
     "no_miembro": ("eXeLearning taldeko kideei bakarrik erantzuten diet (https://t.me/exelearning). Sartzea "
                    "librea da: batu zaitez eta idatzi berriro."),
     "no_autorizado": "Oraindik probetan nago. Laster eXeLearning taldearentzat irekita egongo naiz.",
-    "solo_privado": "Pribatuan bakarrik erantzuten dut: idatzi hemen https://t.me/{usuario}",
+    "solo_privado": "Kaixo, {nombre}. Karla bot naiz, eXeLearning-en laguntzailea. Taldean ezin dizut erantzun, baina pribatuan bai: idatzi hemen https://t.me/{usuario}",
+    "solo_privado_comando": "Kaixo, {nombre}. Karla bot naiz, eXeLearning-en laguntzailea. Hau ez dabil taldean, baina pribatuan bai: ireki hemen https://t.me/{usuario}?start={comando}",
     "solo_texto": "Idatzi galdera testuan.",
     "error": "Zerbait gaizki atera da bilatzean. Saiatu berriro une batean.",
     "cupo": "Gaurko {cupo} galderetara iritsi zara. Bihar jarraitu ahal izango duzu.",
@@ -212,7 +216,8 @@ EN = {
     "no_miembro": ("I only answer members of the eXeLearning group (https://t.me/exelearning). Joining is free: "
                    "join and write to me again."),
     "no_autorizado": "I'm still being tested. I'll soon be open to the eXeLearning group.",
-    "solo_privado": "I only answer in private: write to me at https://t.me/{usuario}",
+    "solo_privado": "Hi, {nombre}. I'm Karla bot, the eXeLearning assistant. I can't answer you in the group, but I can in private: write to me here https://t.me/{usuario}",
+    "solo_privado_comando": "Hi, {nombre}. I'm Karla bot, the eXeLearning assistant. This doesn't work in the group, but it does in private: open it here https://t.me/{usuario}?start={comando}",
     "solo_texto": "Please write your question as text.",
     "error": "Something went wrong while searching. Please try again in a moment.",
     "cupo": "You've reached today's {cupo} questions. You can continue tomorrow.",
