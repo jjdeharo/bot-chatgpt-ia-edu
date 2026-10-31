@@ -62,6 +62,11 @@ Biblioteca digital, un recurso nuevo en el repositorio de Vibe Coding
 Educativo (no los cambios) o una incidencia abierta en GitHub desde Karla.
 Lo que publica él mismo no se avisa.
 
+Los viernes a las 18:00, cada bot publica en su grupo un resumen de la semana
+(`scripts/resumen_semanal.py`, ADR 0018): Karla, las novedades y dudas resueltas
+en eXeLearning; el Bot de IA Educativa, las aplicaciones nuevas del repositorio
+en Vibe Coding Educativo.
+
 ## Probar
 
 ```bash

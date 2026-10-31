@@ -13,10 +13,11 @@ Si en la semana no hay nada, no se publica nada.
 Las horas se calculan en UTC y se pasan a la de Madrid solo para decidir el viernes y
 para escribir las fechas.
 
-    python resumen_semanal.py vce|exelearning [--ejemplo]
+    python resumen_semanal.py vce|exelearning [--ejemplo] [--publicar] [--atras N]
 
 Con --ejemplo lo manda a Juanjo por privado en lugar de al grupo, con la semana que acabó
-el último viernes; con --atras N, la de N semanas antes.
+el último viernes; con --atras N, la de N semanas antes; con --publicar, lo publica en el grupo
+a mano. Lo normal es que lo publique el propio bot desde su bucle (Bot.resumen_si_toca).
 """
 import html
 import json
@@ -264,31 +265,77 @@ def componer_exelearning(resumen: dict, desde: datetime, hasta: datetime, usuari
     return "\n".join(lineas)
 
 
+# --- publicar -----------------------------------------------------------------
+VENTANA = timedelta(hours=6)  # si el bot estaba parado el viernes, se publica esa noche; después, ya no
+
+
+def marca(grupo: str):
+    import grupos
+    return grupos.TODOS[grupo].datos / "resumen-semanal.json"
+
+
+def ya_publicado(grupo: str, cierre: datetime) -> bool:
+    try:
+        return json.loads(marca(grupo).read_text()).get("cierre") == cierre.isoformat()
+    except (OSError, ValueError):
+        return False
+
+
+def toca(grupo: str, ahora: datetime | None = None) -> datetime | None:
+    """El cierre de esta semana si toca publicarlo ahora: viernes desde las 18:00 y sin publicar."""
+    ahora = ahora or datetime.now(timezone.utc)
+    cierre = ultimo_cierre(ahora)
+    if ahora - cierre > VENTANA or ya_publicado(grupo, cierre):
+        return None
+    return cierre
+
+
+def generar(grupo: str, hasta: datetime, usuario: str, cliente=None, modelo: str = "") -> tuple[str | None, object]:
+    """El mensaje de la semana que acaba en «hasta» y el uso de Claude (None si no lo ha usado)."""
+    import grupos
+    desde = hasta - timedelta(days=7)
+    if grupo == "vce":
+        import catalogo
+        return texto_vce(apps_de_la_semana(catalogo.Hoja().filas(), desde, hasta), desde, hasta, usuario), None
+    resumen, uso = resumen_de_la_semana(cliente, modelo, mensajes_de_la_semana(
+        grupos.TODOS[grupo].datos / "mensajes.jsonl", desde, hasta))
+    return texto_exelearning(resumen, desde, hasta, usuario), uso
+
+
+def publicar(tg, grupo: str, cierre: datetime, texto: str | None) -> bool:
+    """En el tema General del grupo (Juanjo, 31-10-2026: donde lo ve todo el mundo). Se apunta la semana
+    aunque no haya nada que publicar, para no volver a intentarlo."""
+    import grupos
+    hecho = True
+    if texto:
+        hecho = tg("sendMessage", chat_id=grupos.TODOS[grupo].id, text=texto, parse_mode="HTML",
+                   link_preview_options={"is_disabled": True}) is not None
+    if hecho:
+        marca(grupo).write_text(json.dumps({"cierre": cierre.isoformat(), "publicado": bool(texto),
+                                            "momento": datetime.now(timezone.utc).isoformat()}))
+    return hecho
+
+
 if __name__ == "__main__":
-    grupo, ejemplo = sys.argv[1], "--ejemplo" in sys.argv
+    grupo, ejemplo, al_grupo = sys.argv[1], "--ejemplo" in sys.argv, "--publicar" in sys.argv
     atras = int(sys.argv[sys.argv.index("--atras") + 1]) if "--atras" in sys.argv else 0  # semanas antes
     hasta = ultimo_cierre() - timedelta(days=7 * atras)
-    desde = hasta - timedelta(days=7)
+    cliente = modelo = None
     if grupo == "exelearning":
         import anthropic
         import consultar
         import karla  # noqa: F401 — pone las credenciales de Karla en bot
+        cliente, modelo = anthropic.Anthropic(api_key=karla.CLAVE.read_text().strip()), karla.MODELO
     import bot
     tg = bot.Telegram(json.loads(bot.CRED.read_text())["token"])
-    usuario = tg("getMe")["username"]
-    if grupo == "vce":
-        import catalogo
-        texto = texto_vce(apps_de_la_semana(catalogo.Hoja().filas(), desde, hasta), desde, hasta, usuario)
-    else:
-        cliente = anthropic.Anthropic(api_key=karla.CLAVE.read_text().strip())
-        resumen, u = resumen_de_la_semana(cliente, karla.MODELO,
-                                          mensajes_de_la_semana(karla.GRUPO.datos / "mensajes.jsonl", desde, hasta))
-        if u:
-            uso = {"entrada": 0, "salida": 0, "usd": 0.0}
-            consultar.Consultor.apuntar(uso, u, karla.MODELO)
-            print(f"Claude: {uso['entrada']} + {uso['salida']} tokens, {uso['usd']:.4f} USD", file=sys.stderr)
-        texto = texto_exelearning(resumen, desde, hasta, usuario)
+    texto, u = generar(grupo, hasta, tg("getMe")["username"], cliente, modelo)
+    if u:
+        uso = {"entrada": 0, "salida": 0, "usd": 0.0}
+        consultar.Consultor.apuntar(uso, u, modelo)
+        print(f"Claude: {uso['entrada']} + {uso['salida']} tokens, {uso['usd']:.4f} USD", file=sys.stderr)
     print(texto or "(nada esta semana)")
     if texto and ejemplo:
         tg("sendMessage", chat_id=bot.JUANJO, text=texto, parse_mode="HTML",
            link_preview_options={"is_disabled": True})
+    if al_grupo:  # a mano, fuera del viernes (Juanjo, 31-10-2026); queda apuntado para no repetirlo
+        print("publicado en el grupo" if publicar(tg, grupo, hasta, texto) else "Telegram no lo ha aceptado")

@@ -693,10 +693,12 @@ class Karla(bot.Bot):
         self.revisar_equipo_sin_fallar()
         siguiente = None
         tipos = {"allowed_updates": ["message", "edited_message", "chat_member", "callback_query"]}
+        self.modelo_resumen = MODELO
         while True:
             if time.time() - getattr(self, "admin_momento", 0) > bot.ADMIN_HORAS * 3600:
                 self.actualizar_entorno()
                 self.revisar_equipo_sin_fallar()
+            self.resumen_si_toca("exelearning")
             try:
                 updates = self.tg("getUpdates", espera=50, timeout=50, offset=siguiente, **tipos)
                 updates = self.esperar_seguidos(updates, **tipos) if updates else updates

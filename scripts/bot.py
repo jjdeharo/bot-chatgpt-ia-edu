@@ -45,6 +45,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import catalogo
+import resumen_semanal
 import consultar
 import fichas
 import grupos
@@ -680,6 +681,34 @@ class Bot:
             self.enviar(JUANJO, self.tx(JUANJO, clave, **datos))
         except Exception as error:  # noqa: BLE001
             registrar(f"no se pudo avisar a Juanjo ({clave}): {type(error).__name__}: {error}")
+
+    def resumen_si_toca(self, grupo: str) -> None:
+        """Los viernes a las 18:00, el resumen de la semana en el grupo (resumen_semanal.py). Se mira en cada
+        vuelta del bucle, que es barato; lo que tarda va aparte, y solo una vez a la vez."""
+        cierre = resumen_semanal.toca(grupo)
+        if not cierre or getattr(self, "resumiendo", False):
+            return
+        self.resumiendo = True
+
+        def hacer():
+            try:
+                cliente = getattr(self, "consultora", None)
+                modelo = getattr(self, "modelo_resumen", "")
+                texto, uso = resumen_semanal.generar(grupo, cierre, self.usuario,
+                                                     cliente.cliente if cliente else None, modelo)
+                if uso:
+                    gasto = {"entrada": 0, "salida": 0, "usd": 0.0}
+                    consultar.Consultor.apuntar(gasto, uso, modelo)
+                    self.apuntar(gasto["usd"])
+                hecho = resumen_semanal.publicar(self.tg, grupo, cierre, texto)
+                registrar(f"resumen semanal de {grupo}: " + ("publicado" if hecho and texto else
+                                                             "sin nada que contar" if hecho else "Telegram lo rechazó"))
+            except Exception as error:  # noqa: BLE001 — se reintenta en la vuelta siguiente, dentro de la ventana
+                registrar(f"error en el resumen semanal de {grupo}: {type(error).__name__}: {error}")
+            finally:
+                self.resumiendo = False
+
+        self.en_hilo(hacer)
 
     def solo_privado(self, chat: int, uid: int, msg: dict) -> None:
         """Responde en el grupo que se le escriba por privado, con freno (Juanjo, 27-10-2026): si no, quien
@@ -1668,6 +1697,8 @@ class Bot:
         while True:
             if time.time() - getattr(self, "admin_momento", 0) > ADMIN_HORAS * 3600:
                 self.actualizar_administradores()
+            if "vce" in grupos.ACTIVOS:
+                self.resumen_si_toca("vce")
             try:
                 tipos = {"allowed_updates": ["message", "callback_query", "chat_member"]}
                 updates = self.tg("getUpdates", espera=50, timeout=50, offset=siguiente, **tipos)
