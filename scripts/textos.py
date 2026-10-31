@@ -31,13 +31,13 @@ ES = {
     "b_lo_publico_yo": 'Lo publico yo',
     "b_anteriores": "Anteriores",
     "b_siguientes": "Siguientes",
-    "seguidas": 'Me has hecho muchas consultas seguidas. Sigue dentro de un rato.',
+    "seguidas": "Me has hecho muchas preguntas seguidas y necesito un respiro. Vuelve a escribirme dentro de un rato y seguimos.",
     "aviso_freno": ("Aviso del Bot de IA Educativa: hoy se han gastado {usd:.2f} USD, más del doble de lo que toca por día para no pasar del tope del mes ({diario:.2f} USD). Hasta mañana se aplican los cupos por persona: {cupo} preguntas, {docs} documentos y {recursos} recursos."),
     # Perfil del bot (setMyDescription y setMyShortDescription): aquí va la autoría.
     "perfil": 'Busco en los grupos ChatGPT-IA-edu, Vibe Coding Educativo y EduMedia-IAG quién dijo algo, cuándo y en qué mensaje, y qué documentos de la Biblioteca digital tratan un tema. También añado documentos a la Biblioteca y recursos educativos al repositorio de Vibe Coding Educativo. Uso Claude, una IA de Anthropic. Creado por @jjdeharo.',
     "perfil_corto": 'Busca en ChatGPT-IA-edu, Vibe Coding Educativo y EduMedia-IAG, y añade documentos y recursos.',
     "licencia_cerrada": 'No lo añado todavía: su licencia ({licencia}) no deja compartir el código. El repositorio admite licencias abiertas: de código abierto o Creative Commons. Si no sabes cuál elegir, pregúntamelo: te recomiendo una según lo que quieras permitir y te explico cómo ponerla. Tienes más información en https://vibe-coding-educativo.github.io/vibe-responsable/es/capitulo-9.html. Después envíame otra vez el recurso: el archivo HTML, un ZIP o el enlace a su repositorio de GitHub.',
-    "de_pago": 'No lo añado: el repositorio es solo para recursos gratuitos, sin versiones de pago ni freemium, y este no lo parece ({detalle}).',
+    "de_pago": "No puedo añadirlo: el repositorio es solo para recursos gratuitos, sin versiones de pago ni freemium, y este no lo parece ({detalle}).",
     "sin_licencia": 'No lo añado todavía: el repositorio pide que el código esté publicado con una licencia abierta, y no encuentro ninguna en el código ni en su repositorio. Si no sabes cuál elegir, pregúntamelo: te recomiendo una según lo que quieras permitir y te explico cómo ponerla. Tienes más información en https://vibe-coding-educativo.github.io/vibe-responsable/es/capitulo-9.html. Después envíame otra vez el recurso: el archivo HTML, un ZIP o el enlace a su repositorio de GitHub.',
     "cambio_licencia_cerrada": 'No guardo el cambio: su licencia ({licencia}) no deja compartir el código, y el repositorio solo admite licencias abiertas: de código abierto o Creative Commons. Si no sabes cuál elegir, pregúntamelo: te recomiendo una según lo que quieras permitir y te explico cómo ponerla. Tienes más información en https://vibe-coding-educativo.github.io/vibe-responsable/es/capitulo-9.html. Cuando la hayas cambiado, pulsa «Cambiar algo» otra vez.',
     "cambio_sin_licencia": 'No guardo el cambio: el repositorio pide que el código esté publicado con una licencia abierta, y no encuentro ninguna en el código ni en su repositorio. Si no sabes cuál elegir, pregúntamelo: te recomiendo una según lo que quieras permitir y te explico cómo ponerla. Tienes más información en https://vibe-coding-educativo.github.io/vibe-responsable/es/capitulo-9.html. Cuando la hayas puesto, pulsa «Cambiar algo» otra vez.',
@@ -71,17 +71,15 @@ ES = {
     "traduccion": "",
     "buscar": 'Escríbeme lo que buscas, con tus palabras. Busco en los grupos marcados; toca uno para marcarlo o desmarcarlo. Lo mantendré mientras sigamos hablando.',
     "biblioteca": "Envíame el documento en PDF (hasta 20 MB) y preparo su ficha.",
-    "solo_chatgpt": ("Añadir documentos a la Biblioteca digital es para miembros de ChatGPT-IA-edu: "
-                     "https://t.me/ChatGPTedu"),
+    "solo_chatgpt": "Añadir documentos a la Biblioteca digital es cosa de los miembros de ChatGPT-IA-edu. Entrar es libre: únete al grupo y vuelve a enviármelo. Este es el grupo: https://t.me/ChatGPTedu",
     "solo_vce": ("El repositorio de recursos es de la comunidad Vibe Coding Educativo; para añadir los tuyos, "
                  "únete al grupo: https://t.me/vceduca"),
-    "no_miembro": ("Solo respondo a miembros de los grupos ChatGPT-IA-edu (https://t.me/ChatGPTedu), "
-                   "Vibe Coding Educativo (https://t.me/vceduca) o EduMedia-IAG (https://t.me/EduMediaIAG)."),
+    "no_miembro": "Lo siento, solo puedo responder a quien forma parte de los grupos ChatGPT-IA-edu (https://t.me/ChatGPTedu), Vibe Coding Educativo (https://t.me/vceduca) o EduMedia-IAG (https://t.me/EduMediaIAG). Entrar es libre: únete a cualquiera y vuelve a escribirme.",
     "no_autorizado": "Todavía estoy en pruebas. Pronto estaré abierto a los grupos.",
     "cupo": "Has llegado a las {cupo} preguntas de hoy. Mañana podrás seguir.",
     "tope": "Este mes se ha agotado el presupuesto del bot. Volverá a funcionar el día 1.",
     "error": "Algo ha fallado al buscar. Prueba otra vez en un momento.",
-    "solo_texto": "Escríbeme la pregunta en texto.",
+    "solo_texto": "Por ahora solo entiendo mensajes escritos. Escríbeme la pregunta, por favor.",
     "aviso_80": ("Aviso del Bot de IA Educativa: este mes se han gastado {usd:.2f} USD de los {tope:.0f} del tope "
                  "({n} preguntas). Al llegar al tope dejaré de responder hasta el día 1. Para subirlo: "
                  "TOPE_MES_USD en el compose del NAS y el límite del espacio de trabajo en la Console."),
@@ -96,8 +94,7 @@ ES = {
     "sin_texto": ("No puedo leer el texto de este PDF: parece escaneado como imagen. Puedes subirlo tú "
                   "directamente a la Biblioteca digital (https://t.me/ChatGPTedu/21753) y preparar su "
                   "ficha con https://chatgpt-ia-edu.github.io/resumen/"),
-    "ajeno": ("No lo añado: la Biblioteca digital es para documentos sobre inteligencia artificial en "
-              "educación, y este trata de otra cosa ({tema})."),
+    "ajeno": "No puedo añadirlo: la Biblioteca digital es para documentos sobre inteligencia artificial en educación, y este trata de otra cosa ({tema}).",
     "repetido": "Este documento ya está en la Biblioteca digital: {enlace}",
     "vista": ("Esta es la ficha. Si te parece bien, publicaré en la Biblioteca digital el documento con "
               "«Aportado por {autor}» y la ficha en respuesta."),
@@ -118,7 +115,7 @@ ES = {
     "falta_info": ("No consigo ver qué hace el recurso desde el enlace ({motivo}). Envíame el archivo HTML o un "
                    "ZIP con el código, el enlace a su repositorio de GitHub, o cuéntame en un mensaje qué hace "
                    "y cómo se usa."),
-    "no_educativo": "No lo añado: el repositorio es para recursos educativos, y este no lo parece ({motivo}). Si crees que me equivoco, pulsa «Pedir una revisión» y lo mirará una persona.",
+    "no_educativo": "No puedo añadirlo: el repositorio es para recursos educativos, y este no lo parece ({motivo}). Si crees que me equivoco, pulsa «Pedir una revisión» y lo mirará una persona.",
     "sin_minimo": "Todavía no lo añado: el repositorio es para recursos que ya se puedan usar en clase, y a este le falta algo ({motivo}). Cuando lo tengas listo, vuelve a mandarme el enlace. Si crees que me equivoco, pulsa «Pedir una revisión» y lo mirará una persona.",
     "b_pedir_revision": "Pedir una revisión",
     "por_que_revision": "Cuéntame en un mensaje por qué crees que debería entrar. Lo leerá la persona que lo revise.",
@@ -149,16 +146,16 @@ ES = {
     "sin_recursos": ("No tengo ningún recurso a tu nombre. Si diste de alta alguno con el formulario, "
                      "escríbeme el correo con el que lo hiciste y te mando un código para comprobar que es tuyo."),
     "otro_correo": "Escríbeme el correo con el que diste de alta tus recursos en el formulario.",
-    "no_es_correo": "Eso no parece un correo. Usa /misrecursos para volver a empezar.",
+    "no_es_correo": "Eso no parece una dirección de correo. Usa /misrecursos y vuelve a escribirla, por ejemplo nombre@gmail.com.",
     "correo_sin_recursos": "Con ese correo no hay ningún recurso en el repositorio. Revisa que esté bien escrito.",
     "codigo_enviado": ("Te he enviado un código a {correo} (mira también en correo no deseado). "
                        "Escríbemelo aquí."),
     "codigo_mal": "Ese código no es correcto. Revisa el correo y escríbemelo otra vez.",
-    "codigo_agotado": "Demasiados intentos. Usa /misrecursos para pedir otro código.",
+    "codigo_agotado": "Ese código ya no vale después de varios intentos fallidos. Usa /misrecursos y te mando otro.",
     "codigo_ok": "Comprobado. Desde ahora puedo gestionar los recursos de {correo}.",
     "borrar_seguro": "¿Seguro que quieres quitar «{titulo}» del repositorio? No se puede deshacer.",
     "borrado": "Quitado del repositorio. En unos minutos dejará de verse.",
-    "no_tuyo": "Ese recurso no está a tu nombre.",
+    "no_tuyo": "Ese recurso no está a tu nombre, así que no puedo cambiarlo. Si es tuyo y lo diste de alta con el formulario, usa /misrecursos para recuperarlo.",
     # Botones
     "b_publicar": "Publicar",
     "b_cambiar": "Cambiar algo",
@@ -230,12 +227,12 @@ CA = {
     "b_lo_publico_yo": 'El publico jo',
     "b_anteriores": "Anteriors",
     "b_siguientes": "Següents",
-    "seguidas": "M'has fet moltes consultes seguides. Continua d'aquí a una estona.",
+    "seguidas": "M'has fet moltes preguntes seguides i necessito un respir. Torna'm a escriure d'aquí a una estona i continuem.",
     # Perfil del bot (setMyDescription y setMyShortDescription): aquí va la autoría.
     "perfil": "Cerco als grups ChatGPT-IA-edu, Vibe Coding Educativo i EduMedia-IAG qui va dir alguna cosa, quan i en quin missatge, i quins documents de la Biblioteca digital tracten un tema. També afegeixo documents a la Biblioteca i recursos educatius al repositori de Vibe Coding Educativo. Faig servir Claude, una IA d'Anthropic. Creat per @jjdeharo.",
     "perfil_corto": 'Cerca a ChatGPT-IA-edu, Vibe Coding Educativo i EduMedia-IAG, i afegeix documents i recursos.',
     "licencia_cerrada": "Encara no l'afegeixo: la seva llicència ({licencia}) no deixa compartir el codi. El repositori admet llicències obertes: de codi obert o Creative Commons. Si no saps quina triar, pregunta-m'ho: et recomano una segons el que vulguis permetre i t'explico com posar-la. Tens més informació a https://vibe-coding-educativo.github.io/vibe-responsable/ca/capitulo-9.html. Després envia'm una altra vegada el recurs: el fitxer HTML, un ZIP o l'enllaç al seu repositori de GitHub.",
-    "de_pago": "No l'afegeixo: el repositori és només per a recursos gratuïts, sense versions de pagament ni freemium, i aquest no ho sembla ({detalle}).",
+    "de_pago": "No el puc afegir: el repositori és només per a recursos gratuïts, sense versions de pagament ni freemium, i aquest no ho sembla ({detalle}).",
     "sin_licencia": "Encara no l'afegeixo: el repositori demana que el codi estigui publicat amb una llicència oberta, i no en trobo cap ni al codi ni al seu repositori. Si no saps quina triar, pregunta-m'ho: et recomano una segons el que vulguis permetre i t'explico com posar-la. Tens més informació a https://vibe-coding-educativo.github.io/vibe-responsable/ca/capitulo-9.html. Després envia'm una altra vegada el recurs: el fitxer HTML, un ZIP o l'enllaç al seu repositori de GitHub.",
     "cambio_licencia_cerrada": "No deso el canvi: la seva llicència ({licencia}) no deixa compartir el codi, i el repositori només admet llicències obertes: de codi obert o Creative Commons. Si no saps quina triar, pregunta-m'ho: et recomano una segons el que vulguis permetre i t'explico com posar-la. Tens més informació a https://vibe-coding-educativo.github.io/vibe-responsable/ca/capitulo-9.html. Quan l'hagis canviada, prem «Canviar alguna cosa» una altra vegada.",
     "cambio_sin_licencia": "No deso el canvi: el repositori demana que el codi estigui publicat amb una llicència oberta, i no en trobo cap ni al codi ni al seu repositori. Si no saps quina triar, pregunta-m'ho: et recomano una segons el que vulguis permetre i t'explico com posar-la. Tens més informació a https://vibe-coding-educativo.github.io/vibe-responsable/ca/capitulo-9.html. Quan l'hagis posada, prem «Canviar alguna cosa» una altra vegada.",
@@ -268,17 +265,15 @@ CA = {
     "traduccion": "Textos traduïts automàticament amb IA, sense revisió professional.",
     "buscar": "Escriu-me el que cerques, amb les teves paraules. Cerco als grups marcats; toca'n un per marcar-lo o desmarcar-lo. Ho mantindré mentre continuem parlant.",
     "biblioteca": "Envia'm el document en PDF (fins a 20 MB) i en preparo la fitxa.",
-    "solo_chatgpt": ("Afegir documents a la Biblioteca digital és per als membres de ChatGPT-IA-edu: "
-                     "https://t.me/ChatGPTedu"),
+    "solo_chatgpt": "Afegir documents a la Biblioteca digital és cosa dels membres de ChatGPT-IA-edu. Entrar-hi és lliure: uneix-te al grup i torna-me'l a enviar. Aquest és el grup: https://t.me/ChatGPTedu",
     "solo_vce": ("El repositori de recursos és de la comunitat Vibe Coding Educativo; per afegir-hi els teus, "
                  "uneix-te al grup: https://t.me/vceduca"),
-    "no_miembro": ("Només responc als membres dels grups ChatGPT-IA-edu (https://t.me/ChatGPTedu), "
-                   "Vibe Coding Educativo (https://t.me/vceduca) o EduMedia-IAG (https://t.me/EduMediaIAG)."),
+    "no_miembro": "Ho sento, només puc respondre a qui forma part dels grups ChatGPT-IA-edu (https://t.me/ChatGPTedu), Vibe Coding Educativo (https://t.me/vceduca) o EduMedia-IAG (https://t.me/EduMediaIAG). Entrar-hi és lliure: uneix-te a qualsevol d'ells i torna'm a escriure.",
     "no_autorizado": "Encara estic en proves. Aviat estaré obert als grups.",
     "cupo": "Has arribat a les {cupo} preguntes d'avui. Demà podràs continuar.",
     "tope": "Aquest mes s'ha esgotat el pressupost del bot. Tornarà a funcionar el dia 1.",
     "error": "Alguna cosa ha fallat en cercar. Torna-ho a provar d'aquí a un moment.",
-    "solo_texto": "Escriu-me la pregunta en text.",
+    "solo_texto": "De moment només entenc missatges escrits. Escriu-me la pregunta, si us plau.",
     "solo_privado": "Hola, {nombre}. Soc el Bot de IA Educativa. Al grup no et puc respondre, però en privat sí. Escriu-me aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soc el Bot de IA Educativa. Això no funciona al grup, però en privat sí. Obre-ho aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Per afegir un document a la Biblioteca digital, envia-me'l en PDF.",
@@ -290,8 +285,7 @@ CA = {
     "sin_texto": ("No puc llegir el text d'aquest PDF: sembla escanejat com a imatge. El pots pujar tu "
                   "directament a la Biblioteca digital (https://t.me/ChatGPTedu/21753) i preparar-ne la "
                   "fitxa amb https://chatgpt-ia-edu.github.io/resumen/"),
-    "ajeno": ("No l'afegeixo: la Biblioteca digital és per a documents sobre intel·ligència artificial en "
-              "educació, i aquest tracta d'una altra cosa ({tema})."),
+    "ajeno": "No el puc afegir: la Biblioteca digital és per a documents sobre intel·ligència artificial en educació, i aquest tracta d'una altra cosa ({tema}).",
     "repetido": "Aquest document ja és a la Biblioteca digital: {enlace}",
     "vista": ("Aquesta és la fitxa, en castellà com tota la biblioteca. Si et sembla bé, publicaré a la "
               "Biblioteca digital el document amb «Aportado por {autor}» i la fitxa en resposta."),
@@ -312,7 +306,7 @@ CA = {
     "falta_info": ("No aconsegueixo veure què fa el recurs des de l'enllaç ({motivo}). Envia'm el fitxer HTML o "
                    "un ZIP amb el codi, l'enllaç al seu repositori de GitHub, o explica'm en un missatge què fa "
                    "i com es fa servir."),
-    "no_educativo": "No l'afegeixo: el repositori és per a recursos educatius, i aquest no ho sembla ({motivo}). Si creus que m'equivoco, prem «Demanar una revisió» i el mirarà una persona.",
+    "no_educativo": "No el puc afegir: el repositori és per a recursos educatius, i aquest no ho sembla ({motivo}). Si creus que m'equivoco, prem «Demanar una revisió» i el mirarà una persona.",
     "sin_minimo": "Encara no l'afegeixo: el repositori és per a recursos que ja es puguin fer servir a classe, i a aquest li falta alguna cosa ({motivo}). Quan el tinguis a punt, torna a enviar-me l'enllaç. Si creus que m'equivoco, prem «Demanar una revisió» i el mirarà una persona.",
     "b_pedir_revision": "Demanar una revisió",
     "por_que_revision": "Explica'm en un missatge per què creus que hauria d'entrar. Ho llegirà la persona que el revisi.",
@@ -344,16 +338,16 @@ CA = {
     "sin_recursos": ("No tinc cap recurs a nom teu. Si en vas donar d'alta algun amb el formulari, "
                      "escriu-me el correu amb què ho vas fer i t'envio un codi per comprovar que és teu."),
     "otro_correo": "Escriu-me el correu amb què vas donar d'alta els teus recursos al formulari.",
-    "no_es_correo": "Això no sembla un correu. Fes servir /misrecursos per tornar a començar.",
+    "no_es_correo": "Això no sembla una adreça de correu. Fes servir /misrecursos i torna-la a escriure, per exemple nom@gmail.com.",
     "correo_sin_recursos": "Amb aquest correu no hi ha cap recurs al repositori. Revisa que estigui ben escrit.",
     "codigo_enviado": ("T'he enviat un codi a {correo} (mira també al correu brossa). "
                        "Escriu-me'l aquí."),
     "codigo_mal": "Aquest codi no és correcte. Revisa el correu i torna-me'l a escriure.",
-    "codigo_agotado": "Massa intents. Fes servir /misrecursos per demanar un altre codi.",
+    "codigo_agotado": "Aquest codi ja no és vàlid després de diversos intents fallits. Fes servir /misrecursos i te n'envio un altre.",
     "codigo_ok": "Comprovat. A partir d'ara puc gestionar els recursos de {correo}.",
     "borrar_seguro": "Segur que vols treure «{titulo}» del repositori? No es pot desfer.",
     "borrado": "Tret del repositori. D'aquí a uns minuts deixarà de veure's.",
-    "no_tuyo": "Aquest recurs no és a nom teu.",
+    "no_tuyo": "Aquest recurs no és a nom teu, així que no el puc canviar. Si és teu i el vas donar d'alta amb el formulari, fes servir /misrecursos per recuperar-lo.",
     "b_publicar": "Publicar",
     "b_cambiar": "Canviar alguna cosa",
     "b_cancelar": "Cancel·lar",
@@ -409,12 +403,12 @@ GL = {
     "b_lo_publico_yo": 'Publícoo eu',
     "b_anteriores": "Anteriores",
     "b_siguientes": "Seguintes",
-    "seguidas": 'Fixéchesme moitas consultas seguidas. Segue dentro dun anaco.',
+    "seguidas": "Fixéchesme moitas preguntas seguidas e necesito un respiro. Volve escribirme dentro dun anaco e seguimos.",
     # Perfil del bot (setMyDescription y setMyShortDescription): aquí va la autoría.
     "perfil": 'Busco nos grupos ChatGPT-IA-edu, Vibe Coding Educativo e EduMedia-IAG quen dixo algo, cando e en que mensaxe, e que documentos da Biblioteca dixital tratan un tema. Tamén engado documentos á Biblioteca e recursos educativos ao repositorio de Vibe Coding Educativo. Uso Claude, unha IA de Anthropic. Creado por @jjdeharo.',
     "perfil_corto": 'Busca en ChatGPT-IA-edu, Vibe Coding Educativo e EduMedia-IAG, e engade documentos e recursos.',
     "licencia_cerrada": 'Aínda non o engado: a súa licenza ({licencia}) non deixa compartir o código. O repositorio admite licenzas abertas: de código aberto ou Creative Commons. Se non sabes cal escoller, pregúntamo: recoméndoche unha segundo o que queiras permitir e explícoche como poñela. Tes máis información en https://vibe-coding-educativo.github.io/vibe-responsable/gl/capitulo-9.html. Despois envíame outra vez o recurso: o ficheiro HTML, un ZIP ou a ligazón ao seu repositorio de GitHub.',
-    "de_pago": 'Non o engado: o repositorio é só para recursos gratuítos, sen versións de pagamento nin freemium, e este non o parece ({detalle}).',
+    "de_pago": "Non podo engadilo: o repositorio é só para recursos gratuítos, sen versións de pagamento nin freemium, e este non o parece ({detalle}).",
     "sin_licencia": 'Aínda non o engado: o repositorio pide que o código estea publicado cunha licenza aberta, e non atopo ningunha nin no código nin no seu repositorio. Se non sabes cal escoller, pregúntamo: recoméndoche unha segundo o que queiras permitir e explícoche como poñela. Tes máis información en https://vibe-coding-educativo.github.io/vibe-responsable/gl/capitulo-9.html. Despois envíame outra vez o recurso: o ficheiro HTML, un ZIP ou a ligazón ao seu repositorio de GitHub.',
     "cambio_licencia_cerrada": 'Non gardo o cambio: a súa licenza ({licencia}) non deixa compartir o código, e o repositorio só admite licenzas abertas: de código aberto ou Creative Commons. Se non sabes cal escoller, pregúntamo: recoméndoche unha segundo o que queiras permitir e explícoche como poñela. Tes máis información en https://vibe-coding-educativo.github.io/vibe-responsable/gl/capitulo-9.html. Cando a cambies, preme «Cambiar algo» outra vez.',
     "cambio_sin_licencia": 'Non gardo o cambio: o repositorio pide que o código estea publicado cunha licenza aberta, e non atopo ningunha nin no código nin no seu repositorio. Se non sabes cal escoller, pregúntamo: recoméndoche unha segundo o que queiras permitir e explícoche como poñela. Tes máis información en https://vibe-coding-educativo.github.io/vibe-responsable/gl/capitulo-9.html. Cando a poñas, preme «Cambiar algo» outra vez.',
@@ -447,17 +441,15 @@ GL = {
     "traduccion": "Textos traducidos automaticamente con IA, sen revisión profesional.",
     "buscar": 'Escríbeme o que buscas, coas túas palabras. Busco nos grupos marcados; toca un para marcalo ou desmarcalo. Mantereino mentres sigamos falando.',
     "biblioteca": "Envíame o documento en PDF (ata 20 MB) e preparo a súa ficha.",
-    "solo_chatgpt": ("Engadir documentos á Biblioteca dixital é para membros de ChatGPT-IA-edu: "
-                     "https://t.me/ChatGPTedu"),
+    "solo_chatgpt": "Engadir documentos á Biblioteca dixital é cousa dos membros de ChatGPT-IA-edu. Entrar é libre: únete ao grupo e volve envialo. Este é o grupo: https://t.me/ChatGPTedu",
     "solo_vce": ("O repositorio de recursos é da comunidade Vibe Coding Educativo; para engadir os teus, "
                  "únete ao grupo: https://t.me/vceduca"),
-    "no_miembro": ("Só respondo a membros dos grupos ChatGPT-IA-edu (https://t.me/ChatGPTedu), "
-                   "Vibe Coding Educativo (https://t.me/vceduca) ou EduMedia-IAG (https://t.me/EduMediaIAG)."),
+    "no_miembro": "Síntoo, só podo responder a quen forma parte dos grupos ChatGPT-IA-edu (https://t.me/ChatGPTedu), Vibe Coding Educativo (https://t.me/vceduca) ou EduMedia-IAG (https://t.me/EduMediaIAG). Entrar é libre: únete a calquera deles e volve escribirme.",
     "no_autorizado": "Aínda estou en probas. Pronto estarei aberto aos grupos.",
     "cupo": "Chegaches ás {cupo} preguntas de hoxe. Mañá poderás seguir.",
     "tope": "Este mes esgotouse o orzamento do bot. Volverá funcionar o día 1.",
     "error": "Algo fallou ao buscar. Proba outra vez nun momento.",
-    "solo_texto": "Escríbeme a pregunta en texto.",
+    "solo_texto": "Polo de agora só entendo mensaxes escritas. Escríbeme a pregunta, por favor.",
     "solo_privado": "Ola, {nombre}. Son o Bot de IA Educativa. No grupo non podo contestarche, pero en privado si. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Ola, {nombre}. Son o Bot de IA Educativa. Isto non funciona no grupo, pero en privado si. Ábreo aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Para engadir un documento á Biblioteca dixital, envíamo en PDF.",
@@ -469,8 +461,7 @@ GL = {
     "sin_texto": ("Non podo ler o texto deste PDF: parece escaneado como imaxe. Podes subilo ti "
                   "directamente á Biblioteca dixital (https://t.me/ChatGPTedu/21753) e preparar a súa "
                   "ficha con https://chatgpt-ia-edu.github.io/resumen/"),
-    "ajeno": ("Non o engado: a Biblioteca dixital é para documentos sobre intelixencia artificial en "
-              "educación, e este trata doutra cousa ({tema})."),
+    "ajeno": "Non podo engadilo: a Biblioteca dixital é para documentos sobre intelixencia artificial en educación, e este trata doutra cousa ({tema}).",
     "repetido": "Este documento xa está na Biblioteca dixital: {enlace}",
     "vista": ("Esta é a ficha, en castelán como toda a biblioteca. Se che parece ben, publicarei na "
               "Biblioteca dixital o documento con «Aportado por {autor}» e a ficha en resposta."),
@@ -491,7 +482,7 @@ GL = {
     "falta_info": ("Non consigo ver que fai o recurso desde a ligazón ({motivo}). Envíame o ficheiro HTML ou un "
                    "ZIP co código, a ligazón ao seu repositorio de GitHub, ou cóntame nunha mensaxe que fai "
                    "e como se usa."),
-    "no_educativo": "Non o engado: o repositorio é para recursos educativos, e este non o parece ({motivo}). Se cres que me equivoco, preme «Pedir unha revisión» e mirarao unha persoa.",
+    "no_educativo": "Non podo engadilo: o repositorio é para recursos educativos, e este non o parece ({motivo}). Se cres que me equivoco, preme «Pedir unha revisión» e mirarao unha persoa.",
     "sin_minimo": "Aínda non o engado: o repositorio é para recursos que xa se poidan usar na aula, e a este fáltalle algo ({motivo}). Cando o teñas listo, volve mandarme a ligazón. Se cres que me equivoco, preme «Pedir unha revisión» e mirarao unha persoa.",
     "b_pedir_revision": "Pedir unha revisión",
     "por_que_revision": "Cóntame nunha mensaxe por que cres que debería entrar. Lerao a persoa que o revise.",
@@ -523,16 +514,16 @@ GL = {
     "sin_recursos": ("Non teño ningún recurso ao teu nome. Se deches de alta algún co formulario, "
                      "escríbeme o correo co que o fixeches e mándoche un código para comprobar que é teu."),
     "otro_correo": "Escríbeme o correo co que deches de alta os teus recursos no formulario.",
-    "no_es_correo": "Iso non parece un correo. Usa /misrecursos para volver comezar.",
+    "no_es_correo": "Iso non parece un enderezo de correo. Usa /misrecursos e volve escribilo, por exemplo nome@gmail.com.",
     "correo_sin_recursos": "Con ese correo non hai ningún recurso no repositorio. Revisa que estea ben escrito.",
     "codigo_enviado": ("Envieiche un código a {correo} (mira tamén no correo lixo). "
                        "Escríbemo aquí."),
     "codigo_mal": "Ese código non é correcto. Revisa o correo e escríbemo outra vez.",
-    "codigo_agotado": "Demasiados intentos. Usa /misrecursos para pedir outro código.",
+    "codigo_agotado": "Ese código xa non vale despois de varios intentos fallidos. Usa /misrecursos e mándoche outro.",
     "codigo_ok": "Comprobado. Desde agora podo xestionar os recursos de {correo}.",
     "borrar_seguro": "Seguro que queres quitar «{titulo}» do repositorio? Non se pode desfacer.",
     "borrado": "Quitado do repositorio. Nuns minutos deixará de verse.",
-    "no_tuyo": "Ese recurso non está ao teu nome.",
+    "no_tuyo": "Ese recurso non está ao teu nome, así que non podo cambialo. Se é teu e o deches de alta co formulario, usa /misrecursos para recuperalo.",
     "b_publicar": "Publicar",
     "b_cambiar": "Cambiar algo",
     "b_cancelar": "Cancelar",
@@ -588,12 +579,12 @@ EU = {
     "b_lo_publico_yo": 'Nik argitaratuko dut',
     "b_anteriores": "Aurrekoak",
     "b_siguientes": "Hurrengoak",
-    "seguidas": 'Kontsulta asko egin dizkidazu jarraian. Jarraitu pixka bat barru.',
+    "seguidas": "Galdera asko egin dizkidazu jarraian eta atseden pixka bat behar dut. Idatzi berriro pixka bat barru eta jarraituko dugu.",
     # Perfil del bot (setMyDescription y setMyShortDescription): aquí va la autoría.
     "perfil": 'ChatGPT-IA-edu, Vibe Coding Educativo eta EduMedia-IAG taldeetan bilatzen dut nork esan zuen zerbait, noiz eta zein mezutan, eta Liburutegi digitaleko zein dokumentuk jorratzen duten gai bat. Dokumentuak gehitzen ditut Liburutegira eta baliabide hezitzaileak Vibe Coding Educativo-ren biltegira. Claude erabiltzen dut, Anthropic-en IA bat. Egilea: @jjdeharo.',
     "perfil_corto": 'ChatGPT-IA-edu, Vibe Coding Educativo eta EduMedia-IAG-en bilatzen du; dokumentuak eta baliabideak gehitzen ditu.',
     "licencia_cerrada": 'Oraindik ez dut gehitzen: haren lizentziak ({licencia}) ez du kodea partekatzen uzten. Biltegiak lizentzia irekiak onartzen ditu: kode irekikoak edo Creative Commons. Zein aukeratu ez badakizu, galdetu niri: baimendu nahi duzunaren arabera bat gomendatuko dizut eta nola jarri azalduko dizut. Informazio gehiago: https://vibe-coding-educativo.github.io/vibe-responsable/eu/capitulo-9.html. Gero bidali berriro baliabidea: HTML fitxategia, ZIP bat edo haren GitHub biltegiaren esteka.',
-    "de_pago": 'Ez dut gehitzen: biltegia doako baliabideetarako bakarrik da, ordainpeko bertsiorik eta freemiumik gabe, eta hau ez dirudi halakoa ({detalle}).',
+    "de_pago": "Ezin dut gehitu: biltegia doako baliabideetarako bakarrik da, ordainpeko bertsiorik eta freemiumik gabe, eta hau ez dirudi halakoa ({detalle}).",
     "sin_licencia": 'Oraindik ez dut gehitzen: biltegiak kodea lizentzia ireki batekin argitaratuta egotea eskatzen du, eta ez dut bat ere aurkitzen ez kodean ez haren biltegian. Zein aukeratu ez badakizu, galdetu niri: baimendu nahi duzunaren arabera bat gomendatuko dizut eta nola jarri azalduko dizut. Informazio gehiago: https://vibe-coding-educativo.github.io/vibe-responsable/eu/capitulo-9.html. Gero bidali berriro baliabidea: HTML fitxategia, ZIP bat edo haren GitHub biltegiaren esteka.',
     "cambio_licencia_cerrada": 'Ez dut aldaketa gordetzen: haren lizentziak ({licencia}) ez du kodea partekatzen uzten, eta biltegiak lizentzia irekiak bakarrik onartzen ditu: kode irekikoak edo Creative Commons. Zein aukeratu ez badakizu, galdetu niri: baimendu nahi duzunaren arabera bat gomendatuko dizut eta nola jarri azalduko dizut. Informazio gehiago: https://vibe-coding-educativo.github.io/vibe-responsable/eu/capitulo-9.html. Aldatu ondoren, sakatu berriro «Zerbait aldatu».',
     "cambio_sin_licencia": 'Ez dut aldaketa gordetzen: biltegiak kodea lizentzia ireki batekin argitaratuta egotea eskatzen du, eta ez dut bat ere aurkitzen ez kodean ez haren biltegian. Zein aukeratu ez badakizu, galdetu niri: baimendu nahi duzunaren arabera bat gomendatuko dizut eta nola jarri azalduko dizut. Informazio gehiago: https://vibe-coding-educativo.github.io/vibe-responsable/eu/capitulo-9.html. Jarri ondoren, sakatu berriro «Zerbait aldatu».',
@@ -627,17 +618,15 @@ EU = {
     "traduccion": "Testuak IArekin automatikoki itzuliak, berrikuspen profesionalik gabe.",
     "buscar": 'Idatzi zer bilatzen duzun, zure hitzekin. Markatutako taldeetan bilatzen dut; ukitu bat markatzeko edo desmarkatzeko. Hitz egiten jarraitzen dugun bitartean mantenduko dut.',
     "biblioteca": "Bidali dokumentua PDFn (20 MB arte) eta haren fitxa prestatuko dut.",
-    "solo_chatgpt": ("Liburutegi digitalera dokumentuak gehitzea ChatGPT-IA-edu taldeko kideentzat da: "
-                     "https://t.me/ChatGPTedu"),
+    "solo_chatgpt": "Liburutegi digitalera dokumentuak gehitzea ChatGPT-IA-edu taldeko kideen kontua da. Sartzea librea da: batu zaitez taldera eta bidali berriro. Hau da taldea: https://t.me/ChatGPTedu",
     "solo_vce": ("Baliabideen biltegia Vibe Coding Educativo komunitatearena da; zureak gehitzeko, "
                  "batu taldera: https://t.me/vceduca"),
-    "no_miembro": ("ChatGPT-IA-edu (https://t.me/ChatGPTedu), Vibe Coding Educativo (https://t.me/vceduca) "
-                   "edo EduMedia-IAG (https://t.me/EduMediaIAG) taldeetako kideei bakarrik erantzuten diet."),
+    "no_miembro": "Sentitzen dut, ChatGPT-IA-edu (https://t.me/ChatGPTedu), Vibe Coding Educativo (https://t.me/vceduca) edo EduMedia-IAG (https://t.me/EduMediaIAG) taldeetako kideei bakarrik erantzun diezaieket. Sartzea librea da: batu zaitez edozeinetara eta idatzi berriro.",
     "no_autorizado": "Oraindik probetan nago. Laster egongo naiz taldeentzat irekita.",
     "cupo": "Gaurko {cupo} galderetara iritsi zara. Bihar jarraitu ahal izango duzu.",
     "tope": "Hilabete honetan botaren aurrekontua agortu da. Hilaren 1ean berriro ibiliko da.",
     "error": "Zerbait gaizki atera da bilatzean. Saiatu berriro une batean.",
-    "solo_texto": "Idatzi galdera testuan.",
+    "solo_texto": "Oraingoz idatzizko mezuak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
     "solo_privado": "Kaixo, {nombre}. IA Educativa bota naiz. Taldean ezin dizut erantzun, baina pribatuan bai. Idatzi hemen: https://t.me/{usuario}",
     "solo_privado_comando": "Kaixo, {nombre}. IA Educativa bota naiz. Hau ez dabil taldean, baina pribatuan bai. Ireki hemen: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Liburutegi digitalera dokumentu bat gehitzeko, bidali PDFn.",
@@ -650,8 +639,7 @@ EU = {
     "sin_texto": ("Ezin dut PDF honen testua irakurri: irudi gisa eskaneatuta dagoela dirudi. Zuk zeuk igo "
                   "dezakezu Liburutegi digitalera (https://t.me/ChatGPTedu/21753) eta haren fitxa prestatu "
                   "https://chatgpt-ia-edu.github.io/resumen/ orriarekin"),
-    "ajeno": ("Ez dut gehitzen: Liburutegi digitala hezkuntzako adimen artifizialari buruzko "
-              "dokumentuetarako da, eta honek beste gai bat jorratzen du ({tema})."),
+    "ajeno": "Ezin dut gehitu: Liburutegi digitala hezkuntzako adimen artifizialari buruzko dokumentuetarako da, eta honek beste gai bat jorratzen du ({tema}).",
     "repetido": "Dokumentu hau Liburutegi digitalean dago jada: {enlace}",
     "vista": ("Hau da fitxa, gaztelaniaz liburutegi osoa bezala. Ados bazaude, dokumentua «Aportado por "
               "{autor}» testuarekin argitaratuko dut Liburutegi digitalean, eta fitxa erantzun gisa."),
@@ -672,7 +660,7 @@ EU = {
     "falta_info": ("Ezin dut estekatik ikusi baliabideak zer egiten duen ({motivo}). Bidali HTML fitxategia edo "
                    "kodea duen ZIP bat, haren GitHub biltegiaren esteka, edo kontatu mezu batean zer egiten "
                    "duen eta nola erabiltzen den."),
-    "no_educativo": "Ez dut gehitzen: biltegia baliabide hezitzaileetarako da, eta hau ez dirudi halakoa ({motivo}). Oker nagoela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
+    "no_educativo": "Ezin dut gehitu: biltegia baliabide hezitzaileetarako da, eta hau ez dirudi halakoa ({motivo}). Oker nagoela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
     "sin_minimo": "Oraindik ez dut gehitzen: biltegia ikasgelan dagoeneko erabil daitezkeen baliabideetarako da, eta honi zerbait falta zaio ({motivo}). Prest duzunean, bidali berriro esteka. Oker nagoela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
     "b_pedir_revision": "Berrikusteko eskatu",
     "por_que_revision": "Esan mezu batean zergatik uste duzun sartu beharko lukeela. Berrikusten duen pertsonak irakurriko du.",
@@ -704,16 +692,16 @@ EU = {
     "sin_recursos": ("Ez daukat baliabiderik zure izenean. Formularioarekin bakarren bati alta eman bazenion, "
                      "idatzi erabili zenuen helbide elektronikoa eta kode bat bidaliko dizut zurea dela egiaztatzeko."),
     "otro_correo": "Idatzi formularioan baliabideei alta emateko erabili zenuen helbide elektronikoa.",
-    "no_es_correo": "Hori ez dirudi helbide elektronikoa. Erabili /misrecursos berriro hasteko.",
+    "no_es_correo": "Hori ez dirudi helbide elektronikoa. Erabili /misrecursos eta idatzi berriro, adibidez izena@gmail.com.",
     "correo_sin_recursos": "Helbide horrekin ez dago baliabiderik biltegian. Egiaztatu ondo idatzita dagoela.",
     "codigo_enviado": ("Kode bat bidali dizut {correo} helbidera (begiratu zabor-postan ere). "
                        "Idatzi hemen."),
     "codigo_mal": "Kode hori ez da zuzena. Begiratu posta eta idatzi berriro.",
-    "codigo_agotado": "Saiakera gehiegi. Erabili /misrecursos beste kode bat eskatzeko.",
+    "codigo_agotado": "Kode horrek ez du balio hainbat saiakera huts egin ondoren. Erabili /misrecursos eta beste bat bidaliko dizut.",
     "codigo_ok": "Egiaztatuta. Hemendik aurrera {correo} helbidearen baliabideak kudea ditzaket.",
     "borrar_seguro": "Ziur «{titulo}» biltegitik kendu nahi duzula? Ezin da desegin.",
     "borrado": "Biltegitik kenduta. Minutu batzuk barru ez da gehiago ikusiko.",
-    "no_tuyo": "Baliabide hori ez dago zure izenean.",
+    "no_tuyo": "Baliabide hori ez dago zure izenean, beraz ezin dut aldatu. Zurea bada eta formularioarekin eman bazenuen alta, erabili /misrecursos berreskuratzeko.",
     "b_publicar": "Argitaratu",
     "b_cambiar": "Zerbait aldatu",
     "b_cancelar": "Utzi",
@@ -769,12 +757,12 @@ EN = {
     "b_lo_publico_yo": "I'll post it myself",
     "b_anteriores": "Previous",
     "b_siguientes": "Next",
-    "seguidas": "You've sent me a lot of requests in a row. Please carry on in a little while.",
+    "seguidas": "You've asked me a lot of questions in a row and I need a breather. Write to me again in a little while and we'll carry on.",
     # Perfil del bot (setMyDescription y setMyShortDescription): aquí va la autoría.
     "perfil": 'I search the ChatGPT-IA-edu, Vibe Coding Educativo and EduMedia-IAG groups for who said something, when and in which message, and for documents in the Digital Library on a topic. I also add documents to the Library and educational resources to the Vibe Coding Educativo repository. I use Claude, an AI by Anthropic. Created by @jjdeharo.',
     "perfil_corto": 'Searches ChatGPT-IA-edu, Vibe Coding Educativo and EduMedia-IAG, and adds documents and resources.',
     "licencia_cerrada": "I'm not adding it yet: its licence ({licencia}) doesn't allow sharing the code. The repository accepts open licences: open source or Creative Commons. If you don't know which one to choose, ask me: I'll recommend one based on what you want to allow and explain how to add it. More information: https://vibe-coding-educativo.github.io/vibe-responsable/en/capitulo-9.html. Then send me the resource again: the HTML file, a ZIP or the link to its GitHub repository.",
-    "de_pago": "I'm not adding it: the repository is only for free resources, with no paid or freemium versions, and this doesn't look like one ({detalle}).",
+    "de_pago": "I can't add it: the repository is only for free resources, with no paid or freemium versions, and this doesn't look like one ({detalle}).",
     "sin_licencia": "I'm not adding it yet: the repository requires the code to be published under an open licence, and I can't find one in the code or in its repository. If you don't know which one to choose, ask me: I'll recommend one based on what you want to allow and explain how to add it. More information: https://vibe-coding-educativo.github.io/vibe-responsable/en/capitulo-9.html. Then send me the resource again: the HTML file, a ZIP or the link to its GitHub repository.",
     "cambio_licencia_cerrada": 'I\'m not saving the change: its licence ({licencia}) doesn\'t allow sharing the code, and the repository only accepts open licences: open source or Creative Commons. If you don\'t know which one to choose, ask me: I\'ll recommend one based on what you want to allow and explain how to add it. More information: https://vibe-coding-educativo.github.io/vibe-responsable/en/capitulo-9.html. Once you\'ve changed it, press "Change something" again.',
     "cambio_sin_licencia": 'I\'m not saving the change: the repository requires the code to be published under an open licence, and I can\'t find one in the code or in its repository. If you don\'t know which one to choose, ask me: I\'ll recommend one based on what you want to allow and explain how to add it. More information: https://vibe-coding-educativo.github.io/vibe-responsable/en/capitulo-9.html. Once you\'ve added it, press "Change something" again.',
@@ -806,17 +794,15 @@ EN = {
     "traduccion": "Texts machine-translated with AI, without professional review.",
     "buscar": "Tell me what you're looking for, in your own words. I search the ticked groups; tap one to tick or untick it. I'll keep it while we keep talking.",
     "biblioteca": "Send me the document as a PDF (up to 20 MB) and I'll prepare its record.",
-    "solo_chatgpt": ("Adding documents to the Digital Library is for members of ChatGPT-IA-edu: "
-                     "https://t.me/ChatGPTedu"),
+    "solo_chatgpt": "Adding documents to the Digital Library is for members of ChatGPT-IA-edu. Joining is free: join the group and send it to me again. This is the group: https://t.me/ChatGPTedu",
     "solo_vce": ("The resource repository belongs to the Vibe Coding Educativo community; to add yours, "
                  "join the group: https://t.me/vceduca"),
-    "no_miembro": ("I only answer members of the ChatGPT-IA-edu (https://t.me/ChatGPTedu), "
-                   "Vibe Coding Educativo (https://t.me/vceduca) or EduMedia-IAG (https://t.me/EduMediaIAG) groups."),
+    "no_miembro": "Sorry, I can only answer people who belong to the ChatGPT-IA-edu (https://t.me/ChatGPTedu), Vibe Coding Educativo (https://t.me/vceduca) or EduMedia-IAG (https://t.me/EduMediaIAG) groups. Joining is free: join any of them and write to me again.",
     "no_autorizado": "I'm still being tested. I'll be open to the groups soon.",
     "cupo": "You've reached today's {cupo} questions. You can continue tomorrow.",
     "tope": "The bot's budget for this month has run out. It will work again on the 1st.",
     "error": "Something went wrong while searching. Please try again in a moment.",
-    "solo_texto": "Please write your question as text.",
+    "solo_texto": "For now I only understand written messages. Please write your question.",
     "solo_privado": "Hi, {nombre}. I'm the IA Educativa Bot. I can't answer you in the group, but I can in private. Write to me here: https://t.me/{usuario}",
     "solo_privado_comando": "Hi, {nombre}. I'm the IA Educativa Bot. This doesn't work in the group, but it does in private. Open it here: https://t.me/{usuario}?start={comando}",
     "no_pdf": "To add a document to the Digital Library, send it to me as a PDF.",
@@ -828,8 +814,7 @@ EN = {
     "sin_texto": ("I can't read the text of this PDF: it seems to be scanned as an image. You can upload it "
                   "yourself to the Digital Library (https://t.me/ChatGPTedu/21753) and prepare its record "
                   "with https://chatgpt-ia-edu.github.io/resumen/"),
-    "ajeno": ("I'm not adding it: the Digital Library is for documents about artificial intelligence in "
-              "education, and this one is about something else ({tema})."),
+    "ajeno": "I can't add it: the Digital Library is for documents about artificial intelligence in education, and this one is about something else ({tema}).",
     "repetido": "This document is already in the Digital Library: {enlace}",
     "vista": ("This is the record, in Spanish like the whole library. If you agree, I'll publish the document "
               "in the Digital Library with \"Aportado por {autor}\" and the record as a reply."),
@@ -850,7 +835,7 @@ EN = {
     "falta_info": ("I can't see what the resource does from the link ({motivo}). Send me the HTML file or a ZIP "
                    "with the code, the link to its GitHub repository, or tell me in a message what it does "
                    "and how it is used."),
-    "no_educativo": "I'm not adding it: the repository is for educational resources, and this doesn't look like one ({motivo}). If you think I'm wrong, press \"Request a review\" and a person will look at it.",
+    "no_educativo": 'I can\'t add it: the repository is for educational resources, and this doesn\'t look like one ({motivo}). If you think I\'m wrong, press "Request a review" and a person will look at it.',
     "sin_minimo": "I'm not adding it yet: the repository is for resources that can already be used in class, and this one is missing something ({motivo}). When it's ready, send me the link again. If you think I'm wrong, press \"Request a review\" and a person will look at it.",
     "b_pedir_revision": "Request a review",
     "por_que_revision": "Tell me in a message why you think it should be included. The person reviewing it will read it.",
@@ -882,16 +867,16 @@ EN = {
     "sin_recursos": ("I don't have any resources under your name. If you added any with the form, write me "
                      "the email address you used and I'll send you a code to check that they're yours."),
     "otro_correo": "Write me the email address you used to add your resources with the form.",
-    "no_es_correo": "That doesn't look like an email address. Use /misrecursos to start again.",
+    "no_es_correo": "That doesn't look like an email address. Use /misrecursos and type it again, for example name@gmail.com.",
     "correo_sin_recursos": "There are no resources in the repository with that email address. Check that it's spelled correctly.",
     "codigo_enviado": ("I've sent a code to {correo} (check your spam folder too). "
                        "Write it here."),
     "codigo_mal": "That code isn't correct. Check your email and write it again.",
-    "codigo_agotado": "Too many attempts. Use /misrecursos to ask for another code.",
+    "codigo_agotado": "That code is no longer valid after several failed attempts. Use /misrecursos and I'll send you another one.",
     "codigo_ok": "Verified. From now on I can manage the resources of {correo}.",
     "borrar_seguro": "Are you sure you want to remove \"{titulo}\" from the repository? This can't be undone.",
     "borrado": "Removed from the repository. It will disappear in a few minutes.",
-    "no_tuyo": "That resource isn't under your name.",
+    "no_tuyo": "That resource isn't under your name, so I can't change it. If it's yours and you registered it with the form, use /misrecursos to recover it.",
     "b_publicar": "Publish",
     "b_cambiar": "Change something",
     "b_cancelar": "Cancel",
