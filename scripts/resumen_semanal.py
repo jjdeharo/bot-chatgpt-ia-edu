@@ -68,17 +68,46 @@ def apps_de_la_semana(filas: list[dict], desde: datetime, hasta: datetime) -> li
     return sorted(nuevas, key=lambda x: x["alta"])
 
 
+# Entradilla y cierre cambian de una semana a otra, para que no parezca un mensaje automático
+# repetido (Juanjo, 31-10-2026), y el cierre recuerda en pocas palabras todo lo que hace el bot.
+ENTRADAS_VCE = [
+    "Aplicaciones añadidas esta semana al {repositorio} ({periodo}):",
+    "Novedades de la semana en el {repositorio} ({periodo}):",
+    "Esta semana han entrado estas aplicaciones en el {repositorio} ({periodo}):",
+    "Por si os sirven en clase, las aplicaciones nuevas del {repositorio} ({periodo}):",
+]
+CIERRES_VCE = [
+    "Soy el Bot de IA Educativa. Por privado busco lo que se ha dicho en este grupo, en ChatGPT-IA-edu y en "
+    "EduMedia-IAG, encuentro documentos de la Biblioteca digital y aplicaciones del repositorio, y os ayudo a "
+    "añadir las vuestras: {bot}",
+    "¿Buscáis algo que se dijo aquí hace meses, una guía sobre un tema o una aplicación para vuestra materia? "
+    "Preguntádmelo por privado. Soy el Bot de IA Educativa y también os ayudo a publicar vuestras aplicaciones "
+    "en el repositorio: {bot}",
+    "Soy el Bot de IA Educativa. Por privado os digo quién habló de algo y cuándo, con el enlace al mensaje, os "
+    "busco documentos y aplicaciones por tema y doy de alta las vuestras en el repositorio: {bot}",
+    "Si habéis hecho una aplicación educativa, mandadme su enlace por privado y preparo su ficha para el "
+    "repositorio. También busco lo que necesitéis en las conversaciones de los grupos y en la Biblioteca "
+    "digital. Soy el Bot de IA Educativa: {bot}",
+    "Soy el Bot de IA Educativa y podéis escribirme por privado para buscar en las conversaciones de los "
+    "grupos, encontrar documentos y aplicaciones por tema, y añadir o cambiar las vuestras del repositorio: {bot}",
+    "¿Recordáis una herramienta que alguien compartió y no la encontráis? Escribidme por privado y la busco en "
+    "los grupos y en el repositorio. Soy el Bot de IA Educativa; también os ayudo a dar de alta vuestras "
+    "aplicaciones: {bot}",
+]
+
+
 def texto_vce(apps: list[dict], desde: datetime, hasta: datetime, usuario: str) -> str | None:
     import catalogo
     if not apps:
         return None
-    lineas = [f"Aplicaciones añadidas esta semana al {enlace(catalogo.WEB, 'repositorio de Vibe Coding Educativo')} "
-              f"({periodo(desde, hasta)}):", ""]
+    semana = hasta.astimezone(MADRID).isocalendar().week
+    entrada = ENTRADAS_VCE[semana % len(ENTRADAS_VCE)]
+    lineas = [entrada.format(repositorio=enlace(catalogo.WEB, "repositorio de Vibe Coding Educativo"),
+                             periodo=periodo(desde, hasta)), ""]
     for a in apps:
         autor = f", de {html.escape(a['autor'], quote=False)}" if a["autor"] else ""
         lineas.append(f"• {enlace(catalogo.enlace_catalogo(a['url']), a['titulo'] or a['url'])}{autor}")
-    lineas += ["", "Soy el Bot de IA Educativa. Si habéis hecho una aplicación educativa, os ayudo a añadirla "
-               f"al repositorio por privado: https://t.me/{usuario}?start=repositorio"]
+    lineas += ["", CIERRES_VCE[semana % len(CIERRES_VCE)].format(bot=f"https://t.me/{usuario}")]
     return "\n".join(lineas)
 
 
@@ -149,13 +178,36 @@ def dudas_de_la_semana(cliente, modelo: str, mensajes: list[dict]) -> tuple[list
     return dudas[:MAX_DUDAS], r.usage
 
 
+ENTRADAS_EXE = [
+    "Dudas resueltas esta semana en el grupo ({periodo}):",
+    "Lo que se ha resuelto esta semana en el grupo ({periodo}):",
+    "Por si os sirven, estas dudas quedaron resueltas en el grupo esta semana ({periodo}):",
+    "Resumen de la semana ({periodo}): dudas que se resolvieron en el grupo.",
+]
+CIERRES_EXE = [
+    "Soy Karla bot. Si os queda alguna duda con eXeLearning, preguntadme por privado y os respondo con el "
+    "manual, la documentación y lo hablado aquí, con el enlace a cada fuente: {bot}",
+    "¿Tenéis una duda que no está en la lista? Preguntadme por privado. Soy Karla bot y busco en el manual de "
+    "eXeLearning, en su documentación y en este grupo; si es un fallo del programa, preparo el aviso para el "
+    "equipo: {bot}",
+    "Soy Karla bot, la asistente de eXeLearning. Por privado resuelvo dudas de uso, explico cómo publicar en "
+    "Moodle u otras plataformas y, si encontráis un error, os ayudo a avisar al equipo: {bot}",
+    "Recordad que podéis preguntarme por privado cualquier duda sobre eXeLearning, también con una captura de "
+    "pantalla. Soy Karla bot y os digo de dónde sale cada respuesta: {bot}",
+    "Soy Karla bot. Estas dudas y muchas más las podéis consultar conmigo por privado: busco en el manual, en "
+    "la documentación de eXeLearning y en todo lo hablado en el grupo: {bot}",
+    "Si necesitáis una respuesta rápida sobre eXeLearning, escribidme por privado. Soy Karla bot: respondo con "
+    "el manual y las conversaciones del grupo, y si dais con un error, preparo el aviso para el equipo: {bot}",
+]
+
+
 def texto_exelearning(dudas: list[dict], desde: datetime, hasta: datetime, usuario: str) -> str | None:
     if not dudas:
         return None
-    lineas = [f"Dudas resueltas esta semana en el grupo ({periodo(desde, hasta)}):", ""]
+    semana = hasta.astimezone(MADRID).isocalendar().week
+    lineas = [ENTRADAS_EXE[semana % len(ENTRADAS_EXE)].format(periodo=periodo(desde, hasta)), ""]
     lineas += [f"• {enlace(d['enlace'], d['tema'])}" for d in dudas]
-    lineas += ["", "Soy Karla bot. Si os queda alguna duda con eXeLearning, preguntadme por privado y os respondo "
-               f"con el manual y lo hablado aquí: https://t.me/{usuario}"]
+    lineas += ["", CIERRES_EXE[semana % len(CIERRES_EXE)].format(bot=f"https://t.me/{usuario}")]
     return "\n".join(lineas)
 
 
