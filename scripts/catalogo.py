@@ -104,6 +104,32 @@ LICENCIA = {
                                         "son las licencias propietarias, «todos los derechos reservados» ni la "
                                         "falta de licencia"},
 }
+# Si la licencia solo consta en el repositorio y no en la página (Juanjo, 31-10-2026): el recurso cumple, pero
+# quien abre la página no lo sabe, y el bot le recomienda ponerla visible. Solo se pregunta cuando se han leído
+# la página y su repositorio (PAGINA_Y_REPO); lo decide Claude, que distingue la licencia del recurso de la de
+# una librería que incluye.
+SOLO_REPOSITORIO = {
+    "licencia_solo_repositorio": {
+        "type": "boolean",
+        "description": "Si la licencia abierta consta solo en el repositorio (su ficha de GitHub, el LICENSE o el "
+                       "README) y no en la página: ni en su código (comentario SPDX, cabecera, metadatos) ni en "
+                       "un texto visible (el pie). Las licencias de librerías o fuentes que use no cuentan como "
+                       "de la página. Falso si consta en la página o si no hay licencia"},
+}
+PAGINA_Y_REPO = "La página se publica desde "
+
+
+def leyo_pagina_y_repositorio(contenido: str) -> bool:
+    """Si lo leído trae la página y la licencia de su repositorio (leer_url con una página de github.io)."""
+    return (contenido or "").startswith(PAGINA_Y_REPO)
+
+
+def spdx(licencia: str) -> str:
+    """El identificador SPDX, si lo que se encontró lo es (GPL-3.0, CC-BY-SA-4.0…); si no, vacío."""
+    licencia = (licencia or "").strip()
+    return licencia if re.fullmatch(r"[A-Za-z0-9.+-]+", licencia) and re.search(r"\d|MIT|CC0|Unlicense", licencia) else ""
+
+
 ANALISIS = {
     "type": "object",
     "properties": {
@@ -118,20 +144,22 @@ ANALISIS = {
                                    "pago para usarlo entero, o la versión gratuita está recortada para empujar a pagar"},
         "pago_detalle": {"type": "string", "description": "Si es de pago o freemium, qué lo muestra, en una frase corta"},
         **LICENCIA,
+        **SOLO_REPOSITORIO,
         "motivo": {"type": "string",
                    "description": "Si falta información, no es educativo o no llega al mínimo, por qué, en una frase corta y en "
                                   "palabras corrientes, dirigida a quien aporta el recurso"},
         **CAMPOS,
     },
-    "required": ["suficiente", "es_recurso_educativo", "nivel_minimo", "de_pago", "pago_detalle", *LICENCIA, "motivo", *CAMPOS],
+    "required": ["suficiente", "es_recurso_educativo", "nivel_minimo", "de_pago", "pago_detalle", *LICENCIA,
+                 *SOLO_REPOSITORIO, "motivo", *CAMPOS],
     "additionalProperties": False,
 }
 CAMBIO = {
     "type": "object",
     "properties": {"autor": {"type": "string"},
                    "url": {"type": "string", "description": "El enlace del recurso: el que pide, si pide cambiarlo"},
-                   **CAMPOS, **LICENCIA},
-    "required": ["autor", "url", *CAMPOS, *LICENCIA],
+                   **CAMPOS, **LICENCIA, **SOLO_REPOSITORIO},
+    "required": ["autor", "url", *CAMPOS, *LICENCIA, *SOLO_REPOSITORIO],
     "additionalProperties": False,
 }
 
@@ -345,7 +373,7 @@ def leer_url(url: str) -> tuple[str, str | None]:
         _, _, _, datos = descargar(repo.replace("https://github.com/", "https://api.github.com/repos/"))
         info = json.loads(datos or b"{}")
         if info.get("full_name"):
-            pagina = (f"La página se publica desde {repo}. Licencia del repositorio según GitHub: "
+            pagina = (f"{PAGINA_Y_REPO}{repo}. Licencia del repositorio según GitHub: "
                       f"{licencia_github(info)}\n\n{pagina}")
     return pagina[:MAX_CODIGO], None
 

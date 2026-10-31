@@ -93,7 +93,19 @@ de su grupo.
    dominio público y cualquier Creative Commons, también las NC: Juanjo pidió
    primero «al menos opensource» y lo rectificó el mismo día («CC BY-NC-SA
    4.0 aunque no sea libre es abierta»). De una página `usuario.github.io/repo`
-   se mira la licencia de `github.com/usuario/repo`. A quien no tiene licencia,
+   se mira la licencia de `github.com/usuario/repo`. Si la licencia solo consta
+   allí, el recurso cumple (un LICENSE en la raíz cubre todo el repositorio),
+   pero quien abre la página no lo sabe; por eso el bot, en el alta y una vez
+   en cada cambio de ficha, recomienda ponerla visible en el pie y una línea
+   SPDX en el código, como recomendación y no como requisito (Juanjo,
+   31-10-2026, a partir de una página de `onio72.github.io/iesmajuelo`). No se
+   avisa a lo ya publicado. El programa solo lo plantea cuando ha leído la
+   página y su repositorio y tiene un identificador SPDX que proponer; si la
+   licencia está en la página, lo decide Claude (campo
+   `licencia_solo_repositorio`), porque distingue la del recurso de la de una
+   librería que incluye. Validado con la simulación del catálogo y con dos
+   casos reales: la página de `iesmajuelo` (solo en el repositorio) y MIAE
+   (en el pie). A quien no tiene licencia,
    el bot le ofrece recomendarle una según lo que quiera permitir, con el
    criterio de la guía Vibe coding responsable (AGPL v3 o MIT para el código,
    CC BY-SA o CC BY para los contenidos; NC admitida pero desaconsejada), le

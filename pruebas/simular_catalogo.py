@@ -147,10 +147,10 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         b = nuevo_bot(Path(tmp))
         s = mensaje(b, 999, "hola")
-        ok &= comprobar("quien no es de ningún grupo no entra", "Solo respondo" in s[0][1], s)
+        ok &= comprobar("quien no es de ningún grupo no entra", "solo puedo responder a quien forma parte" in s[0][1], s)
         s = mensaje(b, CHATGPT, "/ayuda")
         ok &= comprobar("la ayuda de ChatGPT-IA-edu no ofrece el catálogo",
-                        "Biblioteca" in s[0][1] and "repositorio de Vibe" not in s[0][1], s)
+                        "Biblioteca" in s[0][1] and bot.textos.texto("es", "ayuda_recurso")[:40] not in s[0][1], s)
         ok &= comprobar("la ayuda no ofrece ideas para las clases", "Ideas para tus clases" not in s[0][1], s)
         s = mensaje(b, VCE, "/ayuda")
         ok &= comprobar("la ayuda de VCE no ofrece la biblioteca",
@@ -308,6 +308,23 @@ def main():
         d, _ = f.analizar("https://ejemplo.org/fr", base + "<p>Versión gratuita: 5 ejercicios al día. <a href='/pro'>"
                           "Hazte Pro por 4,99 €/mes</a> para ejercicios ilimitados.</p><!-- MIT --></body></html>")
         ok &= comprobar("freemium: de pago", d["de_pago"], [])
+
+        # La licencia solo en el repositorio (Juanjo, 31-10-2026; ADR 0004): cumple, y se recomienda ponerla visible.
+        repo = (catalogo.PAGINA_Y_REPO + "https://github.com/ejemplo/fracciones. Licencia del repositorio según "
+                "GitHub: GPL-3.0\n\nPágina https://ejemplo.github.io/fracciones/\n\n")
+        solo = repo + base + "<script>/*! jQuery v3.7.1 | (c) OpenJS Foundation | MIT license */</script></body></html>"
+        d, _ = f.analizar("https://ejemplo.github.io/fracciones/", solo)
+        ok &= comprobar("licencia solo en el repositorio (la de una librería no cuenta): abierta y solo allí",
+                        d["licencia_abierta"] and d["licencia_solo_repositorio"], [])
+        d, _ = f.analizar("https://ejemplo.github.io/fracciones/", repo + base + "<footer>Licencia GPL v3</footer></body></html>")
+        ok &= comprobar("licencia también en el pie: no solo en el repositorio", not d["licencia_solo_repositorio"], [])
+        antes = len(b.tg.enviados)
+        b.sugerir_licencia_visible(VCE, VCE, "GPL-3.0", True, solo)
+        ok &= comprobar("el consejo propone el pie y la línea SPDX",
+                        len(b.tg.enviados) == antes + 1 and "SPDX-License-Identifier: GPL-3.0 -->" in b.tg.enviados[-1][1],
+                        b.tg.enviados[antes:])
+        b.sugerir_licencia_visible(VCE, VCE, "GPL-3.0", True, base)
+        ok &= comprobar("sin haber leído la página y el repositorio, no se aconseja nada", len(b.tg.enviados) == antes + 1, [])
 
         # El mínimo (Juanjo, 30-10-2026; ADR 0004): fuera lo que no se puede usar; un recurso sencillo entra.
         agpl = "<!-- SPDX-License-Identifier: AGPL-3.0-or-later --></body></html>"
@@ -487,14 +504,17 @@ def main():
         b.pendientes[CHATGPT] = {"ficha": "**GUÍA DE PRUEBA**\nFicha de prueba.", "file_id": "x", "autor": "Ana",
                                  "compartir": True, "momento": time.time()}
         s = boton(b, CHATGPT, "publicar")
-        quitar = next((x["callback_data"] for fila in (s[-1][2] or {}).get("inline_keyboard", []) for x in fila
-                       if x["callback_data"].startswith("bq:")), "") if s else ""
+        # Lo que recibe el autor: después va también el aviso a Juanjo de lo publicado (commit 8c58dda).
+        suyo = next((m for m in reversed(s or []) if m[0] == CHATGPT and m[2]), None)
+        quitar = next((x["callback_data"] for fila in (suyo[2] or {}).get("inline_keyboard", []) for x in fila
+                       if x["callback_data"].startswith("bq:")), "") if suyo else ""
         ok &= comprobar("publicar en la Biblioteca ofrece quitarlo durante 48 horas",
-                        bool(quitar) and "48 horas" in s[-1][1] and len(quitar.split(":")[2].split("-")) == 2, s)
+                        bool(quitar) and "48 horas" in suyo[1] and len(quitar.split(":")[2].split("-")) == 2, s)
         antes = len(b.tg.borrados)
         s = boton(b, CHATGPT, quitar)
         ok &= comprobar("«Quitarlo de la Biblioteca» borra el documento y la ficha",
-                        len(b.tg.borrados) - antes == 2 and "Quitado de la Biblioteca" in s[-1][1], s)
+                        len(b.tg.borrados) - antes == 2 and any("Quitado de la Biblioteca" in m[1] for m in s
+                                                                 if m[0] == CHATGPT), s)
     print("\nTodo bien" if ok else "\nHay fallos")
     return ok
 

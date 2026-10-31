@@ -1157,13 +1157,27 @@ class Bot:
             if f["licencia"]:
                 return self.enviar(chat, self.tx(uid, "licencia_cerrada", licencia=f["licencia"]))
             return self.enviar(chat, self.tx(uid, "sin_licencia"))
+        sugerida = self.sugerir_licencia_visible(chat, uid, f["licencia"], f.pop("licencia_solo_repositorio", False),
+                                                 contenido)
         f["licencia"] = catalogo.componer_licencias(f["licencia"], f.pop("licencia_contenidos", ""))
         f["autor"] = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
         # Lo leído, para los cambios: puede venir de un archivo o de un repositorio, no solo del enlace.
         leido = f"{contenido}\n\nLo que contó quien lo aporta:\n<nota>\n{nota}\n</nota>" if nota else contenido
         self.fichas_rec[uid] = {"ficha": f, "modo": "alta", "momento": time.time(), "usuario": de.get("username"),
-                                "contenido": leido}
+                                "contenido": leido, "licencia_sugerida": sugerida}
         self.ensenar_ficha(chat, f)
+
+    def sugerir_licencia_visible(self, chat: int, uid: int, licencia: str, solo_repositorio: bool,
+                                 contenido: str) -> bool:
+        """Si la licencia solo está en el repositorio, el recurso cumple, pero se recomienda ponerla visible en la
+        página y en su código (Juanjo, 31-10-2026; ADR 0004). Solo en el alta y en los cambios: a lo ya publicado
+        no se le avisa. Sin un identificador SPDX que proponer, no se dice nada."""
+        codigo = catalogo.spdx(licencia)
+        if not (solo_repositorio and codigo and catalogo.leyo_pagina_y_repositorio(contenido)):
+            return False
+        registrar("recomendada la licencia visible en la página")
+        self.enviar(chat, self.tx(uid, "licencia_visible", licencia=catalogo.nombre_licencia(licencia), spdx=codigo))
+        return True
 
     def pedir_revision(self, uid: int, razones: str) -> None:
         """Su autor pide que una persona revise el rechazo: el caso queda guardado (sobrevive a un reinicio) y
@@ -1287,6 +1301,7 @@ class Bot:
             hecho.set()
         self.apuntar(usd)
         anterior = p["ficha"]
+        hallada, solo_repositorio = nueva["licencia"], nueva.pop("licencia_solo_repositorio", False)
         licencia = catalogo.componer_licencias(nueva.pop("licencia"), nueva.pop("licencia_contenidos"))
         abierta = nueva.pop("licencia_abierta")
         if contenido and licencia and not abierta:
@@ -1302,6 +1317,8 @@ class Bot:
             p.setdefault("url_anterior", anterior["url"])
         p["ficha"] = {**anterior, **nueva, "licencia": licencia, "url": url}
         p["momento"] = time.time()
+        if abierta and not p.get("licencia_sugerida"):  # una vez por ficha, no en cada cambio
+            p["licencia_sugerida"] = self.sugerir_licencia_visible(chat, uid, hallada, solo_repositorio, contenido)
         self.ensenar_ficha(chat, p["ficha"], "vista_cambio")
 
     def boton_recurso(self, uid: int, accion: str) -> None:
