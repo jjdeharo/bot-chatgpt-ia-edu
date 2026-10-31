@@ -450,13 +450,15 @@ class Bot:
         self.ambitos = {}      # usuario -> (momento, grupos en que busca o None si todos); caduca con la conversación
         self.valorables = {}   # usuario -> su última respuesta, la única con 👍/👎
 
-    def grupos_de(self, uid: int) -> set[str]:
+    def grupos_de(self, uid: int, al_dia: bool = False) -> set[str]:
         """Los grupos de los que es miembro. Con uno basta para buscar en todos (Juanjo, 27-10-2026);
-        para añadir a la biblioteca o al catálogo hay que ser del grupo que toca."""
+        para añadir a la biblioteca o al catálogo hay que ser del grupo que toca. La respuesta se
+        guarda una hora; con al_dia se vuelve a preguntar a Telegram, que es lo que toca antes de
+        publicar algo en nombre de alguien (revisión del 31-10-2026)."""
         if uid in AUTORIZADOS:
             return set(grupos.ACTIVOS)
         ahora = time.time()
-        if uid in self.miembros and ahora - self.miembros[uid][0] < 3600:
+        if not al_dia and uid in self.miembros and ahora - self.miembros[uid][0] < 3600:
             return self.miembros[uid][1]
         suyos = set()
         for g in grupos.ACTIVOS.values():
@@ -466,18 +468,22 @@ class Bot:
         self.miembros[uid] = (ahora, suyos)
         return suyos
 
-    def seguidas(self, chat: int, uid: int) -> bool:
-        """Más de SEGUIDAS_HORA consultas en una hora: lo hace un programa, no una persona. Se le pide pausa."""
+    def agotadas(self, uid: int) -> bool:
+        """Si ya lleva SEGUIDAS_HORA consultas en la última hora, sin apuntar nada."""
         if uid in AUTORIZADOS:
             return False
         ahora = time.time()
-        r = [m for m in self.recientes.get(uid, []) if ahora - m < 3600]
-        if len(r) >= SEGUIDAS_HORA:
-            self.recientes[uid] = r
+        self.recientes[uid] = [m for m in self.recientes.get(uid, []) if ahora - m < 3600]
+        return len(self.recientes[uid]) >= SEGUIDAS_HORA
+
+    def seguidas(self, chat: int, uid: int) -> bool:
+        """Más de SEGUIDAS_HORA consultas en una hora: lo hace un programa, no una persona. Se le pide pausa."""
+        if self.agotadas(uid):
             self.enviar(chat, self.tx(uid, "seguidas"))
             registrar("consultas seguidas: se pide pausa")
             return True
-        self.recientes[uid] = r + [ahora]
+        if uid not in AUTORIZADOS:
+            self.recientes[uid].append(time.time())
         return False
 
     def actualizar_administradores(self) -> None:
@@ -543,8 +549,8 @@ class Bot:
         cualquiera que escribiera, también para quien después se rechazaba (revisión del 31-10-2026)."""
         if not FRASE.search(texto) or texto.startswith("/") or SOLO_URL.match(texto):
             return
-        if contabilidad(leer_estado())["usd_mes"] >= TOPE_MES_USD:
-            return
+        if self.agotadas(uid) or contabilidad(leer_estado())["usd_mes"] >= TOPE_MES_USD:
+            return  # a quien se le va a pedir pausa no se le detecta nada
         if not DETECCIONES.acquire(blocking=False):
             return
         self.en_hilo(self.detectar_lengua, uid, texto[:500])
@@ -991,6 +997,8 @@ class Bot:
                 return self.enviar(chat, self.tx(uid, "repetido", enlace=candidatos[revision["repetido"] - 1]["enlace"]))
             ficha, coste = self.fichero.ficha(texto, meta, nombre)
             usd += coste
+            compartir, coste = self.fichero.compartible(ficha)
+            usd += coste
         except Exception as error:  # noqa: BLE001 — un documento fallido no tumba el bot
             registrar(f"error con un documento: {type(error).__name__}: {error}")
             return self.enviar(chat, self.tx(uid, "error_doc"))
@@ -1001,7 +1009,6 @@ class Bot:
         autor = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
         if de.get("username"):
             autor += f" (@{de['username']})"
-        compartir = fichas.se_puede_compartir(ficha)
         self.quitar_botones((self.pendientes.get(uid) or {}).get("mensaje"))  # la vista previa anterior ya no vale
         clave = self.clave_borrador()
         self.pendientes[uid] = {"ficha": ficha, "file_id": d["file_id"], "autor": autor,
@@ -1056,14 +1063,14 @@ class Bot:
             return self.enviar(uid, self.tx(uid, "no_quitar_ya"))
         orden, _, clave = accion.partition(":")
         p = self.pendientes.get(uid)
-        if p and clave and clave != p.get("clave"):  # el botón de una ficha anterior: la vigente se queda
+        if p and clave != p.get("clave"):  # el botón de una ficha anterior, o sin clave: la vigente se queda
             return self.enviar(uid, self.tx(uid, "sustituido"))
         p = self.pendientes.pop(uid, None)
         if not p or time.time() - p["momento"] > CADUCA_FICHA_H * 3600:
             return self.enviar(uid, self.tx(uid, "caducado"))
         if orden != "publicar":
             return self.enviar(uid, self.tx(uid, "cancelado"))
-        if BIBLIOTECA.clave not in self.grupos_de(uid):  # por si ha dejado el grupo desde que mandó el documento
+        if BIBLIOTECA.clave not in self.grupos_de(uid, al_dia=True):  # por si ha dejado el grupo desde que mandó el documento
             return self.enviar(uid, self.tx(uid, "solo_chatgpt"))
         try:
             enlace, destino, ids = self.publicar(p)
@@ -1411,7 +1418,7 @@ class Bot:
         try:
             if orden in ("rp", "rc", "rx"):
                 p = self.fichas_rec.get(uid)
-                if p and n and n != p.get("clave"):  # el botón de una vista anterior: la vigente se queda
+                if p and n != p.get("clave"):  # el botón de una vista anterior, o sin clave: la vigente se queda
                     return self.enviar(uid, self.tx(uid, "sustituido"))
             if orden == "rp":
                 return self.publicar_recurso(uid)
@@ -1595,7 +1602,7 @@ class Bot:
         self.espera.pop(uid, None)
         if not p or time.time() - p["momento"] > CADUCA_FICHA_H * 3600:
             return self.enviar(uid, self.tx(uid, "caducado_recurso"))
-        if CATALOGO.clave not in self.grupos_de(uid):  # por si ha dejado el grupo desde que mandó el recurso
+        if CATALOGO.clave not in self.grupos_de(uid, al_dia=True):  # por si ha dejado el grupo desde que mandó el recurso
             return self.enviar(uid, self.tx(uid, "solo_vce"))
         f = p["ficha"]
         try:

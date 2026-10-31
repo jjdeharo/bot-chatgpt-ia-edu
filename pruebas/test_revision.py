@@ -72,6 +72,44 @@ class PermisoDeCompartir(unittest.TestCase):
                     "El titular permite expresamente su libre distribución."):
             self.assertTrue(fichas.se_puede_compartir(self.ficha(lic)), lic)
 
+    def fichero(self, respuesta):
+        """Un Fichero cuyo Claude contesta lo dado (o falla, si es una excepción)."""
+        f = fichas.Fichero.__new__(fichas.Fichero)
+        f.c = mock.Mock()
+        r = mock.Mock(usage=mock.Mock(input_tokens=100, output_tokens=20, cache_read_input_tokens=0,
+                                      cache_creation_input_tokens=0))
+        if isinstance(respuesta, Exception):
+            f.c.cliente.messages.create.side_effect = respuesta
+        else:
+            r.content = [mock.Mock(type="text", text=json.dumps(respuesta))]
+            f.c.cliente.messages.create.return_value = r
+        return f
+
+    def test_una_mencion_no_es_un_permiso(self):
+        """Segunda revisión: «no está bajo Creative Commons» y «trabaja en el MIT» pasaban el filtro de expresiones."""
+        for lic in ("No está bajo una licencia Creative Commons.",
+                    "Licencia propietaria; no autoriza la distribución. El autor trabaja en el MIT."):
+            f = self.fichero({"licencia": "", "permite_compartir": False})
+            self.assertEqual(f.compartible(self.ficha(lic)), (False, mock.ANY), lic)
+            self.assertTrue(f.c.cliente.messages.create.called, "la decisión la toma Claude, no las expresiones")
+
+    def test_las_dos_lecturas_tienen_que_coincidir(self):
+        ficha = self.ficha("CC BY 4.0")
+        self.assertTrue(self.fichero({"licencia": "CC BY 4.0", "permite_compartir": True}).compartible(ficha)[0])
+        self.assertFalse(self.fichero({"licencia": "", "permite_compartir": True}).compartible(ficha)[0])
+        self.assertFalse(self.fichero({"licencia": "propietaria", "permite_compartir": True}).compartible(ficha)[0])
+        self.assertFalse(self.fichero({"licencia": "CC BY 4.0", "permite_compartir": False}).compartible(ficha)[0])
+
+    def test_sin_claude_solo_la_ficha(self):
+        f = self.fichero(RuntimeError("sin red"))
+        with mock.patch("sys.stderr", new_callable=io.StringIO):
+            self.assertEqual(f.compartible(self.ficha("CC BY 4.0")), (False, 0.0))
+
+    def test_lo_cerrado_no_pregunta_a_claude(self):
+        f = self.fichero({"licencia": "CC BY 4.0", "permite_compartir": True})
+        self.assertEqual(f.compartible(self.ficha("© 2024 Editorial Ejemplo")), (False, 0.0))
+        self.assertFalse(f.c.cliente.messages.create.called)
+
 
 class DireccionesPublicas(unittest.TestCase):
     def test_internas(self):
@@ -143,6 +181,19 @@ class Idioma(unittest.TestCase):
         self.assertEqual(len(hilos), 1)
         bot.DETECCIONES.release()  # el hilo simulado no ha corrido
 
+    def test_con_la_frecuencia_agotada_no_detecta(self):
+        """Segunda revisión: a quien se le va a pedir pausa no se le lanza la detección."""
+        b = bot_sin_arrancar()
+        b.en_hilo = lambda *a: self.fail("se programó una detección con las consultas agotadas")
+        b.recientes[7] = [time.time()] * bot.SEGUIDAS_HORA
+        with mock.patch.object(bot, "leer_estado", return_value={}), \
+                mock.patch.object(bot, "contabilidad", return_value={"usd_mes": 0.0}):
+            b.lengua_de_la_frase(7, "hola, qué tal todo")
+        b.enviar = lambda chat, texto, formato=None: b.enviados.append(texto)
+        with mock.patch.object(bot, "registrar"):
+            self.assertTrue(b.seguidas(7, 7))
+        self.assertEqual(b.enviados, [textos.texto("es", "seguidas")])
+
     def test_el_semaforo_se_devuelve_si_falla(self):
         b = bot_sin_arrancar()
         b.consultor = mock.Mock()
@@ -156,7 +207,7 @@ class Idioma(unittest.TestCase):
     def test_no_miembro_no_detecta(self):
         b = bot_sin_arrancar()
         b.en_hilo = lambda *a: self.fail("se programó una detección para alguien rechazado")
-        b.grupos_de = lambda uid: set()
+        b.grupos_de = lambda uid, **k: set()
         with mock.patch.object(bot, "ABIERTO", True):
             b.atender({"chat": {"id": 7, "type": "private"}, "from": {"id": 7, "language_code": "es"},
                        "text": "hola, qué tal todo"})
@@ -176,10 +227,40 @@ class BotonesConClave(unittest.TestCase):
         self.assertEqual(b.enviados, [textos.texto("es", "sustituido")])
         self.assertIn(7, b.pendientes)
 
+    def test_botones_sin_clave(self):
+        """Segunda revisión: un botón anterior al despliegue, sin clave, tampoco publica el borrador nuevo."""
+        b = bot_sin_arrancar()
+        b.pendientes[7] = {"clave": "bbb", "momento": time.time(), "ficha": "**X**", "compartir": False}
+        b.fichas_rec[7] = {"clave": "bbb", "momento": time.time(), "ficha": {}, "modo": "alta"}
+        b.publicar = b.publicar_recurso = lambda *a: self.fail("se publicó con un botón sin clave")
+        b.boton(self.cq("publicar"))
+        b.boton_recurso(7, "rp")
+        b.boton_recurso(7, "rc")
+        self.assertEqual(b.enviados, [textos.texto("es", "sustituido")] * 3)
+        self.assertIn(7, b.pendientes)
+        self.assertIn(7, b.fichas_rec)
+        k = bot_sin_arrancar(karla.Karla)
+        k.borradores[7] = {"clave": "bbb", "momento": time.time(), "titulo": "T", "cuerpo": "C", "repositorio": "exelearning/x"}
+        k.grupos_de = lambda uid, **kw: self.fail("se llegó a la incidencia con un botón sin clave")
+        k.boton_karla(self.cq("inc:si"))
+        k.boton_karla(self.cq("inc:no"))
+        self.assertEqual(k.enviados, [textos_karla.texto("es", "sustituido")] * 2)
+        self.assertIn(7, k.borradores)
+
+    def test_publicar_pregunta_a_telegram_aunque_haya_cache(self):
+        """Segunda revisión: la pertenencia guardada (una hora) no vale para publicar en nombre de alguien."""
+        b = bot_sin_arrancar()
+        b.miembros[7] = (time.time(), {"chatgpt", "vce"})
+        b.tg = lambda metodo, **k: (b.llamadas.append((metodo, k)), {"status": "left"})[1]
+        self.assertEqual(b.grupos_de(7), {"chatgpt", "vce"})
+        self.assertEqual(b.llamadas, [])
+        self.assertEqual(b.grupos_de(7, al_dia=True), set())
+        self.assertTrue(all(m == "getChatMember" for m, k in b.llamadas) and b.llamadas)
+
     def test_biblioteca_boton_vigente_recomprueba_el_grupo(self):
         b = bot_sin_arrancar()
         b.pendientes[7] = {"clave": "bbb", "momento": time.time(), "ficha": "**X**", "compartir": False}
-        b.grupos_de = lambda uid: set()
+        b.grupos_de = lambda uid, **k: set()
         b.boton(self.cq("publicar:bbb"))
         self.assertEqual(b.enviados, [textos.texto("es", "solo_chatgpt")])
         self.assertNotIn(7, b.pendientes)

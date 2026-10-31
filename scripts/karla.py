@@ -561,7 +561,7 @@ class Karla(bot.Bot):
             self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
                     reply_markup={"inline_keyboard": []})
         inc = self.borradores.get(uid)
-        if inc and clave and clave != inc.get("clave"):  # el botón de un borrador anterior: el vigente se queda
+        if inc and clave != inc.get("clave"):  # el botón de un borrador anterior, o sin clave: el vigente se queda
             return self.enviar(uid, self.tx(uid, "sustituido"))
         inc = self.borradores.pop(uid, None)
         if inc and time.time() - inc["momento"] > CADUCA_BORRADOR_H * 3600:
@@ -570,7 +570,7 @@ class Karla(bot.Bot):
             return self.enviar(uid, self.tx(uid, "incidencia_cancelada"))
         if not inc:
             return self.enviar(uid, self.tx(uid, "incidencia_caducada"))
-        if not self.grupos_de(uid):  # por si ha dejado el grupo desde que pidió el borrador
+        if not self.grupos_de(uid, al_dia=True):  # por si ha dejado el grupo desde que pidió el borrador
             return self.enviar(uid, self.tx(uid, "no_miembro"))
         with bot.CERROJO:
             e = bot.contabilidad(bot.leer_estado())
