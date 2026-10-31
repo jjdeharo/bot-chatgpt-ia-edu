@@ -104,6 +104,7 @@ ES = {
     "publicado": 'Publicado en la Biblioteca digital: {enlace}\nSi cambias de idea, puedes quitarlo con el botón de abajo durante las próximas 48 horas.',
     "cancelado": "De acuerdo, no lo publico.",
     "caducado": "Esta ficha ya no está disponible. Si quieres publicarlo, envíame otra vez el documento.",
+    "sustituido": "Esa vista previa ya no es la última: te he preparado otra después. Usa los botones del último mensaje.",
     "error_doc": "Algo ha fallado al preparar la ficha. Prueba otra vez en un rato.",
     # Repositorio de recursos de Vibe Coding Educativo
     "recurso": ("Envíame el enlace del recurso (la dirección que abre cualquiera). Si el enlace no deja ver "
@@ -299,6 +300,7 @@ CA = {
     "publicado": "Publicat a la Biblioteca digital: {enlace}\nSi canvies d'idea, el pots treure amb el botó de sota durant les properes 48 hores.",
     "cancelado": "D'acord, no el publico.",
     "caducado": "Aquesta fitxa ja no està disponible. Si vols publicar-lo, envia'm una altra vegada el document.",
+    "sustituido": "Aquesta vista prèvia ja no és l'última: n'he preparat una altra després. Fes servir els botons de l'últim missatge.",
     "error_doc": "Alguna cosa ha fallat en preparar la fitxa. Torna-ho a provar d'aquí a una estona.",
     "recurso": ("Envia'm l'enllaç del recurs (l'adreça que obre qualsevol persona). Si l'enllaç no deixa veure "
                 "el codi, també em serveixen el fitxer HTML, un ZIP o l'enllaç al seu repositori de GitHub."),
@@ -476,6 +478,7 @@ GL = {
     "publicado": 'Publicado na Biblioteca dixital: {enlace}\nSe cambias de idea, podes quitalo co botón de abaixo durante as próximas 48 horas.',
     "cancelado": "De acordo, non o publico.",
     "caducado": "Esta ficha xa non está dispoñible. Se queres publicalo, envíame outra vez o documento.",
+    "sustituido": "Esa vista previa xa non é a última: preparei outra despois. Usa os botóns da última mensaxe.",
     "error_doc": "Algo fallou ao preparar a ficha. Proba outra vez nun anaco.",
     "recurso": ("Envíame a ligazón do recurso (o enderezo que abre calquera). Se a ligazón non deixa ver "
                 "o seu código, tamén me serven o ficheiro HTML, un ZIP ou a ligazón ao seu repositorio de GitHub."),
@@ -655,6 +658,7 @@ EU = {
     "publicado": 'Liburutegi digitalean argitaratua: {enlace}\nIritziz aldatzen baduzu, beheko botoiarekin ken dezakezu hurrengo 48 orduetan.',
     "cancelado": "Ados, ez dut argitaratzen.",
     "caducado": "Fitxa hau ez dago eskuragarri. Argitaratu nahi baduzu, bidali berriro dokumentua.",
+    "sustituido": "Aurrebista hori ez da azkena: beste bat prestatu dut gero. Erabili azken mezuaren botoiak.",
     "error_doc": "Zerbait gaizki atera da fitxa prestatzean. Saiatu berriro geroxeago.",
     "recurso": ("Bidali baliabidearen esteka (edonork irekitzen duen helbidea). Estekak kodea ikusten uzten ez "
                 "badu, HTML fitxategia, ZIP bat edo haren GitHub biltegiaren esteka ere balio didate."),
@@ -831,6 +835,7 @@ EN = {
     "publicado": 'Published in the Digital Library: {enlace}\nIf you change your mind, you can remove it with the button below during the next 48 hours.',
     "cancelado": "OK, I won't publish it.",
     "caducado": "This record is no longer available. If you want to publish it, send me the document again.",
+    "sustituido": "That preview is no longer the latest one: I prepared another after it. Use the buttons on the last message.",
     "error_doc": "Something went wrong while preparing the record. Please try again later.",
     "recurso": ("Send me the link to the resource (the address anyone can open). If the link doesn't show its "
                 "code, the HTML file, a ZIP or the link to its GitHub repository also work."),

@@ -75,6 +75,7 @@ cd scripts
 ../.venv/bin/python exportar.py --todo && ../.venv/bin/python pdfs.py && ../.venv/bin/python indexar.py
 ../.venv/bin/python consultar.py "¿quién habló de evaluar con IA?"
 ../.venv/bin/python ../pruebas/extremo.py      # las 20 preguntas de prueba (unos 0,04 USD)
+cd .. && .venv/bin/python -m unittest pruebas/test_revision.py   # los controles de seguridad (ADR 0019), sin red ni API
 ```
 
 ## En el NAS

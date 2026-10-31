@@ -33,6 +33,7 @@ import html
 import json
 import os
 import re
+import secrets
 import sys
 import tempfile
 import threading
@@ -90,6 +91,9 @@ MAX_BYTES = 20 * 1024 * 1024  # lo más que Telegram deja descargar a un bot
 AVISO_PERSONA_MIN = 30  # en un grupo, un «solo por privado» por persona cada media hora como mucho
 AVISOS_GRUPO = (3, 10)  # y como mucho 3 cada 10 minutos entre todos: menciones repetidas no llenan el grupo
 JUNTAR_S = 3   # segundos que se esperan más mensajes de la misma consulta (un reenvío llega en varios)
+JUNTAR_MAX_S = 15  # y como mucho esto en total: un chorro de mensajes no retrasa a los demás sin fin
+DETECCIONES = threading.BoundedSemaphore(2)  # detecciones de idioma a la vez; si hay más, se sigue con el que había
+LIMPIAR_S = 3600  # cada cuánto se borra de verdad lo caducado (memoria, borradores, preguntas sin resolver)
 MAX_FOTOS = 3  # imágenes por consulta: cada una cuesta unos 1.500 tokens de entrada
 # Para probar la publicación sin tocar el grupo: el id de un chat privado.
 BIBLIOTECA_PRUEBA = os.environ.get("BIBLIOTECA_PRUEBA")
@@ -179,21 +183,29 @@ def guardar_estado(e: dict) -> None:
     tmp.replace(ESTADO)
 
 
-def guardar_sin_resolver(pregunta: str, motivo: str) -> None:
-    """Lo que el bot no ha sabido responder, para mejorarlo (Juanjo, 27-10-2026). Anónimo: ni la cuenta
-    ni el nombre de quien pregunta. Se borra a los DIAS_SIN_RESOLVER días."""
-    ahora = datetime.now(timezone.utc)
-    limite = (ahora - timedelta(days=DIAS_SIN_RESOLVER)).isoformat(timespec="seconds")
+def purgar_sin_resolver(nueva: str | None = None) -> None:
+    """Quita las preguntas de más de DIAS_SIN_RESOLVER días y añade, si la hay, una nueva. Lo llama el bucle del
+    bot cada hora: antes solo se limpiaba al guardar otra, y sin preguntas nuevas nada caducaba (31-10-2026)."""
+    limite = (datetime.now(timezone.utc) - timedelta(days=DIAS_SIN_RESOLVER)).isoformat(timespec="seconds")
     with CERROJO:
         try:
             vivas = [l for l in SIN_RESOLVER.read_text().splitlines() if l and json.loads(l)["fecha"] >= limite]
         except (OSError, ValueError):
             vivas = []
-        vivas.append(json.dumps({"fecha": ahora.isoformat(timespec="seconds"), "motivo": motivo,
-                                 "pregunta": pregunta[:500]}, ensure_ascii=False))
+        if nueva:
+            vivas.append(nueva)
+        if not vivas and not SIN_RESOLVER.exists():
+            return
         tmp = SIN_RESOLVER.with_suffix(".tmp")
-        tmp.write_text("\n".join(vivas) + "\n")
+        tmp.write_text("\n".join(vivas) + "\n" if vivas else "")
         tmp.replace(SIN_RESOLVER)
+
+
+def guardar_sin_resolver(pregunta: str, motivo: str) -> None:
+    """Lo que el bot no ha sabido responder, para mejorarlo (Juanjo, 27-10-2026). Sin la cuenta ni el nombre de
+    quien pregunta (lo que diga el propio texto no se toca). Se borra a los DIAS_SIN_RESOLVER días."""
+    purgar_sin_resolver(json.dumps({"fecha": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                    "motivo": motivo, "pregunta": pregunta[:500]}, ensure_ascii=False))
 
 
 def sin_resolver_de(e: dict) -> str:
@@ -518,18 +530,28 @@ class Bot:
     def tx(self, uid: int, clave: str, **datos) -> str:
         return textos.texto(self.lenguas.get(uid, "es"), clave, **datos)
 
-    def fijar_lengua(self, uid: int, de: dict, texto: str = "") -> None:
-        """Al principio, el idioma de su Telegram; en cuanto escribe una frase, el de la frase.
-
-        La detección va aparte y no retrasa la respuesta: lo que contesta Claude ya sale en el
-        idioma de la pregunta, y el idioma detectado vale para los textos fijos siguientes."""
+    def fijar_lengua(self, uid: int, de: dict) -> None:
+        """Mientras no ha escrito nada, el idioma de su Telegram. Sin IA: vale para cualquiera, también para
+        decirle que no es miembro."""
         if uid not in self.lenguas:
             self.lenguas[uid] = textos.lengua_de_telegram(de.get("language_code"))
-        if FRASE.search(texto) and not texto.startswith("/") and not SOLO_URL.match(texto):
-            self.en_hilo(self.detectar_lengua, uid, texto[:500])
+
+    def lengua_de_la_frase(self, uid: int, texto: str) -> None:
+        """En cuanto escribe una frase, el idioma de la frase, con Claude Haiku y aparte, para no retrasar la
+        respuesta: lo que contesta Claude ya sale en el idioma de la pregunta, y el detectado vale para los textos
+        fijos siguientes. Solo después de saber que es miembro y que queda presupuesto: antes se lanzaba para
+        cualquiera que escribiera, también para quien después se rechazaba (revisión del 31-10-2026)."""
+        if not FRASE.search(texto) or texto.startswith("/") or SOLO_URL.match(texto):
+            return
+        if contabilidad(leer_estado())["usd_mes"] >= TOPE_MES_USD:
+            return
+        if not DETECCIONES.acquire(blocking=False):
+            return
+        self.en_hilo(self.detectar_lengua, uid, texto[:500])
 
     def detectar_lengua(self, uid: int, texto: str) -> None:
-        """Claude Haiku: 26 de 30 frases cortas, sin errores dañinos; langid y fastText, 21 (ADR 0005)."""
+        """Claude Haiku: 26 de 30 frases cortas, sin errores dañinos; langid y fastText, 21 (ADR 0005).
+        Quien llama ha tomado antes un turno de DETECCIONES; aquí se devuelve."""
         try:
             r = self.consultor.cliente.messages.create(
                 model=consultar.MODELO_CLAUDE, max_tokens=200,
@@ -542,9 +564,46 @@ class Bot:
         except Exception as error:  # noqa: BLE001 — sin detección, se sigue con el idioma que había
             registrar(f"error al detectar el idioma: {type(error).__name__}: {error}")
             return
+        finally:
+            DETECCIONES.release()
         if lengua in textos.LENGUAS:
             self.lenguas[uid] = lengua
         self.apuntar(fichas.coste(r.usage, consultar.PRECIO[consultar.MODELO_CLAUDE]))
+
+    def quitar_botones(self, ref: tuple | None) -> None:
+        """Los botones de una vista previa que ya no es la vigente, para que no quede nada que pulsar."""
+        if ref:
+            self.tg("editMessageReplyMarkup", chat_id=ref[0], message_id=ref[1], reply_markup={"inline_keyboard": []})
+
+    @staticmethod
+    def clave_borrador() -> str:
+        """Cada borrador lleva una clave en sus botones: lo que se confirma es lo que se vio, no lo último que
+        haya preparado el bot para esa persona (revisión del 31-10-2026)."""
+        return secrets.token_hex(3)
+
+    def limpiar(self) -> None:
+        """Cada hora: lo caducado se borra de verdad, no solo se deja de usar (revisión del 31-10-2026)."""
+        ahora = time.time()
+
+        def d_(nombre):  # Karla no tiene biblioteca ni catálogo
+            return getattr(self, nombre, {})
+
+        for d, s in ((d_("memoria"), MEMORIA_MIN * 60), (d_("ambitos"), MEMORIA_MIN * 60)):  # (momento, …)
+            for k in [k for k, v in list(d.items()) if ahora - v[0] > s]:
+                d.pop(k, None)
+        for d, s in ((d_("pendientes"), CADUCA_FICHA_H * 3600), (d_("fichas_rec"), CADUCA_FICHA_H * 3600),
+                     (d_("compartir"), CADUCA_FICHA_H * 3600), (d_("rechazados"), CADUCA_FICHA_H * 3600),
+                     (d_("espera"), ESPERA_MIN * 60)):  # {"momento": …}
+            for k in [k for k, v in list(d.items()) if ahora - v.get("momento", 0) > s]:
+                d.pop(k, None)
+        for k, momentos in list(self.recientes.items()):
+            vivos = [m for m in momentos if ahora - m < 3600]
+            if vivos:
+                self.recientes[k] = vivos
+            else:
+                self.recientes.pop(k, None)
+        purgar_sin_resolver()
+        self.limpiado = ahora
 
     def ayuda(self, uid: int, suyos: set[str]) -> str:
         """En HTML, con el título de cada apartado en negrita (Juanjo, 27-10-2026)."""
@@ -644,8 +703,9 @@ class Bot:
     def esperar_seguidos(self, updates: list, **params) -> list:
         """Un reenvío de varios mensajes llega en varias entregas, con menos de un segundo entre ellas.
         Si lo último es una consulta en privado, se esperan JUNTAR_S segundos por si sigue."""
-        avisados = set()
-        while updates and juntable(updates[-1].get("message")):
+        avisados, inicio = set(), time.time()
+        while (updates and juntable(updates[-1].get("message")) and time.time() - inicio < JUNTAR_MAX_S
+               and len(updates) < 100):
             chat = updates[-1]["message"]["chat"]["id"]
             if chat not in avisados:  # que vea que se le atiende desde el primer momento
                 self.tg("sendChatAction", chat_id=chat, action="typing")
@@ -758,7 +818,7 @@ class Bot:
 
     def atender(self, msg: dict) -> None:
         chat, uid = msg["chat"]["id"], msg["from"]["id"]
-        self.fijar_lengua(uid, msg["from"], (msg.get("text") or "").strip() if msg["chat"]["type"] == "private" else "")
+        self.fijar_lengua(uid, msg["from"])
         if msg["chat"]["type"] != "private":
             if not grupos.por_id(chat):
                 # Solo está en sus grupos. En uno conocido que aún no busca (un grupo nuevo mientras se
@@ -776,6 +836,7 @@ class Bot:
         suyos = self.grupos_de(uid)
         if not suyos:
             return self.enviar(chat, self.tx(uid, "no_miembro"))
+        self.lengua_de_la_frase(uid, texto)
         comando = texto.split()[0].split("@")[0].lower() if texto.startswith("/") else ""
         if comando == "/start" and texto.split()[1:2] and texto.split()[1].lower() in COMANDOS:
             comando = "/" + texto.split()[1].lower()  # enlace t.me/<bot>?start=misrecursos
@@ -941,14 +1002,18 @@ class Bot:
         if de.get("username"):
             autor += f" (@{de['username']})"
         compartir = fichas.se_puede_compartir(ficha)
+        self.quitar_botones((self.pendientes.get(uid) or {}).get("mensaje"))  # la vista previa anterior ya no vale
+        clave = self.clave_borrador()
         self.pendientes[uid] = {"ficha": ficha, "file_id": d["file_id"], "autor": autor,
-                                "compartir": compartir, "momento": time.time()}
+                                "compartir": compartir, "momento": time.time(), "clave": clave}
         aviso = self.tx(uid, "vista" if compartir else "vista_sin_archivo", autor=autor)
         self.enviar(chat, aviso)
-        self.tg("sendMessage", chat_id=chat, text=fichas.a_html(ficha), parse_mode="HTML",
-                link_preview_options={"is_disabled": True},
-                reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_publicar"), "callback_data": "publicar"},
-                                                   {"text": self.tx(uid, "b_cancelar"), "callback_data": "cancelar"}]]})
+        m = self.tg("sendMessage", chat_id=chat, text=fichas.a_html(ficha), parse_mode="HTML",
+                    link_preview_options={"is_disabled": True},
+                    reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_publicar"), "callback_data": f"publicar:{clave}"},
+                                                       {"text": self.tx(uid, "b_cancelar"), "callback_data": f"cancelar:{clave}"}]]})
+        if m:
+            self.pendientes[uid]["mensaje"] = (chat, m["message_id"])
         registrar(f"ficha preparada: {usd:.4f} USD, compartir={compartir}")
 
     def boton(self, cq: dict) -> None:
@@ -989,11 +1054,17 @@ class Bot:
                 registrar("documento quitado de la biblioteca a petición de quien lo aportó")
                 return self.enviar(uid, self.tx(uid, "quitado_biblioteca"))
             return self.enviar(uid, self.tx(uid, "no_quitar_ya"))
+        orden, _, clave = accion.partition(":")
+        p = self.pendientes.get(uid)
+        if p and clave and clave != p.get("clave"):  # el botón de una ficha anterior: la vigente se queda
+            return self.enviar(uid, self.tx(uid, "sustituido"))
         p = self.pendientes.pop(uid, None)
         if not p or time.time() - p["momento"] > CADUCA_FICHA_H * 3600:
             return self.enviar(uid, self.tx(uid, "caducado"))
-        if accion != "publicar":
+        if orden != "publicar":
             return self.enviar(uid, self.tx(uid, "cancelado"))
+        if BIBLIOTECA.clave not in self.grupos_de(uid):  # por si ha dejado el grupo desde que mandó el documento
+            return self.enviar(uid, self.tx(uid, "solo_chatgpt"))
         try:
             enlace, destino, ids = self.publicar(p)
         except Exception as error:  # noqa: BLE001
@@ -1018,11 +1089,12 @@ class Bot:
         ficha_html = fichas.a_html(p["ficha"])
         aportado = f"Aportado por {html.escape(p['autor'], quote=False)}"
         if p["compartir"]:
-            doc = self.tg("sendDocument", chat_id=destino, document=p["file_id"], parse_mode="HTML",
-                          caption=f"<b>{html.escape(fichas.titulo(p['ficha']).upper(), quote=False)}</b>\n\n{aportado}",
-                          **tema)
+            doc = p.get("doc") or self.tg("sendDocument", chat_id=destino, document=p["file_id"], parse_mode="HTML",
+                                          caption=f"<b>{html.escape(fichas.titulo(p['ficha']).upper(), quote=False)}</b>\n\n{aportado}",
+                                          **tema)
             if not doc:
                 raise RuntimeError("Telegram no ha aceptado el documento")
+            p["doc"] = doc  # si falla la ficha y se reintenta, el documento ya está: no se manda otra vez
             r = self.tg("sendMessage", chat_id=destino, text=ficha_html, parse_mode="HTML",
                         reply_parameters={"message_id": doc["message_id"]},
                         link_preview_options={"is_disabled": True}, **tema)
@@ -1097,10 +1169,10 @@ class Bot:
         return True
 
     def recurso(self, chat: int, uid: int, de: dict, url: str, contenido: str | None = None,
-                nota: str = "", repositorio: str | None = None) -> None:
+                nota: str = "", repositorio: str | None = None, comprobado: bool = False) -> None:
         """Del enlace a la ficha: comprueba que no esté ya, lee el recurso y prepara la ficha."""
         self.espera.pop(uid, None)
-        if not self.puede_preparar(chat, uid):
+        if not comprobado and not self.puede_preparar(chat, uid):
             return
         usd, hecho = 0.0, None
         try:
@@ -1165,7 +1237,7 @@ class Bot:
         leido = f"{contenido}\n\nLo que contó quien lo aporta:\n<nota>\n{nota}\n</nota>" if nota else contenido
         self.fichas_rec[uid] = {"ficha": f, "modo": "alta", "momento": time.time(), "usuario": de.get("username"),
                                 "contenido": leido, "licencia_sugerida": sugerida}
-        self.ensenar_ficha(chat, f)
+        self.ensenar_ficha(chat, uid)
 
     def sugerir_licencia_visible(self, chat: int, uid: int, licencia: str, solo_repositorio: bool,
                                  contenido: str) -> bool:
@@ -1237,18 +1309,31 @@ class Bot:
         url = espera.get("url") if espera and espera["que"] == "detalle" else None
         if not url:
             return self.enviar(chat, self.tx(uid, "archivo_sin_enlace"))
-        info = self.tg("getFile", file_id=d["file_id"])
-        with urllib.request.urlopen(f"https://api.telegram.org/file/bot{self.token}/{info['file_path']}") as r:
-            contenido = catalogo.leer_archivo(d.get("file_name") or "recurso.html", r.read())
-        self.recurso(chat, uid, msg["from"], url, contenido)
+        if not self.puede_preparar(chat, uid):  # el cupo, antes de descargar y descomprimir nada
+            return
+        try:
+            info = self.tg("getFile", file_id=d["file_id"])
+            with urllib.request.urlopen(f"https://api.telegram.org/file/bot{self.token}/{info['file_path']}",
+                                        timeout=120) as r:
+                contenido = catalogo.leer_archivo(d.get("file_name") or "recurso.html", r.read())
+        except Exception as error:  # noqa: BLE001 — un ZIP roto o enorme no tumba el hilo sin avisar
+            registrar(f"error al leer un archivo de recurso: {type(error).__name__}: {error}")
+            return self.enviar(chat, self.tx(uid, "error_recurso"))
+        self.recurso(chat, uid, msg["from"], url, contenido, comprobado=True)
 
-    def ensenar_ficha(self, chat: int, f: dict, texto: str = "vista_recurso") -> None:
-        self.enviar(chat, self.tx(chat, texto))
-        self.tg("sendMessage", chat_id=chat, text=catalogo.a_html(f), parse_mode="HTML",
-                link_preview_options={"is_disabled": True},
-                reply_markup={"inline_keyboard": [[{"text": self.tx(chat, "b_publicar"), "callback_data": "rp"},
-                                                   {"text": self.tx(chat, "b_cambiar"), "callback_data": "rc"},
-                                                   {"text": self.tx(chat, "b_cancelar"), "callback_data": "rx"}]]})
+    def ensenar_ficha(self, chat: int, uid: int, texto: str = "vista_recurso") -> None:
+        """La ficha pendiente de esa persona, con botones que llevan su clave; los de la vista anterior se quitan."""
+        p = self.fichas_rec[uid]
+        self.quitar_botones(p.get("mensaje"))
+        p["clave"] = clave = self.clave_borrador()
+        self.enviar(chat, self.tx(uid, texto))
+        m = self.tg("sendMessage", chat_id=chat, text=catalogo.a_html(p["ficha"]), parse_mode="HTML",
+                    link_preview_options={"is_disabled": True},
+                    reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_publicar"), "callback_data": f"rp:{clave}"},
+                                                       {"text": self.tx(uid, "b_cambiar"), "callback_data": f"rc:{clave}"},
+                                                       {"text": self.tx(uid, "b_cancelar"), "callback_data": f"rx:{clave}"}]]})
+        if m:
+            p["mensaje"] = (chat, m["message_id"])
 
     def cambiar_recurso(self, chat: int, uid: int, peticion: str) -> None:
         self.espera.pop(uid, None)
@@ -1319,11 +1404,15 @@ class Bot:
         p["momento"] = time.time()
         if abierta and not p.get("licencia_sugerida"):  # una vez por ficha, no en cada cambio
             p["licencia_sugerida"] = self.sugerir_licencia_visible(chat, uid, hallada, solo_repositorio, contenido)
-        self.ensenar_ficha(chat, p["ficha"], "vista_cambio")
+        self.ensenar_ficha(chat, uid, "vista_cambio")
 
     def boton_recurso(self, uid: int, accion: str) -> None:
         orden, _, n = accion.partition(":")
         try:
+            if orden in ("rp", "rc", "rx"):
+                p = self.fichas_rec.get(uid)
+                if p and n and n != p.get("clave"):  # el botón de una vista anterior: la vigente se queda
+                    return self.enviar(uid, self.tx(uid, "sustituido"))
             if orden == "rp":
                 return self.publicar_recurso(uid)
             if orden == "rc":
@@ -1506,6 +1595,8 @@ class Bot:
         self.espera.pop(uid, None)
         if not p or time.time() - p["momento"] > CADUCA_FICHA_H * 3600:
             return self.enviar(uid, self.tx(uid, "caducado_recurso"))
+        if CATALOGO.clave not in self.grupos_de(uid):  # por si ha dejado el grupo desde que mandó el recurso
+            return self.enviar(uid, self.tx(uid, "solo_vce"))
         f = p["ficha"]
         try:
             if p["modo"] == "alta":
@@ -1714,6 +1805,8 @@ class Bot:
         while True:
             if time.time() - getattr(self, "admin_momento", 0) > ADMIN_HORAS * 3600:
                 self.actualizar_administradores()
+            if time.time() - getattr(self, "limpiado", 0) > LIMPIAR_S:
+                self.limpiar()
             if "vce" in grupos.ACTIVOS:
                 self.resumen_si_toca("vce")
             try:
@@ -1728,12 +1821,15 @@ class Bot:
                 continue
             for u in updates:
                 siguiente = u["update_id"] + 1
-                if "message" in u:
-                    self.atender(u["message"])
-                elif "callback_query" in u:
-                    self.boton(u["callback_query"])
-                elif "chat_member" in u and self.cambia_cargo(u["chat_member"]):
-                    self.actualizar_administradores()
+                try:
+                    if "message" in u:
+                        self.atender(u["message"])
+                    elif "callback_query" in u:
+                        self.boton(u["callback_query"])
+                    elif "chat_member" in u and self.cambia_cargo(u["chat_member"]):
+                        self.actualizar_administradores()
+                except Exception as error:  # noqa: BLE001 — un mensaje raro no tumba el bot (como en Karla)
+                    registrar(f"error al atender: {type(error).__name__}: {error}")
 
 
 if __name__ == "__main__":

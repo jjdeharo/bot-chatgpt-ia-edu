@@ -580,8 +580,9 @@ class Consultor:
         quien = "" if x["autor"] in ("", "?") else f"{x['autor']}, "  # hay mensajes sin autor en el índice
         return f"— {quien}{x['grupo']}, {d}/{m}/{a}\n{enlace}"
 
-    def autores(self) -> set[str]:
-        """Los nombres de quien escribe en los grupos, para saber cuándo una idea nombra a alguien."""
+    def nombres_del_grupo(self) -> set[str]:
+        """Los nombres de quien escribe en los grupos, para saber cuándo una idea nombra a alguien.
+        Se llamó «autores», como la búsqueda por autor, y la tapaba: buscar_autor fallaba siempre (31-10-2026)."""
         return {m["autor"] for b in self.buscadores.values() for m in b.ms.values()
                 if m.get("autor") and " " in m["autor"].strip() and m["autor"][0].isupper()}  # nombre y apellido
 
@@ -649,7 +650,7 @@ class Consultor:
         if r.stop_reason == "refusal":
             raise RuntimeError("la revisión no ha respondido")
         veredictos = {v["n"]: v for v in json.loads(next(b.text for b in r.content if b.type == "text"))["ideas"]}
-        cambios, autores = [], self.autores()
+        cambios, autores = [], self.nombres_del_grupo()
         for n, (k, p) in enumerate(ideas):
             v = veredictos.get(n)
             if v is None:  # sin veredicto no hay idea: lo que sale, revisado

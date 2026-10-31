@@ -17,10 +17,12 @@ Uso de prueba: catalogo.py URL
 """
 import html
 import io
+import ipaddress
 import json
 import os
 import re
 import secrets
+import socket
 import sys
 import time
 import urllib.error
@@ -274,11 +276,52 @@ def enlace_catalogo(url: str = "") -> str:
 
 
 # --- leer el recurso ----------------------------------------------------------
+AVISO_NO_PUBLICA = "El enlace no lleva a una web pública: tiene que ser una dirección http o https que cualquiera pueda abrir."
+MAX_ENTRADAS_ZIP = 2000
+
+
+def direccion_publica(url: str) -> bool:
+    """Solo HTTP o HTTPS hacia un servidor de internet. Un enlace aportado al bot no puede llevarlo a la red del NAS
+    ni a sus propios contenedores (revisión del 31-10-2026): se resuelve el nombre y todas sus direcciones tienen
+    que ser públicas. Un nombre sin punto (otro contenedor) o .local tampoco vale."""
+    p = urllib.parse.urlsplit(url)
+    host = p.hostname or ""
+    if p.scheme not in ("http", "https") or not host or "." not in host or host.endswith((".local", ".internal", ".lan")):
+        return False
+    try:
+        infos = socket.getaddrinfo(host, p.port or (443 if p.scheme == "https" else 80), proto=socket.IPPROTO_TCP)
+    except (OSError, ValueError):
+        return False
+    try:
+        ips = {ipaddress.ip_address(i[4][0]) for i in infos}
+    except ValueError:
+        return False
+    return bool(ips) and all(ip.is_global for ip in ips)  # fuera quedan privadas, bucle local, enlace local y reservadas
+
+
+class NoPublica(urllib.error.URLError):
+    pass
+
+
+class _SoloPublicas(urllib.request.HTTPRedirectHandler):
+    """Cada redirección se comprueba también: un acortador podría llevar a una dirección interna."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not direccion_publica(newurl):
+            raise NoPublica(f"redirección a una dirección no pública: {newurl}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_ABRIDOR = urllib.request.build_opener(_SoloPublicas)
+
+
 def descargar(url: str, limite=MAX_DESCARGA) -> tuple[int, str, str, bytes]:
-    """(estado HTTP, dirección final, tipo, contenido)."""
+    """(estado HTTP, dirección final, tipo, contenido). NoPublica si la dirección, o una de sus redirecciones,
+    no es de internet."""
+    if not direccion_publica(url):
+        raise NoPublica(f"dirección no pública: {url}")
     pet = urllib.request.Request(url, headers={"User-Agent": AGENTE})
     try:
-        with urllib.request.urlopen(pet, timeout=25) as r:
+        with _ABRIDOR.open(pet, timeout=25) as r:
             return r.status, r.geturl(), r.headers.get_content_type(), r.read(limite)
     except urllib.error.HTTPError as e:
         return e.code, url, "", b""
@@ -295,6 +338,8 @@ def saltos(url: str, maximo: int = 6) -> list[str]:
     abridor = urllib.request.build_opener(_SinSeguir)
     vistas = [url]
     for _ in range(maximo):
+        if not direccion_publica(vistas[-1]):  # hasta aquí se mira; una dirección interna no se pide
+            break
         try:
             with abridor.open(urllib.request.Request(vistas[-1], headers={"User-Agent": AGENTE}, method="HEAD"),
                               timeout=15):
@@ -358,10 +403,15 @@ def repositorio_de_pagina(url: str) -> str | None:
 
 def leer_url(url: str) -> tuple[str, str | None]:
     """(texto para Claude, aviso para la persona si el enlace no funciona para cualquiera)."""
+    if not direccion_publica(url):
+        return "", AVISO_NO_PUBLICA
     repo = de_github(url)
     if repo:
         return repo, None
-    estado, final, tipo, contenido = descargar(url)
+    try:
+        estado, final, tipo, contenido = descargar(url)
+    except NoPublica:
+        return "", AVISO_NO_PUBLICA
     if estado >= 400:
         return "", f"El enlace no se abre desde fuera: el servidor responde con el código {estado}."
     if re.search(r"accounts\.google\.com|login\.microsoftonline|/login|/signin", final):
@@ -381,12 +431,20 @@ def leer_url(url: str) -> tuple[str, str | None]:
 def leer_archivo(nombre: str, datos: bytes) -> str:
     """Un HTML suelto o un ZIP con el código."""
     if nombre.lower().endswith(".zip"):
-        partes = []
+        partes, total = [], 0
         with zipfile.ZipFile(io.BytesIO(datos)) as z:
-            for n in sorted(z.namelist(), key=lambda n: (n.count("/"), not n.lower().endswith(".html"))):
-                if re.search(r"\.(html?|js|py|css|md|txt|json)$", n, re.I) and "node_modules" not in n:
-                    partes.append(f"--- {n} ---\n{z.read(n)[:MAX_CODIGO].decode('utf-8', 'replace')}")
-                if sum(len(p) for p in partes) > MAX_CODIGO:
+            entradas = sorted(z.infolist(), key=lambda i: (i.filename.count("/"), not i.filename.lower().endswith(".html")))
+            for info in entradas[:MAX_ENTRADAS_ZIP]:
+                n = info.filename
+                if info.is_dir() or not re.search(r"\.(html?|js|py|css|md|txt|json)$", n, re.I) or "node_modules" in n:
+                    continue
+                # Por flujo y solo hasta el límite: un ZIP de 4 KB puede ocupar gigas descomprimido y el tamaño
+                # declarado puede mentir, así que nunca se carga una entrada entera (revisión del 31-10-2026).
+                with z.open(info) as f:
+                    trozo = f.read(MAX_CODIGO + 1)
+                partes.append(f"--- {n} ---\n{trozo[:MAX_CODIGO].decode('utf-8', 'replace')}")
+                total += len(partes[-1])
+                if total > MAX_CODIGO:
                     break
         return "\n\n".join(partes)[:MAX_CODIGO]
     return f"--- {nombre} ---\n{datos.decode('utf-8', 'replace')}"[:MAX_CODIGO]

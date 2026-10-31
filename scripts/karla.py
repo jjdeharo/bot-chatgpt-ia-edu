@@ -465,17 +465,27 @@ class Karla(bot.Bot):
     def ensenar_borrador(self, chat: int, uid: int, texto: str, inc: dict) -> None:
         """El borrador, con lo que es una incidencia explicado (Juanjo, 27-10-2026: «la mayoría no sabe qué
         es un issue ni para qué sirve») y dos botones. Sin pulsar «Enviar», no se publica nada."""
-        self.borradores[uid] = {**inc, "momento": time.time()}
+        # Los botones llevan la clave del borrador y los del anterior se quitan: lo que se envía es lo que se vio.
+        # Y el cuerpo se enseña entero, en varios mensajes si hace falta (revisión del 31-10-2026).
+        self.quitar_botones((self.borradores.get(uid) or {}).get("mensaje"))
+        clave = self.clave_borrador()
+        self.borradores[uid] = {**inc, "momento": time.time(), "clave": clave}
         if texto:
             self.enviar(chat, bot.respuesta_html(texto), "HTML")
         cuerpo = inc.get("cuerpo", "")
-        vista = (f"{html.escape(self.tx(uid, 'incidencia_vista'), quote=False)}\n\n"
-                 f"<b>{html.escape(inc.get('titulo', ''))}</b>\n"
-                 f"<pre>{html.escape(cuerpo[:3000] + ('…' if len(cuerpo) > 3000 else ''))}</pre>")
-        self.tg("sendMessage", chat_id=chat, text=vista, parse_mode="HTML",
-                link_preview_options={"is_disabled": True},
-                reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_enviar"), "callback_data": "inc:si"},
-                                                   {"text": self.tx(uid, "b_no_enviar"), "callback_data": "inc:no"}]]})
+        cabecera = (f"{html.escape(self.tx(uid, 'incidencia_vista'), quote=False)}\n\n"
+                    f"<b>{html.escape(inc.get('titulo', ''))}</b>\n")
+        trozos = [cuerpo[i:i + 2500] for i in range(0, len(cuerpo), 2500)] or [""]
+        for t in trozos[:-1]:
+            self.tg("sendMessage", chat_id=chat, text=f"{cabecera}<pre>{html.escape(t)}</pre>", parse_mode="HTML",
+                    link_preview_options={"is_disabled": True})
+            cabecera = ""
+        m = self.tg("sendMessage", chat_id=chat, text=f"{cabecera}<pre>{html.escape(trozos[-1])}</pre>", parse_mode="HTML",
+                    link_preview_options={"is_disabled": True},
+                    reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_enviar"), "callback_data": f"inc:si:{clave}"},
+                                                       {"text": self.tx(uid, "b_no_enviar"), "callback_data": f"inc:no:{clave}"}]]})
+        if m:
+            self.borradores[uid]["mensaje"] = (chat, m["message_id"])
 
     def parecido_en_grupo(self, cuenta: str, nombre: str) -> dict | None:
         """Quién del grupo parece ser esa persona de GitHub: el mismo nombre de usuario o todas las palabras de su
@@ -545,16 +555,23 @@ class Karla(bot.Bot):
             return self.decidir_equipo(accion, m)
         if not accion.startswith("inc:"):
             return
+        partes = accion.split(":")
+        sino, clave = partes[1], partes[2] if len(partes) > 2 else ""
         if m:  # los botones se quitan: una incidencia no se envía dos veces
             self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
                     reply_markup={"inline_keyboard": []})
+        inc = self.borradores.get(uid)
+        if inc and clave and clave != inc.get("clave"):  # el botón de un borrador anterior: el vigente se queda
+            return self.enviar(uid, self.tx(uid, "sustituido"))
         inc = self.borradores.pop(uid, None)
         if inc and time.time() - inc["momento"] > CADUCA_BORRADOR_H * 3600:
             inc = None
-        if accion == "inc:no":
+        if sino == "no":
             return self.enviar(uid, self.tx(uid, "incidencia_cancelada"))
         if not inc:
             return self.enviar(uid, self.tx(uid, "incidencia_caducada"))
+        if not self.grupos_de(uid):  # por si ha dejado el grupo desde que pidió el borrador
+            return self.enviar(uid, self.tx(uid, "no_miembro"))
         with bot.CERROJO:
             e = bot.contabilidad(bot.leer_estado())
             hoy = e.get("incidencias_dia", {})
@@ -583,6 +600,12 @@ class Karla(bot.Bot):
     def tx(self, uid: int, clave: str, **datos) -> str:
         return textos_karla.texto(self.lenguas.get(uid, "es"), clave, **datos)
 
+    def limpiar(self) -> None:
+        super().limpiar()
+        ahora = time.time()
+        for k in [k for k, v in list(self.borradores.items()) if ahora - v.get("momento", 0) > CADUCA_BORRADOR_H * 3600]:
+            self.borradores.pop(k, None)
+
     def ayuda(self, uid: int) -> str:
         partes = [html.escape(self.tx(uid, "inicio"), quote=False),
                   bot.negrita_titulo(self.tx(uid, "ayuda_preguntar"), ". "),
@@ -594,7 +617,7 @@ class Karla(bot.Bot):
     def atender(self, msg: dict) -> None:
         chat, uid = msg["chat"]["id"], msg["from"]["id"]
         privado = msg["chat"]["type"] == "private"
-        self.fijar_lengua(uid, msg["from"], (msg.get("text") or "").strip() if privado else "")
+        self.fijar_lengua(uid, msg["from"])
         if not privado:
             if chat != GRUPO.id:
                 self.tg("leaveChat", chat_id=chat)  # solo está en el grupo eXeLearning
@@ -609,6 +632,7 @@ class Karla(bot.Bot):
             return self.enviar(chat, self.tx(uid, "no_autorizado"))
         if not self.grupos_de(uid):
             return self.enviar(chat, self.tx(uid, "no_miembro"))
+        self.lengua_de_la_frase(uid, texto)
         comando = texto.split()[0].split("@")[0].lower() if texto.startswith("/") else ""
         if comando == "/estado" and uid == bot.JUANJO:
             return self.enviar_tablas(chat, bloques_estado(bot.contabilidad(bot.leer_estado())))
@@ -698,6 +722,8 @@ class Karla(bot.Bot):
             if time.time() - getattr(self, "admin_momento", 0) > bot.ADMIN_HORAS * 3600:
                 self.actualizar_entorno()
                 self.revisar_equipo_sin_fallar()
+            if time.time() - getattr(self, "limpiado", 0) > bot.LIMPIAR_S:
+                self.limpiar()
             self.resumen_si_toca("exelearning")
             try:
                 updates = self.tg("getUpdates", espera=50, timeout=50, offset=siguiente, **tipos)

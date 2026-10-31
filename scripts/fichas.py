@@ -54,8 +54,8 @@ def instrucciones() -> str:
 def leer_pdf(ruta: Path) -> tuple[str, str]:
     """Texto de las primeras páginas y metadatos del PDF."""
     texto = subprocess.run(["pdftotext", "-l", str(PAGINAS), "-enc", "UTF-8", str(ruta), "-"],
-                           capture_output=True, text=True).stdout
-    info = subprocess.run(["pdfinfo", str(ruta)], capture_output=True, text=True).stdout
+                           capture_output=True, text=True, timeout=120).stdout  # un PDF malicioso no cuelga el bot
+    info = subprocess.run(["pdfinfo", str(ruta)], capture_output=True, text=True, timeout=60).stdout
     meta = "\n".join(l for l in info.splitlines()
                      if l.split(":")[0] in ("Title", "Author", "Subject", "Keywords", "Creator", "CreationDate", "Pages"))
     return re.sub(r"\n{3,}", "\n\n", texto)[:MAX_TEXTO], meta
@@ -109,9 +109,30 @@ class Fichero:
         return (m.group(1) if m else salida).strip(), coste(r.usage, PRECIO_FICHA)
 
 
+# Lo que, en el apartado Licencia, nombra una licencia abierta o un permiso expreso de distribución.
+LICENCIA_ABIERTA = re.compile(
+    r"creative commons|\bCC[ -]?(BY|0)\b|dominio p[uú]blico|public domain|\b(A?GPL|LGPL|MIT|BSD|Apache|MPL|EUPL|ODbL)\b"
+    r"|licencia (libre|abierta)|libre distribuci[oó]n|distribuci[oó]n libre|permite (expresamente )?(su |la )?(libre )?distribu", re.I)
+# Y lo que lo niega, con la frase que piden las instrucciones o con cualquier otra.
+LICENCIA_CERRADA = re.compile(
+    r"no se (puede|podr[aá]|permite)|todos los derechos|all rights reserved|prohib|sin licencia|no (tiene|consta|indica) licencia|©", re.I)
+
+
+def licencia_de(ficha: str) -> str:
+    """La línea (o líneas) que sigue al rótulo **Licencia** de la ficha."""
+    m = re.search(r"\*\*Licencia\*\*\s*\n(.*?)(?:\n\s*\n|\Z)", ficha, re.S)
+    return m.group(1).strip() if m else ""
+
+
 def se_puede_compartir(ficha: str) -> bool:
-    """Las instrucciones de la página escriben «No se podrá compartir…» cuando no hay licencia libre."""
-    return "No se podrá compartir" not in ficha
+    """El archivo solo se adjunta si el apartado Licencia nombra una licencia abierta y no dice nada en contra;
+    si falta el apartado o hay duda, se publica solo la ficha. Antes bastaba con que no apareciera la frase
+    literal «No se podrá compartir», y una redacción distinta habría dejado pasar un documento con todos los
+    derechos reservados (revisión del 31-10-2026)."""
+    licencia = licencia_de(ficha)
+    if not licencia or LICENCIA_CERRADA.search(licencia):
+        return False
+    return bool(LICENCIA_ABIERTA.search(licencia))
 
 
 def titulo(ficha: str) -> str:
