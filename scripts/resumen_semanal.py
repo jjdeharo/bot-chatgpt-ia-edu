@@ -103,7 +103,9 @@ DUDAS = {
 SISTEMA = f"""Lees los mensajes de una semana del grupo de Telegram de eXeLearning, un programa libre \
 para crear materiales educativos, y eliges las dudas sobre el programa que quedaron resueltas en el \
 grupo: alguien preguntó o contó un problema y otra persona dio una respuesta que lo resuelve o que \
-dice con claridad qué hacer. Para cada una, el mensaje de la duda y el de la respuesta que la \
+dice con claridad qué hacer. Cuentan también las preguntas de información (si el programa tiene o \
+permite algo, dónde está, cómo se llama) contestadas con el dato o con un enlace, aunque la \
+respuesta no esté marcada como respuesta al mensaje. Para cada una, el mensaje de la duda y el de la respuesta que la \
 resuelve (si la solución se reparte en varios, el principal).
 
 No incluyas: dudas sin respuesta o con respuestas que no la resuelven, avisos, novedades, \
