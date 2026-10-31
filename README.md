@@ -75,6 +75,12 @@ del bot, `anthropic-bot.txt` con la clave de API del espacio de trabajo
 «Bot ChatGPT-IA-edu» y `catalogo-vce.json` con la dirección y la clave de la
 API del catálogo).
 
+En el NAS, `repo/` es un clon de git. Se despliega desde el portátil con
+`desplegar-nas`, después del push: lleva allí el commit, copia
+`nas/compose.yml` y reinicia o reconstruye lo que pide `nas/despliegue.conf`.
+`desplegar-nas --comprobar` dice qué commit corre en el NAS y si allí se ha
+tocado algo.
+
 Los dos bots y el índice comparten una sola copia del modelo de significado,
 en el contenedor `bot-significado` (ADR 0012). Si se para, los bots siguen
 contestando, pero buscan solo por palabras.
