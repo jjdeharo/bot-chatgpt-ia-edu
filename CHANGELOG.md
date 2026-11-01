@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.3.1 — 2026-11-01
+
+El mensaje que lleva una pregunta al grupo dice ahora que se contesta allí, respondiendo a ese mensaje, y a quién se le hará llegar por privado: la frase anterior se podía leer como si hubiera que escribir al bot.
+
 ## 1.3.0 — 2026-11-01
 
 Dos ideas del análisis competitivo del 01-11 (ADR 0023). **Preguntar en el grupo**: cuando un bot no encuentra la respuesta, o la persona pulsa 👎, ofrece llevar la pregunta al grupo con su nombre; antes enseña el mensaje tal como quedará, y quien responda allí a ese mensaje le llega por privado durante una semana; se puede quitar en 48 horas, con un tope de tres al día por persona (no en EduMedia-IAG). **`/sinresolver`**, para Juanjo: las preguntas sin resolver agrupadas por temas con Sonnet, con qué las resolvería y un ejemplo literal de cada tema (unos 0,01 USD; sin gasto con menos de 5).

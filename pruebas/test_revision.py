@@ -640,6 +640,8 @@ class PreguntarEnElGrupo(unittest.TestCase):
         grupo, privado = b.llamadas
         self.assertEqual(grupo[1]["chat_id"], bot.grupos.TODOS["vce"].id)
         self.assertIn('<a href="tg://user?id=7">Ana Pérez</a>', grupo[1]["text"])
+        self.assertIn("contesta aquí en el grupo respondiendo a este mensaje, y se la haré llegar a Ana por privado",
+                      grupo[1]["text"])
         d = bot.leer_preguntas_grupo()
         self.assertEqual(list(d.values())[0]["uid"], 7)
         quitar = self.botones(privado)[0]

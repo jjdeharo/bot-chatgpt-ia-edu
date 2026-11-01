@@ -100,7 +100,7 @@ ES = {
     "no_quitar_pregunta": "Ya no puedo quitarla: Telegram solo deja borrar los mensajes durante 48 horas. Pídeselo a quien administra el grupo.",
     "respuesta_en_grupo": "{quien} ha respondido en el grupo a la pregunta que llevé por ti:\n«{extracto}»\n{enlace}",
     "solo_imagenes": "Solo ha enviado imágenes.",
-    "pregunta_en_grupo": "<b>Pregunta de {autor} que no he sabido responder</b>\nNo he encontrado la respuesta ni en la documentación de eXeLearning ni en lo hablado en el grupo. ¿Alguien puede ayudar?\n<blockquote>{pregunta}</blockquote>\nSi respondes a este mensaje, le haré llegar tu respuesta por privado.",
+    "pregunta_en_grupo": "<b>Pregunta de {autor} que no he sabido responder</b>\nNo he encontrado la respuesta ni en la documentación de eXeLearning ni en lo hablado en el grupo. ¿Alguien puede ayudar?\n<blockquote>{pregunta}</blockquote>\nSi sabes la respuesta, contesta aquí en el grupo respondiendo a este mensaje, y se la haré llegar a {nombre} por privado.",
     "b_cancelar": "Cancelar",
     "codigo": "Soy software libre (AGPL v3), versión {version}: el código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }

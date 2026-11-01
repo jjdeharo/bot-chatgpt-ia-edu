@@ -31,7 +31,7 @@ bots, y Juanjo pidió las dos («haz las 2 mejoras»):
    línea, en negrita, que es una pregunta de esa persona que el bot no ha sabido responder, con su
    nombre enlazado a su perfil (tercera persona, como pide Juanjo para lo que un programa publica en
    nombre de alguien), lo que el bot ha mirado, la pregunta en una cita y que quien responda a ese mensaje
-   hará llegar su respuesta por privado. Las imágenes de la consulta van con ella (como foto o álbum); la
+   hará llegar su respuesta por privado, dicho de forma que se entienda que se contesta en el grupo (1.3.1, a petición de Juanjo). Las imágenes de la consulta van con ella (como foto o álbum); la
    pregunta se recorta a 1.500 caracteres, o a 700 con imágenes, porque el pie de foto admite 1.024.
 4. **Las respuestas llegan a quien preguntó.** Como administradores, los bots reciben todos los mensajes
    del grupo. Si uno responde a una pregunta que llevó el bot, el bot manda a quien la hizo, por privado y

@@ -75,7 +75,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.3.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.3.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -946,7 +946,8 @@ class Bot:
         pregunta = p["texto"].strip() or self.tx_en("es", "solo_imagenes")
         if len(pregunta) > largo:
             pregunta = pregunta[:largo].rstrip() + "…"
-        return self.tx_en("es", "pregunta_en_grupo", autor=autor, pregunta=html.escape(pregunta, quote=False))
+        return self.tx_en("es", "pregunta_en_grupo", autor=autor, pregunta=html.escape(pregunta, quote=False),
+                          nombre=html.escape(de.get("first_name") or nombre, quote=False))
 
     def pregunta_grupo(self, uid: int, accion: str, m: dict, de: dict) -> None:
         """Los botones de «Preguntar en el grupo»: pg (enseñar cómo quedará), pgp (publicar), pgx (cancelar)
