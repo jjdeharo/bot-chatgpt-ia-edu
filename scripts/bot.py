@@ -58,12 +58,24 @@ BASE = Path(__file__).resolve().parent.parent
 ESTADO = BASE / "datos" / "estado-bot.json"
 SIN_RESOLVER = BASE / "datos" / "sin-resolver.jsonl"
 DIAS_SIN_RESOLVER = 60
+# Preguntar en el grupo lo que el bot no ha sabido responder (ADR 0023): qué mensajes del grupo son preguntas
+# llevadas por el bot y de quién, para avisarle de las respuestas. Se borran a los PREGUNTA_GRUPO_DIAS días.
+PREGUNTAS_GRUPO = BASE / "datos" / "preguntas-grupo.json"
+PREGUNTA_GRUPO_DIAS = 7
+PREGUNTAS_GRUPO_DIA = 3  # por persona y día: un error o un abuso no llena el grupo
+MOTIVOS_GRUPO = ("sin resultado", "respuesta vacía")  # se ofrece de entrada; con 👎, en cualquier respuesta
+LARGO_GRUPO = 1500       # lo más que se publica de la pregunta (con imágenes, el pie de foto admite 1.024)
+# Dónde se pueden llevar. EduMedia-IAG no, de entrada: es el grupo de Raül Torres y el bot no publica nada allí.
+GRUPOS_PREGUNTAR = set(os.environ.get("GRUPOS_PREGUNTAR", "chatgpt,vce,exelearning").split(","))
+# Las preguntas sin resolver por temas (ADR 0023): con menos de MIN_TEMAS no se llama a la IA.
+MODELO_TEMAS = os.environ.get("MODELO_TEMAS", "claude-sonnet-5-5")
+MIN_TEMAS = 5
 VALORAR = {"inline_keyboard": [[{"text": "👍", "callback_data": "val:+"}, {"text": "👎", "callback_data": "val:-"}]]}
 CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-chatgpt-ia-edu.json"))
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.2.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.3.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -265,7 +277,106 @@ def sin_resolver_de(e: dict) -> str:
     if not total:
         return "Sin resolver: ninguna en los últimos 60 días."
     return (f"Sin resolver: {n} de {cuenta(total, 'pregunta', 'preguntas')} de los últimos 60 días "
-            f"({round(100 * n / total)} %).")
+            f"({round(100 * n / total)} %). Por temas: /sinresolver.")
+
+
+def leer_sin_resolver() -> list[dict]:
+    try:
+        return [json.loads(l) for l in SIN_RESOLVER.read_text().splitlines() if l.strip()]
+    except (OSError, ValueError):
+        return []
+
+
+TEMAS_SISTEMA = """Analizas las preguntas que un bot de Telegram no ha sabido responder, para que su \
+responsable decida qué mejorar. {contexto}
+
+Agrupa las preguntas por temas: cada tema junta las que se resolverían con la misma mejora. Una pregunta va en \
+un solo tema. No inventes temas sin preguntas ni preguntas que no estén en la lista. Escribe en castellano, \
+con frases cortas y sin jerga."""
+
+
+def esquema_temas(soluciones: list[str]) -> dict:
+    """La forma de la respuesta, como salida estructurada (Sonnet 5.5 no admite obligar a usar una herramienta)."""
+    return {"type": "object", "additionalProperties": False, "required": ["temas"], "properties": {"temas": {
+                "type": "array", "items": {"type": "object", "additionalProperties": False,
+                                           "required": ["tema", "preguntas", "falta", "solucion", "propuesta"],
+                                           "properties": {
+                    "tema": {"type": "string", "description": "Nombre corto del tema, de dos a seis palabras."},
+                    "preguntas": {"type": "array", "items": {"type": "integer"},
+                                  "description": "Números de las preguntas del tema, tal como van en la lista."},
+                    "falta": {"type": "string", "description": "Qué buscaba la gente y no encontró, en una frase."},
+                    "solucion": {"type": "string", "enum": soluciones},
+                    "propuesta": {"type": "string",
+                                  "description": "La mejora concreta que lo resolvería, en una o dos frases."}}}}}}
+
+
+def temas_sin_resolver(cliente, contexto: str, soluciones: list[str], modelo: str = MODELO_TEMAS) -> tuple[list, list, dict]:
+    """Las preguntas sin resolver de los últimos 60 días, agrupadas por temas con Sonnet (ADR 0023). Las que
+    fallaron por un error del programa no se mandan: no dicen qué falta, sino que algo se rompió. Devuelve los
+    temas (con sus preguntas literales, no las que escriba el modelo), las de error y el gasto."""
+    guardadas = leer_sin_resolver()
+    errores = [g for g in guardadas if g.get("motivo") == "error"]
+    resto = [g for g in guardadas if g.get("motivo") != "error"]
+    uso = {"entrada": 0, "salida": 0, "usd": 0.0}
+    if len(resto) < MIN_TEMAS:  # pocas: se enseñan tal cual, sin gastar
+        return [{"tema": "", "preguntas": resto}] if resto else [], errores, uso
+    lista = "\n".join(f"{i}. [{g['motivo']}] {' '.join(g['pregunta'].split())[:500]}" for i, g in enumerate(resto, 1))
+    r = cliente.messages.create(model=modelo, max_tokens=8000, system=TEMAS_SISTEMA.format(contexto=contexto),
+                                output_config={"effort": "medium",
+                                               "format": {"type": "json_schema", "schema": esquema_temas(soluciones)}},
+                                messages=[{"role": "user", "content": lista}])
+    consultar.Consultor.apuntar(uso, r.usage, modelo)
+    datos = json.loads(next((b.text for b in r.content if getattr(b, "type", "") == "text"), "{}") or "{}")
+    temas, usadas = [], set()
+    for t in datos.get("temas", []):
+        nums = [n for n in t.get("preguntas", []) if isinstance(n, int) and 1 <= n <= len(resto) and n not in usadas]
+        if nums:
+            usadas.update(nums)
+            temas.append({**t, "preguntas": [resto[n - 1] for n in nums]})
+    sueltas = [g for i, g in enumerate(resto, 1) if i not in usadas]  # las que el modelo no colocó, a la vista
+    if sueltas:
+        temas.append({"tema": "Sin tema", "preguntas": sueltas, "falta": "", "solucion": "", "propuesta": ""})
+    temas.sort(key=lambda t: -len(t["preguntas"]))
+    return temas, errores, uso
+
+
+def bloques_temas(temas: list, errores: list, uso: dict) -> list:
+    """/sinresolver: un apartado por tema, de más a menos preguntas, con un ejemplo literal."""
+    n = sum(len(t["preguntas"]) for t in temas)
+    error = f" Además, {cuenta(len(errores), 'falló', 'fallaron')} por un error del programa." if errores else ""
+    if not n:
+        return [("texto", "Sin resolver: ninguna en los últimos 60 días." + error)]
+    if len(temas) == 1 and not temas[0]["tema"]:  # pocas, sin agrupar
+        return ([("texto", f"Sin resolver en los últimos 60 días: {n}. Son pocas para agruparlas por temas." + error)]
+                + [("texto", f"{g['fecha'][:10]} · {g['motivo']}: «{' '.join(g['pregunta'].split())[:300]}»")
+                   for g in temas[0]["preguntas"]])
+    bloques = [("texto", f"Sin resolver en los últimos 60 días: {cuenta(n, 'pregunta', 'preguntas')} en "
+                         f"{cuenta(len(temas), 'tema', 'temas')}." + error)]
+    for i, t in enumerate(temas, 1):
+        bloques.append(("titulo", f"{i}. {t['tema']}: {cuenta(len(t['preguntas']), 'pregunta', 'preguntas')}"))
+        if t.get("falta"):
+            bloques.append(("texto", t["falta"]))
+        if t.get("solucion"):
+            bloques.append(("texto", f"Lo resolvería: {t['solucion']}. {t.get('propuesta', '')}".strip()))
+        bloques.append(("texto", f"Ejemplo: «{' '.join(t['preguntas'][0]['pregunta'].split())[:250]}»"))
+    bloques.append(("texto", f"Análisis con Sonnet: {usd(uso['usd'])} USD."))
+    return bloques
+
+
+def leer_preguntas_grupo() -> dict:
+    """Las preguntas llevadas al grupo que aún se siguen: «chat:mensaje» -> quién, en qué idioma, cuándo."""
+    try:
+        d = json.loads(PREGUNTAS_GRUPO.read_text())
+    except (OSError, ValueError):
+        return {}
+    limite = time.time() - PREGUNTA_GRUPO_DIAS * 86400
+    return {k: v for k, v in d.items() if v.get("momento", 0) >= limite}
+
+
+def guardar_preguntas_grupo(d: dict) -> None:
+    tmp = PREGUNTAS_GRUPO.with_suffix(".tmp")
+    tmp.write_text(json.dumps(d, ensure_ascii=False, indent=1))
+    tmp.replace(PREGUNTAS_GRUPO)
 
 
 def contabilidad(e: dict) -> dict:
@@ -450,7 +561,7 @@ def a_texto(bloques: list) -> str:
     """Las tablas en texto, con las columnas alineadas: para la terminal y por si falla el mensaje enriquecido."""
     partes = []
     for b in bloques:
-        if b[0] == "texto":
+        if b[0] in ("texto", "titulo"):
             partes.append(b[1])
             continue
         _, titulo, cabecera, filas, nota = b
@@ -473,6 +584,9 @@ def a_html(bloques: list) -> str:
     for b in bloques:
         if b[0] == "texto":
             partes.append(f"<p>{html.escape(b[1], quote=False)}</p>")
+            continue
+        if b[0] == "titulo":
+            partes.append(f"<p><b>{html.escape(b[1], quote=False)}</b></p>")
             continue
         _, titulo, cabecera, filas, nota = b
         partes.append(f"<table bordered striped compact><caption>{html.escape(titulo, quote=False)}</caption>"
@@ -509,6 +623,7 @@ class Bot:
         self.rechazados = {}   # usuario -> último recurso rechazado por su contenido, por si pide revisarlo
         self.ambitos = {}      # usuario -> (momento, grupos en que busca o None si todos); caduca con la conversación
         self.valorables = {}   # usuario -> su última respuesta, la única con 👍/👎
+        self.al_grupo = {}     # usuario -> la pregunta que puede llevar al grupo (ADR 0023)
 
     def grupos_de(self, uid: int, al_dia: bool = False) -> set[str]:
         """Los grupos de los que es miembro. Con uno basta para buscar en todos (Juanjo, 27-10-2026);
@@ -596,6 +711,10 @@ class Bot:
     def tx(self, uid: int, clave: str, **datos) -> str:
         return textos.texto(self.lenguas.get(uid, "es"), clave, **datos)
 
+    def tx_en(self, lengua: str, clave: str, **datos) -> str:
+        """En un idioma dado: el del grupo, o el de alguien a quien se avisa sin que haya escrito (ADR 0023)."""
+        return textos.texto(lengua, clave, **datos)
+
     def fijar_lengua(self, uid: int, de: dict) -> None:
         """Mientras no ha escrito nada, el idioma de su Telegram. Sin IA: vale para cualquiera, también para
         decirle que no es miembro."""
@@ -680,6 +799,11 @@ class Bot:
             else:
                 self.recientes.pop(k, None)
         purgar_sin_resolver()
+        for k in [k for k, v in list(d_("al_grupo").items()) if ahora - v.get("momento", 0) > CADUCA_FICHA_H * 3600]:
+            d_("al_grupo").pop(k, None)
+        with CERROJO:
+            if PREGUNTAS_GRUPO.exists():
+                guardar_preguntas_grupo(leer_preguntas_grupo())  # lo de más de una semana se borra de verdad
         self.limpiado = ahora
 
     def ayuda(self, uid: int, suyos: set[str]) -> str:
@@ -728,13 +852,20 @@ class Bot:
                         link_preview_options={"is_disabled": True})
 
     def enviar_valorable(self, chat: int, uid: int, texto_md: str, pregunta: str, guardada: bool,
-                         valorable: bool = True) -> bool:
+                         valorable: bool = True, al_grupo: dict | None = None, ofrecer: bool = False) -> bool:
         """La respuesta, como mensaje enriquecido en Markdown (Bot API 10.1: negrita, listas, tablas…), con 👍/👎
         debajo, solo en la última: los de la anterior se quitan (Juanjo, 30-10-2026). Si Telegram no acepta el
         Markdown, va como antes, en HTML. Solo en memoria: tras reiniciar el bot, los botones de antes no se
         quitan solos y al tocarlos no cuentan. Lo que no es valorable (la pregunta queda fuera de lo que hace el
-        bot) va sin botones, y la respuesta anterior conserva los suyos (Juanjo, 30-10-2026, ADR 0014)."""
-        botones = VALORAR if valorable else None
+        bot) va sin botones, y la respuesta anterior conserva los suyos (Juanjo, 30-10-2026, ADR 0014).
+
+        al_grupo es la pregunta tal como se llevaría al grupo ({"texto", "fotos"}); con ofrecer, el botón
+        «Preguntar en el grupo» va ya debajo (el bot no ha encontrado nada); si no, sale al pulsar 👎 (ADR 0023)."""
+        clave = self.clave_borrador() if valorable and al_grupo else ""
+        if clave:
+            self.al_grupo[uid] = {**al_grupo, "clave": clave, "momento": time.time()}
+        botones = ({"inline_keyboard": VALORAR["inline_keyboard"] + ([self.fila_grupo(uid, clave)] if ofrecer else [])}
+                   if valorable else None)
         anterior = self.valorables.pop(uid, None) if valorable else None
         if anterior:
             self.tg("editMessageReplyMarkup", chat_id=anterior["chat"], message_id=anterior["id"],
@@ -751,7 +882,8 @@ class Bot:
             if hecho is None:  # una etiqueta partida al cortar: mejor sin formato que nada
                 hecho = self.tg("sendMessage", text=html.unescape(re.sub(r"<[^>]+>", "", texto_html[corte:])), **comun)
         if hecho and valorable:
-            self.valorables[uid] = {"chat": chat, "id": hecho["message_id"], "pregunta": pregunta, "guardada": guardada}
+            self.valorables[uid] = {"chat": chat, "id": hecho["message_id"], "pregunta": pregunta, "guardada": guardada,
+                                    "clave": clave}
         if hecho is None:  # Telegram no ha aceptado ninguna de las formas: que conste, no como respondida
             registrar("respuesta sin entregar: Telegram ha rechazado el mensaje en todas sus formas")
         return hecho is not None
@@ -778,9 +910,10 @@ class Bot:
         # Sin v (botones de antes de reiniciar, o un segundo toque) no se sabe qué era: un «Gracias» neutro.
         self.tg("answerCallbackQuery", callback_query_id=cq["id"],
                 text=self.tx(uid, "valoracion_antigua" if not v else "valoracion_no" if not util else "valoracion_si"))
-        if m:
+        if m:  # con 👎, en lugar de los botones queda «Preguntar en el grupo», si se puede (ADR 0023)
+            grupo = (not util and v and v.get("clave") and (self.al_grupo.get(uid) or {}).get("clave") == v["clave"])
             self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
-                    reply_markup={"inline_keyboard": []})
+                    reply_markup={"inline_keyboard": [self.fila_grupo(uid, v["clave"])] if grupo else []})
         if uid == JUANJO or not v:  # sin v: botones de antes de reiniciar, o un segundo toque; no cuentan
             return
         if not util and not v["guardada"]:
@@ -792,6 +925,154 @@ class Bot:
             e[clave + "_mes"] += 1
             guardar_estado(e)
         registrar(f"respuesta valorada: {'útil' if util else 'no útil'}")
+
+    # --- preguntar en el grupo (ADR 0023) ---------------------------------------
+    def fila_grupo(self, uid: int, clave: str) -> list:
+        return [{"text": self.tx(uid, "b_preguntar_grupo"), "callback_data": f"pg:{clave}"}]
+
+    def grupos_para_preguntar(self, uid: int) -> list:
+        """Los grupos de la persona donde puede llevar la pregunta; si ha acotado la búsqueda, esos primero."""
+        suyos = [g for g in grupos.ACTIVOS.values() if g.clave in GRUPOS_PREGUNTAR and g.clave in self.grupos_de(uid, al_dia=True)]
+        acotados = self.ambito(uid) if hasattr(self, "ambitos") else None
+        if not acotados:
+            return suyos
+        return [g for g in suyos if g.clave in acotados] or suyos
+
+    def texto_en_grupo(self, de: dict, p: dict) -> str:
+        """El mensaje del grupo, en HTML: quién pregunta, en tercera persona y con su nombre, y la pregunta."""
+        nombre = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x) or "Alguien"
+        autor = f'<a href="tg://user?id={de["id"]}">{html.escape(nombre, quote=False)}</a>'
+        largo = 700 if p.get("fotos") else LARGO_GRUPO  # el pie de una foto admite 1.024 caracteres
+        pregunta = p["texto"].strip() or self.tx_en("es", "solo_imagenes")
+        if len(pregunta) > largo:
+            pregunta = pregunta[:largo].rstrip() + "…"
+        return self.tx_en("es", "pregunta_en_grupo", autor=autor, pregunta=html.escape(pregunta, quote=False))
+
+    def pregunta_grupo(self, uid: int, accion: str, m: dict, de: dict) -> None:
+        """Los botones de «Preguntar en el grupo»: pg (enseñar cómo quedará), pgp (publicar), pgx (cancelar)
+        y pgq (quitarla del grupo). Nada se publica sin que la persona vea antes el mensaje y lo confirme."""
+        orden, _, resto = accion.partition(":")
+        if m:
+            self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
+                    reply_markup={"inline_keyboard": []})
+        if orden == "pgq":
+            return self.retirar_pregunta(uid, resto)
+        clave, _, grupo = resto.partition(":")
+        p = self.al_grupo.get(uid)
+        if not p or p["clave"] != clave or time.time() - p["momento"] > CADUCA_FICHA_H * 3600:
+            return self.enviar(uid, self.tx(uid, "pregunta_caducada"))
+        if orden == "pgx":
+            self.al_grupo.pop(uid, None)
+            return self.enviar(uid, self.tx(uid, "pregunta_no"))
+        destinos = self.grupos_para_preguntar(uid)
+        if not destinos:
+            return self.enviar(uid, self.tx(uid, "no_miembro"))
+        if orden == "pg":
+            vista = self.tx(uid, "vista_pregunta", dias=PREGUNTA_GRUPO_DIAS)
+            if p.get("fotos"):
+                vista += " " + self.tx(uid, "vista_pregunta_fotos", n=len(p["fotos"][:MAX_FOTOS]))
+            botones = [[{"text": self.tx(uid, "b_publicar_en", grupo=g.nombre), "callback_data": f"pgp:{clave}:{g.clave}"}]
+                       for g in destinos] + [[{"text": self.tx(uid, "b_cancelar"), "callback_data": f"pgx:{clave}"}]]
+            return self.tg("sendMessage", chat_id=uid, parse_mode="HTML", link_preview_options={"is_disabled": True},
+                           text=f"{html.escape(vista, quote=False)}\n\n{self.texto_en_grupo(de, p)}",
+                           reply_markup={"inline_keyboard": botones})
+        g = next((g for g in destinos if g.clave == grupo), None)
+        if orden != "pgp" or not g:
+            return self.enviar(uid, self.tx(uid, "pregunta_caducada"))
+        hoy = datetime.now(ZONA).strftime("%Y-%m-%d")
+        cuenta_hoy = self.__dict__.setdefault("llevadas", {})  # usuario -> (día, preguntas llevadas ese día)
+        dia, n = cuenta_hoy.get(uid, (hoy, 0))
+        n = n if dia == hoy else 0
+        if n >= PREGUNTAS_GRUPO_DIA and uid not in AUTORIZADOS:
+            return self.enviar(uid, self.tx(uid, "pregunta_tope", n=PREGUNTAS_GRUPO_DIA))
+        self.al_grupo.pop(uid, None)  # una pregunta se lleva una sola vez
+        texto, fotos = self.texto_en_grupo(de, p), p.get("fotos", [])[:MAX_FOTOS]
+        if len(fotos) == 1:
+            r = self.tg("sendPhoto", chat_id=g.id, photo=fotos[0], caption=texto, parse_mode="HTML")
+            ids = [r["message_id"]] if r else []
+        elif fotos:
+            r = self.tg("sendMediaGroup", chat_id=g.id, media=[
+                {"type": "photo", "media": f, **({"caption": texto, "parse_mode": "HTML"} if i == 0 else {})}
+                for i, f in enumerate(fotos)])
+            ids = [x["message_id"] for x in r] if isinstance(r, list) else []
+        else:
+            r = self.tg("sendMessage", chat_id=g.id, text=texto, parse_mode="HTML",
+                        link_preview_options={"is_disabled": True})
+            ids = [r["message_id"]] if r else []
+        if not ids:
+            registrar(f"no se ha podido llevar una pregunta al grupo {g.clave}")
+            return self.enviar(uid, self.tx(uid, "pregunta_error"))
+        cuenta_hoy[uid] = (hoy, n + 1)
+        with CERROJO:
+            d = leer_preguntas_grupo()
+            d[f"{g.id}:{ids[0]}"] = {"uid": uid, "ids": ids, "grupo": g.clave, "momento": time.time(),
+                                     "lengua": self.lenguas.get(uid, "es")}
+            guardar_preguntas_grupo(d)
+        registrar(f"pregunta llevada al grupo {g.clave}")
+        self.tg("sendMessage", chat_id=uid, link_preview_options={"is_disabled": True},
+                text=self.tx(uid, "pregunta_publicada", grupo=g.nombre, enlace=f"{g.enlace}/{ids[0]}",
+                             dias=PREGUNTA_GRUPO_DIAS),
+                reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_quitar_pregunta"),
+                                                    "callback_data": f"pgq:{g.id}:{ids[0]}:{self.firma(uid, g.id, ids[0])}"}]]})
+
+    def retirar_pregunta(self, uid: int, resto: str) -> None:
+        chat, _, resto = resto.partition(":")
+        mensaje, _, firma = resto.partition(":")
+        if not self.firmado(uid, firma, chat, mensaje):  # solo quien la llevó la puede quitar
+            return
+        with CERROJO:
+            d = leer_preguntas_grupo()
+            p = d.pop(f"{chat}:{mensaje}", None)
+            guardar_preguntas_grupo(d)
+        ids = (p or {}).get("ids") or [int(mensaje)]
+        if not all([self.tg("deleteMessage", chat_id=int(chat), message_id=i) for i in ids]):
+            return self.enviar(uid, self.tx(uid, "no_quitar_pregunta"))
+        registrar("pregunta quitada del grupo por quien la llevó")
+        self.enviar(uid, self.tx(uid, "pregunta_quitada"))
+
+    def respuesta_a_pregunta(self, msg: dict) -> bool:
+        """Si el mensaje del grupo responde a una pregunta que llevó el bot, se le hace llegar a quien la hizo,
+        con el enlace (ADR 0023). Devuelve True si era una de esas, para no contestarle «escríbeme por privado»."""
+        r = msg.get("reply_to_message") or {}
+        if (r.get("from") or {}).get("id") != self.id:
+            return False
+        chat = msg["chat"]["id"]
+        p = next((v for k, v in leer_preguntas_grupo().items()
+                  if k.startswith(f"{chat}:") and r.get("message_id") in v.get("ids", [])), None)
+        if not p:
+            return False
+        de = msg.get("from") or {}
+        if de.get("id") == p["uid"] or de.get("is_bot"):
+            return True
+        quien = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x) or "Alguien"
+        texto = " ".join((msg.get("text") or msg.get("caption") or "").split())
+        g = grupos.por_id(chat)
+        enlace = f"{g.enlace}/{msg['message_id']}" if g else ""
+        self.enviar(p["uid"], self.tx_en(p.get("lengua", "es"), "respuesta_en_grupo", quien=quien, enlace=enlace,
+                                         extracto=(texto[:300] + "…") if len(texto) > 300 else texto or "…"))
+        registrar("respuesta en el grupo a una pregunta llevada por el bot: avisada")
+        return True
+
+    # --- preguntas sin resolver por temas (ADR 0023) ---------------------------
+    CONTEXTO_TEMAS = ("El bot responde a los miembros de tres grupos de docentes sobre IA en educación "
+                      "(ChatGPT-IA-edu, Vibe Coding Educativo y EduMedia-IAG) buscando en lo que se ha hablado en "
+                      "ellos, en la Biblioteca digital de documentos y en el repositorio de recursos educativos. No "
+                      "redacta textos ni actividades: busca lo compartido.")
+    SOLUCIONES = ["nadie lo ha tratado en los grupos", "está en los grupos pero el bot no lo encuentra",
+                  "función que el bot no tiene", "completar lo que el bot sabe de sí mismo", "fuera de su ámbito"]
+
+    def sin_resolver_por_temas(self, chat: int) -> None:
+        hecho = self.escribiendo(chat)
+        try:
+            temas, errores, uso = temas_sin_resolver(self.consultor.cliente, self.CONTEXTO_TEMAS, self.SOLUCIONES)
+        except Exception as error:  # noqa: BLE001
+            registrar(f"error al agrupar las preguntas sin resolver: {type(error).__name__}: {error}")
+            return self.enviar(chat, "No he podido agruparlas: " + f"{type(error).__name__}: {error}")
+        finally:
+            hecho.set()
+        if uso["usd"]:
+            self.apuntar(uso["usd"])
+        self.enviar_tablas(chat, bloques_temas(temas, errores, uso))
 
     def enviar_tablas(self, chat: int, bloques: list) -> None:
         """/estado en tablas, como mensaje enriquecido; si Telegram no lo acepta, en texto."""
@@ -985,6 +1266,8 @@ class Bot:
                     self.tg("leaveChat", chat_id=chat)
                 return
             # En los grupos no busca nunca: a quien le escribe le indica el privado (Juanjo, 24-10-2026).
+            if self.respuesta_a_pregunta(msg):  # responde a una pregunta que llevó el bot (ADR 0023)
+                return
             if self.le_hablan(msg):
                 self.solo_privado(chat, uid, msg)
             return
@@ -1002,6 +1285,8 @@ class Bot:
             self.espera.pop(uid, None)  # un comando deja lo que estuviera a medias
         if comando == "/estado" and uid == JUANJO:
             return self.enviar_tablas(chat, bloques_estado(contabilidad(leer_estado())))
+        if comando == "/sinresolver" and uid == JUANJO:
+            return self.en_hilo(self.sin_resolver_por_temas, chat)
         if comando in ("/start", "/ayuda"):
             return self.enviar(chat, self.ayuda(uid, suyos), "HTML")
         if comando == "/buscar":
@@ -1085,7 +1370,9 @@ class Bot:
                  if nombres and busco else "")  # solo si ha buscado: no en «¿quién administra…?»
         self.texto_o_nada(uid, r, con_fotos(texto, fotos))
         entregada = self.enviar_valorable(chat, uid, aviso + r["texto"], con_fotos(texto, fotos),
-                                          bool(r.get("sin_resolver")), r.get("valorable", True))
+                                          bool(r.get("sin_resolver")), r.get("valorable", True),
+                                          al_grupo={"texto": texto, "fotos": fotos},
+                                          ofrecer=r.get("sin_resolver") in MOTIVOS_GRUPO)
         if r.get("sin_resolver") and uid != JUANJO:  # las pruebas de Juanjo no cuentan
             guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"])
         # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.
@@ -1191,6 +1478,8 @@ class Bot:
             return self.valorar(cq)
         self.tg("answerCallbackQuery", callback_query_id=cq["id"])
         m = cq.get("message") or {}
+        if accion.startswith(("pg:", "pgp:", "pgx:", "pgq:")):  # preguntar en el grupo (ADR 0023)
+            return self.pregunta_grupo(uid, accion, m, cq["from"])
         if accion.startswith("g:"):  # casillas de /buscar: marcar o desmarcar un grupo (Juanjo, 27-10-2026)
             grupo = accion[2:]
             marcados = set(self.ambito(uid) or grupos.ACTIVOS)
@@ -1972,7 +2261,8 @@ class Bot:
             self.tg("setMyShortDescription", short_description=textos.texto(lengua, "perfil_corto"), **idioma)
         # Juanjo tiene además /estado; un menú propio de su chat tapa el general, así que lleva todo.
         menu = [{"command": c, "description": textos.texto("es", f"c_{c}")} for c in COMANDOS]
-        self.tg("setMyCommands", commands=menu + [{"command": "estado", "description": "Consultas y gasto"}],
+        self.tg("setMyCommands", commands=menu + [{"command": "estado", "description": "Consultas y gasto"},
+                                                  {"command": "sinresolver", "description": "Preguntas sin resolver por temas"}],
                 scope={"type": "chat", "chat_id": JUANJO})
         self.actualizar_administradores()
         siguiente = None
@@ -2009,5 +2299,9 @@ class Bot:
 if __name__ == "__main__":
     if sys.argv[1:] == ["estado"]:
         print(informe(contabilidad(leer_estado())))
+    elif sys.argv[1:] == ["sinresolver"]:  # para revisarlas desde la terminal del NAS; el gasto no se apunta
+        import anthropic
+        print(a_texto(bloques_temas(*temas_sin_resolver(anthropic.Anthropic(api_key=consultar.CLAVE.read_text().strip()),
+                                                         Bot.CONTEXTO_TEMAS, Bot.SOLUCIONES))))
     else:
         Bot().en_marcha()

@@ -39,8 +39,12 @@ ayuda «No guardo tus preguntas».
    las preguntas que no consigo responder, para mejorar el bot, y las borro a los
    60 días» (texto de Juanjo; «de forma anónima» y no «totalmente», porque si
    alguien escribe un dato suyo dentro de la pregunta, ese texto queda).
-4. **El análisis**, a mano con Juanjo un mes después (27-11-2026), sin gasto de
-   API. `/estado` dice cuántas hay guardadas.
+4. **El análisis**, con Juanjo un mes después (27-11-2026). `/estado` dice
+   cuántas hay guardadas y, desde el 01-11-2026, `/sinresolver` las agrupa por
+   temas con Sonnet, con qué las resolvería y un ejemplo de cada tema (unos
+   0,01 USD; sin gasto con menos de 5): ver [ADR 0023](0023-preguntar-en-el-grupo-y-preguntas-sin-resolver-por-temas.md).
+   Lo que el bot no encuentra se puede llevar además al grupo, si la persona
+   quiere (mismo ADR).
 
 ## Validación
 

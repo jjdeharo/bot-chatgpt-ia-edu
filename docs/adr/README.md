@@ -24,5 +24,6 @@
 | [0020](0020-correcciones-del-informe-del-01-11-2026.md) | Correcciones del informe del 01-11-2026: respuesta vacía, botones firmados, 429, repuesto HTML, versión y pruebas en GitHub | aceptado |
 | [0021](0021-reenvios-con-origen-seguimiento-de-incidencias-archivos-elpx-y-vigilancia-de-la-documentacion.md) | Reenvíos con su origen, seguimiento de incidencias, archivos .elpx, vigilancia de la documentación y búsqueda de recursos por el camino barato | aceptado |
 | [0022](0022-notas-de-voz-con-el-modelo-del-boletin.md) | Notas de voz, pasadas a texto con el modelo de voz del boletín semanal | aceptado |
+| [0023](0023-preguntar-en-el-grupo-y-preguntas-sin-resolver-por-temas.md) | Preguntar en el grupo lo que el bot no resuelve, y preguntas sin resolver por temas | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

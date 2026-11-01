@@ -50,6 +50,7 @@ CAMBIO_USD = float(os.environ.get("CAMBIO_USD", "18"))  # desde aquí, Haiku has
 # Lo de bot.py, con los archivos y el tope de Karla, por debajo del de su espacio de trabajo.
 bot.ESTADO = bot.BASE / "datos" / "estado-karla.json"
 bot.SIN_RESOLVER = bot.BASE / "datos" / "sin-resolver-karla.jsonl"
+bot.PREGUNTAS_GRUPO = bot.BASE / "datos" / "preguntas-grupo-karla.json"
 bot.TOPE_MES_USD = float(os.environ.get("TOPE_MES_USD", "22.5"))
 bot.CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/karla-bot.json"))
 # Incidencias de GitHub (ADR 0010): buscar siempre; abrir, solo si INCIDENCIAS lo permite y la persona lo
@@ -517,6 +518,16 @@ class Karla(bot.Bot):
         self.memoria, self.miembros, self.lenguas, self.recientes = {}, {}, {}, {}
         self.borradores = {}  # usuario -> incidencia a la espera de que la envíe o no
         self.valorables = {}  # usuario -> su última respuesta, la única con 👍/👎
+        self.al_grupo = {}  # usuario -> la pregunta que puede llevar al grupo (ADR 0023)
+
+    CONTEXTO_TEMAS = ("El bot es Karla bot, que responde dudas sobre eXeLearning (programa libre para crear recursos "
+                      "educativos) a los miembros del grupo de Telegram eXeLearning. Busca en el manual de usuario, en "
+                      "la documentación técnica y de los complementos, en las conversaciones del grupo desde 2019 y "
+                      "en «eXeLearning: recetas probadas», un documento propio con soluciones comprobadas, y busca o "
+                      "abre incidencias en GitHub.")
+    SOLUCIONES = ["añadir una receta probada", "está documentado pero Karla no lo encuentra",
+                  "falta en la documentación oficial", "fallo o carencia del programa",
+                  "completar lo que Karla sabe de sí misma", "fuera de su ámbito"]
 
     def actualizar_entorno(self) -> None:
         """Quién administra el grupo, su descripción y su mensaje fijado, con los enlaces, para que Karla
@@ -624,6 +635,8 @@ class Karla(bot.Bot):
         if accion.startswith("val:"):
             return self.valorar(cq)
         self.tg("answerCallbackQuery", callback_query_id=cq["id"])
+        if accion.startswith(("pg:", "pgp:", "pgx:", "pgq:")):  # preguntar en el grupo (ADR 0023)
+            return self.pregunta_grupo(uid, accion, m, cq["from"])
         if accion.startswith("eq:") and uid == bot.JUANJO:
             return self.decidir_equipo(accion, m)
         if accion.startswith("sig:"):
@@ -679,6 +692,9 @@ class Karla(bot.Bot):
 
     def tx(self, uid: int, clave: str, **datos) -> str:
         return textos_karla.texto(self.lenguas.get(uid, "es"), clave, **datos)
+
+    def tx_en(self, lengua: str, clave: str, **datos) -> str:
+        return textos_karla.texto(lengua, clave, **datos)
 
     # --- seguimiento de incidencias (ADR 0021) ---------------------------------
     def decidir_seguimiento(self, uid: int, accion: str, m: dict) -> None:
@@ -793,6 +809,8 @@ class Karla(bot.Bot):
                 self.tg("leaveChat", chat_id=chat)  # solo está en el grupo eXeLearning
             elif msg.get("pinned_message"):
                 self.actualizar_entorno()
+            elif self.respuesta_a_pregunta(msg):  # responde a una pregunta que llevó Karla (ADR 0023)
+                pass
             elif self.le_hablan(msg):
                 self.solo_privado(chat, uid, msg)
             return
@@ -806,6 +824,8 @@ class Karla(bot.Bot):
         comando = texto.split()[0].split("@")[0].lower() if texto.startswith("/") else ""
         if comando == "/estado" and uid == bot.JUANJO:
             return self.enviar_tablas(chat, bloques_estado(bot.contabilidad(bot.leer_estado())))
+        if comando == "/sinresolver" and uid == bot.JUANJO:
+            return self.en_hilo(self.sin_resolver_por_temas, chat)
         if comando in ("/start", "/ayuda"):
             return self.enviar(chat, self.ayuda(uid), "HTML")
         voz = self.voz_a_texto(chat, uid, msg)  # una nota de voz, como pregunta escrita (ADR 0022)
@@ -813,13 +833,15 @@ class Karla(bot.Bot):
             if not voz:
                 return
             texto, msg = voz, {**msg, "voz": True}
+        propio = texto  # lo que la persona ha escrito o dicho: es lo que iría al grupo (ADR 0023)
         if msg.get("document"):  # un proyecto de eXeLearning con su duda en el pie (ADR 0021)
             resumen = self.archivo_exe(chat, uid, msg)
             if resumen is None:
                 return self.enviar(chat, self.tx(uid, "solo_texto"))
             if not resumen:
                 return
-            texto = f"{(msg.get('caption') or '').strip()}\n\n{resumen}".strip()
+            propio = (msg.get("caption") or "").strip()
+            texto = f"{propio}\n\n{resumen}".strip()
         if not texto and not fotos:
             return self.enviar(chat, self.tx(uid, "solo_texto"))
 
@@ -856,7 +878,9 @@ class Karla(bot.Bot):
         else:
             self.texto_o_nada(uid, r, bot.con_fotos(texto, fotos))
             entregada = self.enviar_valorable(chat, uid, r["texto"], bot.con_fotos(texto, fotos),
-                                              bool(r.get("sin_resolver")), r.get("valorable", True))
+                                              bool(r.get("sin_resolver")), r.get("valorable", True),
+                                              al_grupo={"texto": propio, "fotos": fotos},
+                                              ofrecer=r.get("sin_resolver") in bot.MOTIVOS_GRUPO)
         if r.get("sin_resolver") and uid != bot.JUANJO:  # las pruebas de Juanjo no cuentan
             bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"])
         self.memoria[uid] = (time.time(), historial[-2 * bot.INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},
@@ -896,7 +920,8 @@ class Karla(bot.Bot):
         if (self.tg("getMyName") or {}).get("name") != "Karla bot":  # Telegram limita los cambios de nombre
             self.tg("setMyName", name="Karla bot")
         self.tg("setMyCommands", commands=[{"command": "ayuda", "description": "Cómo funciono"},
-                                           {"command": "estado", "description": "Consultas y gasto"}],
+                                           {"command": "estado", "description": "Consultas y gasto"},
+                                           {"command": "sinresolver", "description": "Preguntas sin resolver por temas"}],
                 scope={"type": "chat", "chat_id": bot.JUANJO})
         self.actualizar_entorno()
         self.revisar_equipo_sin_fallar()
@@ -970,6 +995,9 @@ def informe(e: dict) -> str:
 if __name__ == "__main__":
     if sys.argv[1:] == ["estado"]:
         print(informe(bot.contabilidad(bot.leer_estado())))
+    elif sys.argv[1:] == ["sinresolver"]:  # para revisarlas desde la terminal del NAS; el gasto no se apunta
+        print(bot.a_texto(bot.bloques_temas(*bot.temas_sin_resolver(anthropic.Anthropic(api_key=CLAVE.read_text().strip()),
+                                                                     Karla.CONTEXTO_TEMAS, Karla.SOLUCIONES))))
     elif sys.argv[1:]:
         c = Consultora()
         for p in sys.argv[1:]:

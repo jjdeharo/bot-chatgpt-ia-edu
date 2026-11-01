@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.3.0 — 2026-11-01
+
+Dos ideas del análisis competitivo del 01-11 (ADR 0023). **Preguntar en el grupo**: cuando un bot no encuentra la respuesta, o la persona pulsa 👎, ofrece llevar la pregunta al grupo con su nombre; antes enseña el mensaje tal como quedará, y quien responda allí a ese mensaje le llega por privado durante una semana; se puede quitar en 48 horas, con un tope de tres al día por persona (no en EduMedia-IAG). **`/sinresolver`**, para Juanjo: las preguntas sin resolver agrupadas por temas con Sonnet, con qué las resolvería y un ejemplo literal de cada tema (unos 0,01 USD; sin gasto con menos de 5).
+
 ## 1.2.0 — 2026-11-01
 
 Notas de voz en los dos bots (ADR 0022): un servicio de voz con faster-whisper «small», reutilizando la imagen, el entorno y el modelo ya descargado del boletín semanal; el bot enseña lo que ha entendido y responde como a una pregunta escrita. Sin gasto de API.

@@ -35,7 +35,7 @@ def bot_sin_arrancar(clase=bot.Bot):
     """Un bot con sus diccionarios vacíos y sin Telegram: tg apunta las llamadas y enviar, los textos."""
     b = clase.__new__(clase)
     for nombre in ("memoria", "pendientes", "miembros", "espera", "fichas_rec", "listas", "lenguas", "recientes",
-                   "compartir", "rechazados", "ambitos", "valorables", "borradores"):
+                   "compartir", "rechazados", "ambitos", "valorables", "borradores", "al_grupo"):
         setattr(b, nombre, {})
     b.llamadas, b.enviados = [], []
     b.tg = lambda metodo, **k: (b.llamadas.append((metodo, k)), {"message_id": 99})[1]
@@ -564,6 +564,206 @@ class NotasDeVoz(unittest.TestCase):
         with mock.patch.object(bot, "VOZ_URL", "http://voz:8001"):
             self.assertEqual(b.voz_a_texto(7, 7, {"voice": {"file_id": "x", "duration": 4}}), "")
         self.assertEqual(b.enviados[-1], textos.texto("ca", "audio_vacio"))
+
+
+class PreguntarEnElGrupo(unittest.TestCase):
+    """ADR 0023: lo que el bot no ha sabido responder se puede llevar al grupo, viéndolo antes."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.parche = mock.patch.object(bot, "PREGUNTAS_GRUPO", Path(self.dir.name) / "preguntas-grupo.json")
+        self.parche.start()
+        self.reg = mock.patch.object(bot, "registrar")
+        self.reg.start()
+
+    def tearDown(self):
+        self.parche.stop()
+        self.reg.stop()
+        self.dir.cleanup()
+
+    def bot(self, clase=bot.Bot, suyos=("chatgpt", "vce")):
+        b = bot_sin_arrancar(clase)
+        b.token, b.id = "token", 555
+        b.grupos_de = lambda uid, al_dia=False: set(suyos)
+        if clase is not bot.Bot:
+            del b.ambitos  # Karla no acota la búsqueda por grupos
+        return b
+
+    DE = {"id": 7, "first_name": "Ana", "last_name": "Pérez"}
+
+    def preparar(self, b, ofrecer=True, fotos=()):
+        b.enviar_valorable(7, 7, "No lo he encontrado.", "¿cómo se hace X?", True,
+                           al_grupo={"texto": "¿Cómo se hace X?", "fotos": list(fotos)}, ofrecer=ofrecer)
+        return b.al_grupo[7]["clave"]
+
+    def botones(self, llamada):
+        return [x["callback_data"] for fila in llamada[1]["reply_markup"]["inline_keyboard"] for x in fila]
+
+    def test_se_ofrece_si_no_encuentra_nada(self):
+        b = self.bot()
+        clave = self.preparar(b)
+        envio = next(c for c in b.llamadas if c[0] == "sendRichMessage")
+        self.assertEqual(self.botones(envio), ["val:+", "val:-", f"pg:{clave}"])
+        b2 = self.bot()
+        self.preparar(b2, ofrecer=False)
+        envio = next(c for c in b2.llamadas if c[0] == "sendRichMessage")
+        self.assertEqual(self.botones(envio), ["val:+", "val:-"])
+
+    def test_con_pulgar_abajo_queda_el_boton_del_grupo(self):
+        b = self.bot()
+        clave = self.preparar(b, ofrecer=False)
+        with mock.patch.object(bot, "guardar_sin_resolver"), mock.patch.object(bot, "leer_estado", return_value={}), \
+                mock.patch.object(bot, "contabilidad", return_value={"utiles_hoy": 0, "utiles_mes": 0,
+                                                                     "no_utiles_hoy": 0, "no_utiles_mes": 0}), \
+                mock.patch.object(bot, "guardar_estado"):
+            b.valorar({"id": "q", "from": {"id": 7}, "data": "val:-", "message": {"chat": {"id": 7}, "message_id": 99}})
+        edicion = [c for c in b.llamadas if c[0] == "editMessageReplyMarkup"][-1]
+        self.assertEqual(self.botones(edicion), [f"pg:{clave}"])
+
+    def test_vista_previa_antes_de_publicar(self):
+        b = self.bot()
+        clave = self.preparar(b)
+        b.llamadas.clear()
+        b.pregunta_grupo(7, f"pg:{clave}", {}, self.DE)
+        self.assertEqual([c[0] for c in b.llamadas], ["sendMessage"])  # nada en el grupo todavía
+        vista = b.llamadas[0][1]
+        self.assertEqual(vista["chat_id"], 7)
+        self.assertIn("Ana Pérez", vista["text"])
+        self.assertIn("¿Cómo se hace X?", vista["text"])
+        self.assertEqual(self.botones(b.llamadas[0]), [f"pgp:{clave}:chatgpt", f"pgp:{clave}:vce", f"pgx:{clave}"])
+
+    def test_publicar_guarda_quien_y_ofrece_quitarla(self):
+        b = self.bot(suyos=("vce",))
+        clave = self.preparar(b)
+        b.llamadas.clear()
+        b.pregunta_grupo(7, f"pgp:{clave}:vce", {}, self.DE)
+        grupo, privado = b.llamadas
+        self.assertEqual(grupo[1]["chat_id"], bot.grupos.TODOS["vce"].id)
+        self.assertIn('<a href="tg://user?id=7">Ana Pérez</a>', grupo[1]["text"])
+        d = bot.leer_preguntas_grupo()
+        self.assertEqual(list(d.values())[0]["uid"], 7)
+        quitar = self.botones(privado)[0]
+        self.assertTrue(quitar.startswith(f"pgq:{bot.grupos.TODOS['vce'].id}:99:"))
+        self.assertNotIn(7, b.al_grupo)  # una pregunta se lleva una sola vez
+        b.llamadas.clear()
+        b.pregunta_grupo(7, f"pgp:{clave}:vce", {}, self.DE)
+        self.assertEqual(b.llamadas, [])
+        self.assertEqual(b.enviados[-1], textos.texto("es", "pregunta_caducada"))
+
+    def test_boton_viejo_o_de_otro_grupo_no_publica(self):
+        b = self.bot(suyos=("vce",))
+        self.preparar(b)
+        b.llamadas.clear()
+        b.pregunta_grupo(7, "pgp:000000:vce", {}, self.DE)
+        clave = b.al_grupo[7]["clave"]
+        b.pregunta_grupo(7, f"pgp:{clave}:chatgpt", {}, self.DE)  # no es miembro de ese grupo
+        self.assertFalse([c for c in b.llamadas if c[0] == "sendMessage"])
+
+    def test_tope_diario(self):
+        b = self.bot(suyos=("vce",))
+        for _ in range(bot.PREGUNTAS_GRUPO_DIA):
+            clave = self.preparar(b)
+            b.pregunta_grupo(7, f"pgp:{clave}:vce", {}, self.DE)
+        b.llamadas.clear()
+        clave = self.preparar(b)
+        b.llamadas.clear()
+        b.pregunta_grupo(7, f"pgp:{clave}:vce", {}, self.DE)
+        self.assertFalse([c for c in b.llamadas if c[0] == "sendMessage"])
+        self.assertEqual(b.enviados[-1], textos.texto("es", "pregunta_tope", n=bot.PREGUNTAS_GRUPO_DIA))
+
+    def test_con_una_imagen_va_como_foto(self):
+        b = self.bot(suyos=("vce",))
+        clave = self.preparar(b, fotos=["foto1"])
+        b.llamadas.clear()
+        b.pregunta_grupo(7, f"pgp:{clave}:vce", {}, self.DE)
+        self.assertEqual(b.llamadas[0][0], "sendPhoto")
+        self.assertLessEqual(len(b.llamadas[0][1]["caption"]), 1024)
+
+    def test_respuesta_en_el_grupo_llega_por_privado(self):
+        b = self.bot(suyos=("vce",))
+        g = bot.grupos.TODOS["vce"]
+        bot.guardar_preguntas_grupo({f"{g.id}:50": {"uid": 7, "ids": [50], "grupo": "vce", "momento": time.time(),
+                                                    "lengua": "ca"}})
+        ajeno = {"chat": {"id": g.id}, "message_id": 61, "from": {"id": 8, "first_name": "Luis"},
+                 "text": "Prueba con el menú Herramientas", "reply_to_message": {"message_id": 50, "from": {"id": 555}}}
+        with mock.patch.object(bot.grupos, "ACTIVOS", {"vce": g}):
+            self.assertTrue(b.respuesta_a_pregunta(ajeno))
+        self.assertEqual(b.enviados[-1], textos.texto("ca", "respuesta_en_grupo", quien="Luis",
+                                                      extracto="Prueba con el menú Herramientas",
+                                                      enlace=f"{g.enlace}/61"))
+        propio = {**ajeno, "from": {"id": 7, "first_name": "Ana"}}
+        n = len(b.enviados)
+        self.assertTrue(b.respuesta_a_pregunta(propio))  # quien preguntó no se avisa a sí mismo
+        self.assertEqual(len(b.enviados), n)
+        otro = {**ajeno, "reply_to_message": {"message_id": 51, "from": {"id": 555}}}
+        self.assertFalse(b.respuesta_a_pregunta(otro))  # otro mensaje del bot: sigue como siempre
+
+    def test_caducan_a_la_semana(self):
+        g = bot.grupos.TODOS["vce"]
+        bot.guardar_preguntas_grupo({f"{g.id}:50": {"uid": 7, "ids": [50], "momento": time.time() - 8 * 86400}})
+        self.assertEqual(bot.leer_preguntas_grupo(), {})
+
+    def test_solo_quien_la_llevo_la_quita(self):
+        b = self.bot(suyos=("vce",))
+        g = bot.grupos.TODOS["vce"]
+        bot.guardar_preguntas_grupo({f"{g.id}:50": {"uid": 7, "ids": [50], "momento": time.time()}})
+        b.pregunta_grupo(8, f"pgq:{g.id}:50:{b.firma(7, g.id, 50)}", {}, {"id": 8})
+        self.assertFalse([c for c in b.llamadas if c[0] == "deleteMessage"])
+        b.pregunta_grupo(7, f"pgq:{g.id}:50:{b.firma(7, g.id, 50)}", {}, self.DE)
+        self.assertEqual([c[1]["message_id"] for c in b.llamadas if c[0] == "deleteMessage"], [50])
+        self.assertEqual(bot.leer_preguntas_grupo(), {})
+
+    def test_edumedia_no_es_destino(self):
+        b = self.bot(suyos=("edumedia", "vce"))
+        self.assertEqual([g.clave for g in b.grupos_para_preguntar(7)], ["vce"])
+
+    def test_karla_con_sus_textos(self):
+        b = self.bot(karla.Karla, suyos=("exelearning",))
+        clave = self.preparar(b)
+        b.llamadas.clear()
+        with mock.patch.object(bot.grupos, "ACTIVOS", {"exelearning": bot.grupos.TODOS["exelearning"]}):
+            b.pregunta_grupo(7, f"pg:{clave}", {}, self.DE)
+        self.assertIn("documentación de eXeLearning", b.llamadas[0][1]["text"])
+        self.assertEqual(self.botones(b.llamadas[0]), [f"pgp:{clave}:exelearning", f"pgx:{clave}"])
+
+
+class SinResolverPorTemas(unittest.TestCase):
+    def guardar(self, f, preguntas):
+        f.write_text("".join(json.dumps({"fecha": "2026-11-01T10:00:00+00:00", "motivo": m, "pregunta": q}) + "\n"
+                             for m, q in preguntas))
+
+    def test_pocas_no_gastan(self):
+        cliente = mock.Mock()
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "s.jsonl"
+            self.guardar(f, [("sin resultado", "a"), ("error", "b")])
+            with mock.patch.object(bot, "SIN_RESOLVER", f):
+                temas, errores, uso = bot.temas_sin_resolver(cliente, "ctx", ["x"])
+        cliente.messages.create.assert_not_called()
+        self.assertEqual(len(errores), 1)
+        texto = bot.a_texto(bot.bloques_temas(temas, errores, uso))
+        self.assertIn("Son pocas", texto)
+        self.assertIn("1 falló por un error", texto)
+
+    def test_temas_con_las_preguntas_literales(self):
+        bloque = mock.Mock(type="text", text=json.dumps({"temas": [
+            {"tema": "Exportar a SCORM", "preguntas": [1, 2, 99], "falta": "f", "solucion": "x", "propuesta": "p"},
+            {"tema": "Repetida", "preguntas": [2], "falta": "", "solucion": "x", "propuesta": ""}]}))
+        cliente = mock.Mock()
+        cliente.messages.create.return_value = mock.Mock(content=[bloque], usage=mock.Mock(
+            input_tokens=1000, output_tokens=200, cache_read_input_tokens=0, cache_creation_input_tokens=0))
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "s.jsonl"
+            self.guardar(f, [("sin resultado", f"pregunta {i}") for i in range(1, 7)] + [("error", "fallo")])
+            with mock.patch.object(bot, "SIN_RESOLVER", f):
+                temas, errores, uso = bot.temas_sin_resolver(cliente, "ctx", ["x"])
+        enviado = cliente.messages.create.call_args.kwargs["messages"][0]["content"]
+        self.assertNotIn("fallo", enviado)  # los errores del programa no se mandan
+        self.assertEqual([t["tema"] for t in temas], ["Sin tema", "Exportar a SCORM"])  # 4 sueltas, 2 en el tema
+        self.assertEqual([g["pregunta"] for g in temas[1]["preguntas"]], ["pregunta 1", "pregunta 2"])
+        self.assertGreater(uso["usd"], 0)
+        html_ = bot.a_html(bot.bloques_temas(temas, errores, uso))
+        self.assertIn("<b>2. Exportar a SCORM: 2 preguntas</b>", html_)
 
 
 if __name__ == "__main__":

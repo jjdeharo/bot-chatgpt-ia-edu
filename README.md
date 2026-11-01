@@ -19,7 +19,9 @@ Si le piden ayuda para enseñar (ideas, consejo, una clase, una rúbrica), la
 prepara con lo que se ha compartido en los grupos: cada idea con quién la
 compartió, cuándo y el enlace, y aparte lo que añade el bot (ADR 0011).
 
-Entiende capturas de pantalla y notas de voz (ADR 0022). Habla en castellano, catalán, gallego, euskera o inglés: al principio, en el
+Entiende capturas de pantalla y notas de voz (ADR 0022). Si no encuentra la respuesta, o la persona
+pulsa 👎, ofrece llevar la pregunta al grupo con su nombre, después de enseñarle el mensaje; quien responda
+allí a ese mensaje le llega por privado durante una semana (ADR 0023). Habla en castellano, catalán, gallego, euskera o inglés: al principio, en el
 idioma del Telegram de cada persona y, en cuanto escribe una frase, en el de
 la frase (`scripts/textos.py`, ADR 0005). Las traducciones son automáticas,
 hechas con IA, sin revisión profesional.
@@ -33,7 +35,8 @@ el grupo y con la documentación del programa (manual, documentación técnica y
 complementos), siempre con sus fuentes, y en un lenguaje pensado para el
 profesorado. Si la duda es un fallo o una mejora de eXeLearning, busca si ya
 hay una incidencia en GitHub y, si la persona lo confirma, la abre; si lo pide, le avisa de cada
-respuesta del equipo y del cierre (ADR 0021). Entiende capturas de pantalla y archivos `.elpx` del
+respuesta del equipo y del cierre (ADR 0021). Lo que no sabe responder lo puede llevar al grupo, como el
+otro bot (ADR 0023). Entiende capturas de pantalla y archivos `.elpx` del
 proyecto, que resume antes de responder. Sustituye
 al cuaderno de NotebookLM «Karla - Experta en eXeLearning». Usa el mismo
 programa que el Bot de IA Educativa (`scripts/karla.py`, con sus textos en
@@ -62,7 +65,8 @@ Cada vez que alguien publica algo con un bot, ese bot se lo cuenta a Juanjo
 por privado con el enlace, para que pueda verlo: un documento nuevo en la
 Biblioteca digital, un recurso nuevo en el repositorio de Vibe Coding
 Educativo (no los cambios) o una incidencia abierta en GitHub desde Karla.
-Lo que publica él mismo no se avisa.
+Lo que publica él mismo no se avisa, ni las preguntas que alguien lleva al grupo,
+que ya ve en el grupo (ADR 0023).
 
 Los viernes a las 18:00, cada bot publica en su grupo un resumen de la semana
 (`scripts/resumen_semanal.py`, ADR 0018): Karla, las novedades y dudas resueltas
@@ -159,7 +163,10 @@ Juanjo ve las consultas y el gasto escribiendo `/estado` al bot (solo a él le r
 guardan cifras por día, sin separar grupos (ADR 0003), y durante el mes en qué días ha preguntado
 cada cuenta, para saber cuántas personas vuelven (ADR 0014). La última respuesta lleva 👍/👎. Las
 preguntas que el bot no consigue responder, y las marcadas con 👎, se guardan de forma anónima, sin
-nada de quién pregunta, en `datos/sin-resolver.jsonl`, y se borran a los 60 días (ADR 0007).
+nada de quién pregunta, en `datos/sin-resolver.jsonl`, y se borran a los 60 días (ADR 0007). Juanjo las
+ve agrupadas por temas, con qué las resolvería, escribiendo `/sinresolver` a cada bot (unos 0,01 USD con
+Sonnet; sin gasto con menos de 5), o con `docker exec bot-chatgpt-ia-edu python bot.py sinresolver` y
+`docker exec karla-bot python karla.py sinresolver` en el NAS (ADR 0023).
 
 Karla bot usa Claude Sonnet 5.5 hasta un gasto del mes y, a partir de ahí, Claude Haiku 5.5
 hasta el día 1, con su propio tope.
