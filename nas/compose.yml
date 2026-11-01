@@ -33,6 +33,30 @@ services:
       timeout: 10s
       start_period: 120s
 
+  # El servicio de voz (ADR 0022): pasa a texto las notas de voz con faster-whisper «small», con la imagen,
+  # el entorno de Python y el modelo ya descargado del boletín semanal; nada nuevo que instalar. El modelo
+  # se carga en cada petición y se suelta: en reposo no ocupa memoria. Si se para, los bots lo dicen y siguen.
+  voz:
+    image: boletin-semanal:local
+    container_name: bot-voz
+    restart: unless-stopped
+    user: "1000:10"
+    command: ["/proyecto/.venv/bin/python", "/bot/scripts/voz.py"]
+    cpus: 1.5
+    environment:
+      HOME: /home/jjdeharo
+      HF_HUB_OFFLINE: "1"  # el modelo está en la caché; sin salir a la red
+      VOZ_HILOS: "2"
+    volumes:
+      - ./repo:/bot:ro
+      - ../boletin-semanal/repo/.venv:/proyecto/.venv:ro
+      - ../boletin-semanal/home/.cache/huggingface:/home/jjdeharo/.cache/huggingface:ro
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/salud', timeout=5)"]
+      interval: 60s
+      timeout: 10s
+      start_period: 30s
+
   bot:
     image: bot-chatgpt-ia-edu:local
     container_name: bot-chatgpt-ia-edu
@@ -41,6 +65,7 @@ services:
     command: ["python", "bot.py"]
     environment: &entorno
       SIGNIFICADO_URL: http://significado:8000
+      VOZ_URL: http://voz:8001
       # Abierto a todo miembro del grupo desde el 24-10-2026 (antes, solo Juanjo).
       ABIERTO: "1"
       JUANJO: "218499880"  # la cuenta de Juanjo (avisos, /estado); fuera del código público (ADR 0020)
@@ -73,6 +98,7 @@ services:
       # Incidencias (ADR 0010): «dueño/repositorio» = pruebas, solo para Juanjo; «1» = al equipo de eXeLearning.
       INCIDENCIAS: "1"  # abiertas para todo el grupo desde el 27-10-2026
       SIGNIFICADO_URL: http://significado:8000
+      VOZ_URL: http://voz:8001
     volumes: *volumenes
     depends_on: [bot, significado]
 

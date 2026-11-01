@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.2.0 — 2026-11-01
+
+Notas de voz en los dos bots (ADR 0022): un servicio de voz con faster-whisper «small», reutilizando la imagen, el entorno y el modelo ya descargado del boletín semanal; el bot enseña lo que ha entendido y responde como a una pregunta escrita. Sin gasto de API.
+
 ## 1.1.0 — 2026-11-01
 
 Las mejoras del informe del 01-11 (ADR 0021): los mensajes reenviados llevan quién los escribió y cuándo, para que el bot dé con el hilo exacto; Karla ofrece avisar de cada respuesta del equipo a quien envía un aviso de error, y del cierre; Karla lee archivos `.elpx`, `.elp` y `.zip` (resumen del proyecto: versión, páginas, iDevices) y diagnostica con ellos; el bucle del índice avisa si la documentación de eXeLearning lleva tres días sin cambiar; y pedir aplicaciones o recursos de un tema va por la búsqueda normal, no por la ayuda para enseñar (de 0,08 a 0,003 USD).

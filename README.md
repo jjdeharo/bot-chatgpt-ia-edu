@@ -19,7 +19,7 @@ Si le piden ayuda para enseñar (ideas, consejo, una clase, una rúbrica), la
 prepara con lo que se ha compartido en los grupos: cada idea con quién la
 compartió, cuándo y el enlace, y aparte lo que añade el bot (ADR 0011).
 
-Habla en castellano, catalán, gallego, euskera o inglés: al principio, en el
+Entiende capturas de pantalla y notas de voz (ADR 0022). Habla en castellano, catalán, gallego, euskera o inglés: al principio, en el
 idioma del Telegram de cada persona y, en cuanto escribe una frase, en el de
 la frase (`scripts/textos.py`, ADR 0005). Las traducciones son automáticas,
 hechas con IA, sin revisión profesional.
@@ -94,6 +94,10 @@ En el NAS, `repo/` es un clon de git. Se despliega desde el portátil con
 `nas/compose.yml` y reinicia o reconstruye lo que pide `nas/despliegue.conf`.
 `desplegar-nas --comprobar` dice qué commit corre en el NAS y si allí se ha
 tocado algo.
+
+Las notas de voz las pasa a texto el contenedor `bot-voz` (`scripts/voz.py`, ADR 0022), que corre con
+la imagen, el entorno de Python y el modelo faster-whisper «small» del boletín semanal, montados en solo
+lectura desde `../boletin-semanal`. Si se para, los bots piden la pregunta por escrito.
 
 Los dos bots y el índice comparten una sola copia del modelo de significado,
 en el contenedor `bot-significado` (ADR 0012). Si se para, los bots siguen

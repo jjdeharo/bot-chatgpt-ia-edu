@@ -63,7 +63,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.1.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.2.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -86,6 +86,9 @@ SOLO_URL = re.compile(r"^\s*(https?://\S+)\s*$")
 # Un enlace a un mensaje de Telegram no es un recurso para el repositorio: es una pregunta sobre ese mensaje (ADR 0020).
 ENLACE_TELEGRAM = re.compile(r"^https?://(t\.me|telegram\.me|telegram\.dog)/", re.I)
 LARGO_PREGUNTA = 6000  # caracteres de la pregunta que lee Claude: un reenvío de varios mensajes cabe (antes, 1.000)
+VOZ_URL = os.environ.get("VOZ_URL", "").rstrip("/")  # el servicio de voz (scripts/voz.py, ADR 0022); sin él, no hay audios
+VOZ_MAX_S = int(os.environ.get("VOZ_MAX_S", "180"))
+NOTA_AUDIO = "[Transcrito de una nota de voz: puede llevar erratas]"
 NOTA_RECORTE = "\n[El mensaje era más largo: solo he recibido el principio.]"
 FRASE = re.compile(r"[^\W\d_]{2,}\W+[^\W\d_]{2,}")  # dos palabras al menos: un «ok» o un código no cuentan
 LENGUA = {"type": "object", "properties": {"lengua": {"type": "string", "enum": [*textos.LENGUAS, "dudoso"]}},
@@ -834,6 +837,54 @@ class Bot:
         bloques.append({"type": "text", "text": texto or "(Sin texto: solo las imágenes.)"})
         return bloques
 
+    def transcribir(self, file_id: str) -> dict:
+        """El audio de Telegram, pasado por el servicio de voz: {"texto", "lengua", "duracion"}."""
+        info = self.tg("getFile", file_id=file_id)
+        with urllib.request.urlopen(f"https://api.telegram.org/file/bot{self.token}/{info['file_path']}",
+                                    timeout=60) as r:
+            audio = r.read()
+        pet = urllib.request.Request(VOZ_URL + "/transcribir", audio, {"Content-Type": "application/octet-stream"})
+        with urllib.request.urlopen(pet, timeout=240) as r:
+            return json.load(r)
+
+    def voz_a_texto(self, chat: int, uid: int, msg: dict) -> str | None:
+        """Una nota de voz o un audio, como texto (ADR 0022). None si el mensaje no es de voz; "" si ya se le ha
+        contestado (sin servicio, demasiado largo, sin palabras). La transcripción se le enseña, porque el
+        modelo se equivoca con los nombres, y el idioma que detecta vale para los textos fijos."""
+        a = msg.get("voice") or msg.get("audio")
+        if not a:
+            return None
+        if not VOZ_URL:
+            self.enviar(chat, self.tx(uid, "sin_voz"))
+            return ""
+        if (a.get("duration") or 0) > VOZ_MAX_S:
+            self.enviar(chat, self.tx(uid, "audio_largo", minutos=VOZ_MAX_S // 60))
+            return ""
+        self.enviar(chat, self.tx(uid, "escuchando"))
+        hecho = self.escribiendo(chat)
+        try:
+            r = self.transcribir(a["file_id"])
+        except urllib.error.HTTPError as error:
+            registrar(f"voz: el servicio responde {error.code}")
+            self.enviar(chat, self.tx(uid, "audio_largo", minutos=VOZ_MAX_S // 60) if error.code == 413
+                        else self.tx(uid, "sin_voz"))
+            return ""
+        except Exception as error:  # noqa: BLE001 — sin servicio, se le dice y sigue
+            registrar(f"voz: {type(error).__name__}: {error}")
+            self.enviar(chat, self.tx(uid, "sin_voz"))
+            return ""
+        finally:
+            hecho.set()
+        texto = (r.get("texto") or "").strip()
+        if not texto:
+            self.enviar(chat, self.tx(uid, "audio_vacio"))
+            return ""
+        if r.get("lengua") in textos.LENGUAS:
+            self.lenguas[uid] = r["lengua"]
+        registrar(f"nota de voz transcrita: {r.get('duracion', 0)} s, {len(texto.split())} palabras")
+        self.enviar(chat, self.tx(uid, "entendido", texto=texto[:1500]))
+        return texto
+
     def avisar_juanjo(self, uid: int, clave: str, **datos) -> None:
         """Le cuenta a Juanjo lo que alguien ha publicado con el bot, para verlo (Juanjo, 31-10-2026).
         Lo suyo no: ya lo sabe. Si el aviso falla, lo publicado sigue igual."""
@@ -969,6 +1020,12 @@ class Bot:
             return self.en_hilo(self.mis_recursos, chat, uid)
         espera = self.esperando(uid)
         fotos = msg.get("fotos") or []
+        voz = self.voz_a_texto(chat, uid, msg)
+        if voz is not None:
+            if not voz:
+                return
+            texto = voz  # la nota de voz sigue como una pregunta escrita; la nota de erratas va solo a Claude
+            msg = {**msg, "voz": True}
         if msg.get("document"):
             nombre = msg["document"].get("file_name") or ""
             if ARCHIVO_RECURSO.search(nombre):
@@ -1002,8 +1059,8 @@ class Bot:
             historial = []
         hecho = self.escribiendo(chat)
         try:
-            r = self.consultor.responder(self.pregunta(texto, fotos), historial[-2 * INTERCAMBIOS:], self.ambito(uid),
-                                         self.lenguas.get(uid, "es"))
+            r = self.consultor.responder(self.pregunta(f"{NOTA_AUDIO}\n{texto}" if msg.get("voz") else texto, fotos),
+                                         historial[-2 * INTERCAMBIOS:], self.ambito(uid), self.lenguas.get(uid, "es"))
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             registrar(f"error: {type(error).__name__}: {error}")
             if uid != JUANJO:

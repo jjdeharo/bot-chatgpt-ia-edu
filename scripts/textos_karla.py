@@ -18,7 +18,7 @@ ES = {
                         "por qué el programa se comporta de una manera o cómo publicar tu recurso en Moodle, "
                         "Procomún u otra plataforma. Busco en el manual, en la documentación del programa y de sus "
                         "complementos y en lo que se ha hablado en el grupo [eXeLearning](https://t.me/exelearning), "
-                        "y te digo de dónde sale cada cosa. Puedes mandarme una captura de pantalla o el archivo .elpx de tu proyecto con la duda. Si lo que "
+                        "y te digo de dónde sale cada cosa. Puedes mandarme una captura de pantalla o el archivo .elpx de tu proyecto con la duda, o contármela en una nota de voz. Si lo que "
                         "cuentas es un fallo del programa, busco si ya está avisado y, si quieres, preparo el aviso para el "
                         "equipo que lo desarrolla."),
     "ayuda_final": ("ℹ️ Ten en cuenta: puedo equivocarme, así que comprueba lo importante en el mensaje o el "
@@ -37,7 +37,7 @@ ES = {
     "no_autorizado": "Todavía estoy en pruebas. Pronto estaré abierta al grupo eXeLearning.",
     "solo_privado": "Hola, {nombre}. Soy Karla bot, la asistente de eXeLearning. En el grupo no puedo contestarte, pero por privado sí. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soy Karla bot, la asistente de eXeLearning. Esto no funciona en el grupo, pero por privado sí. Ábrelo aquí: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "Por ahora solo entiendo mensajes escritos, capturas de pantalla y archivos .elpx. Escríbeme la pregunta, por favor.",
+    "solo_texto": "Por ahora solo entiendo mensajes escritos, capturas de pantalla, notas de voz y archivos .elpx. Escríbeme la pregunta, por favor.",
     "error": "Algo ha fallado al buscar. Prueba otra vez en un momento.",
     "cupo": "Has llegado a las {cupo} preguntas de hoy. Mañana podrás seguir.",
     "tope": "Este mes se ha agotado mi presupuesto. Volveré a responder el día 1.",
@@ -71,6 +71,11 @@ ES = {
     "valoracion_si": "¡Gracias!",
     "valoracion_no": "Gracias. Guardo la pregunta, sin nada tuyo, para mejorar.",
     "valoracion_antigua": "Gracias.",
+    "escuchando": "Te escucho. Tardo unos segundos en pasar el audio a texto.",
+    "entendido": "He entendido: «{texto}»",
+    "audio_largo": "El audio dura más de {minutos} minutos. Mándame uno más corto o escríbeme la duda.",
+    "sin_voz": "Ahora mismo no puedo escuchar audios. Escríbeme la pregunta, por favor.",
+    "audio_vacio": "No he entendido nada en el audio. Prueba otra vez o escríbeme la pregunta.",
     "seguir_pregunta": "¿Quieres que te avise aquí cuando el equipo responda o cierre el aviso? Para eso guardo tu cuenta junto al número del aviso hasta que se cierre.",
     "b_si_avisar": "Sí, avísame",
     "b_no_avisar": "No hace falta",
@@ -90,7 +95,7 @@ CA = {
                         "una cosa, per què el programa es comporta d'una manera o com publicar el teu recurs a "
                         "Moodle, Procomún o una altra plataforma. Cerco al manual, a la documentació del programa i "
                         "dels seus complements i en el que s'ha parlat al grup [eXeLearning](https://t.me/exelearning), "
-                        "i et dic d'on surt cada cosa. Em pots enviar una captura de pantalla o el fitxer .elpx del teu projecte amb el dubte. Si el que "
+                        "i et dic d'on surt cada cosa. Em pots enviar una captura de pantalla o el fitxer .elpx del teu projecte amb el dubte, o explicar-me'l en una nota de veu. Si el que "
                         "expliques és una errada del programa, busco si ja està avisada i, si vols, preparo l'avís per a "
                         "l'equip que el desenvolupa."),
     "ayuda_final": ("ℹ️ Tingues en compte: em puc equivocar, així que comprova el que sigui important al missatge "
@@ -109,7 +114,7 @@ CA = {
     "no_autorizado": "Encara estic en proves. Aviat estaré oberta al grup eXeLearning.",
     "solo_privado": "Hola, {nombre}. Soc la Karla bot, l'assistent d'eXeLearning. Al grup no et puc respondre, però en privat sí. Escriu-me aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soc la Karla bot, l'assistent d'eXeLearning. Això no funciona al grup, però en privat sí. Obre-ho aquí: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "De moment només entenc missatges escrits, captures de pantalla i fitxers .elpx. Escriu-me la pregunta, si us plau.",
+    "solo_texto": "De moment només entenc missatges escrits, captures de pantalla, notes de veu i fitxers .elpx. Escriu-me la pregunta, si us plau.",
     "error": "Alguna cosa ha fallat en cercar. Torna-ho a provar d'aquí a una estona.",
     "cupo": "Has arribat a les {cupo} preguntes d'avui. Demà podràs continuar.",
     "tope": "Aquest mes s'ha esgotat el meu pressupost. Tornaré a respondre el dia 1.",
@@ -126,6 +131,11 @@ CA = {
     "valoracion_si": "Gràcies!",
     "valoracion_no": "Gràcies. Guardo la pregunta, sense res teu, per millorar.",
     "valoracion_antigua": "Gràcies.",
+    "escuchando": "T'escolto. Trigo uns segons a passar l'àudio a text.",
+    "entendido": "He entès: «{texto}»",
+    "audio_largo": "L'àudio dura més de {minutos} minuts. Envia-me'n un de més curt o escriu-me el dubte.",
+    "sin_voz": "Ara mateix no puc escoltar àudios. Escriu-me la pregunta, si us plau.",
+    "audio_vacio": "No he entès res a l'àudio. Torna-ho a provar o escriu-me la pregunta.",
     "seguir_pregunta": "Vols que t'avisi aquí quan l'equip respongui o tanqui l'avís? Per fer-ho guardo el teu compte amb el número de l'avís fins que es tanqui.",
     "b_si_avisar": "Sí, avisa'm",
     "b_no_avisar": "No cal",
@@ -145,7 +155,7 @@ GL = {
                         "algo, por que o programa se comporta dunha maneira ou como publicar o teu recurso en "
                         "Moodle, Procomún ou outra plataforma. Busco no manual, na documentación do programa e dos "
                         "seus complementos e no que se falou no grupo [eXeLearning](https://t.me/exelearning), e "
-                        "dígoche de onde sae cada cousa. Podes mandarme unha captura de pantalla ou o ficheiro .elpx do teu proxecto coa dúbida. Se o que "
+                        "dígoche de onde sae cada cousa. Podes mandarme unha captura de pantalla ou o ficheiro .elpx do teu proxecto coa dúbida, ou contarma nunha nota de voz. Se o que "
                         "contas é un fallo do programa, busco se xa está avisado e, se queres, preparo o aviso para o "
                         "equipo que o desenvolve."),
     "ayuda_final": ("ℹ️ Ten en conta: podo equivocarme, así que comproba o importante na mensaxe ou no documento "
@@ -163,7 +173,7 @@ GL = {
     "no_autorizado": "Aínda estou en probas. Pronto estarei aberta ao grupo eXeLearning.",
     "solo_privado": "Ola, {nombre}. Son Karla bot, a asistente de eXeLearning. No grupo non podo contestarche, pero en privado si. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Ola, {nombre}. Son Karla bot, a asistente de eXeLearning. Isto non funciona no grupo, pero en privado si. Ábreo aquí: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "Polo de agora só entendo mensaxes escritas, capturas de pantalla e ficheiros .elpx. Escríbeme a pregunta, por favor.",
+    "solo_texto": "Polo de agora só entendo mensaxes escritas, capturas de pantalla, notas de voz e ficheiros .elpx. Escríbeme a pregunta, por favor.",
     "error": "Algo fallou ao buscar. Proba outra vez nun momento.",
     "cupo": "Chegaches ás {cupo} preguntas de hoxe. Mañá poderás seguir.",
     "tope": "Este mes esgotouse o meu orzamento. Volverei responder o día 1.",
@@ -180,6 +190,11 @@ GL = {
     "valoracion_si": "Grazas!",
     "valoracion_no": "Grazas. Gardo a pregunta, sen nada teu, para mellorar.",
     "valoracion_antigua": "Grazas.",
+    "escuchando": "Escóitote. Tardo uns segundos en pasar o audio a texto.",
+    "entendido": "Entendín: «{texto}»",
+    "audio_largo": "O audio dura máis de {minutos} minutos. Mándame un máis curto ou escríbeme a dúbida.",
+    "sin_voz": "Agora mesmo non podo escoitar audios. Escríbeme a pregunta, por favor.",
+    "audio_vacio": "Non entendín nada no audio. Proba outra vez ou escríbeme a pregunta.",
     "seguir_pregunta": "Queres que che avise aquí cando o equipo responda ou peche o aviso? Para iso gardo a túa conta xunto ao número do aviso ata que se peche.",
     "b_si_avisar": "Si, avísame",
     "b_no_avisar": "Non fai falta",
@@ -200,7 +215,7 @@ EU = {
                         "beste plataforma batean nola argitaratu. Eskuliburuan, programaren eta bere osagarrien "
                         "dokumentazioan eta [eXeLearning](https://t.me/exelearning) taldean hitz egindakoan "
                         "bilatzen dut, eta gauza bakoitza nondik datorren esaten dizut. Zalantzarekin batera pantaila-argazki "
-                        "bat edo zure proiektuaren .elpx fitxategia bidal diezadakezu. Kontatzen duzuna programaren akats bat bada, jada jakinarazita dagoen "
+                        "bat edo zure proiektuaren .elpx fitxategia bidal diezadakezu, edo ahots-ohar batean kontatu. Kontatzen duzuna programaren akats bat bada, jada jakinarazita dagoen "
                         "bilatzen dut eta, nahi baduzu, garatzen duen taldearentzako oharra prestatzen dut."),
     "ayuda_final": ("ℹ️ Kontuan izan: oker egon naiteke, beraz egiaztatu garrantzitsua aipatzen dudan mezuan edo "
                     "dokumentuan. Idazten didazuna Claude-rekin prozesatzen da, Anthropic-en IA bat, Estatu "
@@ -218,7 +233,7 @@ EU = {
     "no_autorizado": "Oraindik probetan nago. Laster eXeLearning taldearentzat irekita egongo naiz.",
     "solo_privado": "Kaixo, {nombre}. Karla bot naiz, eXeLearning-en laguntzailea. Taldean ezin dizut erantzun, baina pribatuan bai. Idatzi hemen: https://t.me/{usuario}",
     "solo_privado_comando": "Kaixo, {nombre}. Karla bot naiz, eXeLearning-en laguntzailea. Hau ez dabil taldean, baina pribatuan bai. Ireki hemen: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "Oraingoz idatzizko mezuak, pantaila-argazkiak eta .elpx fitxategiak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
+    "solo_texto": "Oraingoz idatzizko mezuak, pantaila-argazkiak, ahots-oharrak eta .elpx fitxategiak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
     "error": "Zerbait gaizki atera da bilatzean. Saiatu berriro une batean.",
     "cupo": "Gaurko {cupo} galderetara iritsi zara. Bihar jarraitu ahal izango duzu.",
     "tope": "Hilabete honetan nire aurrekontua agortu da. Hilaren 1ean erantzungo dut berriro.",
@@ -235,6 +250,11 @@ EU = {
     "valoracion_si": "Eskerrik asko!",
     "valoracion_no": "Eskerrik asko. Galdera gordetzen dut, zure daturik gabe, hobetzeko.",
     "valoracion_antigua": "Eskerrik asko.",
+    "escuchando": "Entzuten dizut. Segundo batzuk behar ditut audioa testu bihurtzeko.",
+    "entendido": "Hau ulertu dut: «{texto}»",
+    "audio_largo": "Audioak {minutos} minutu baino gehiago irauten du. Bidali laburrago bat edo idatzi zalantza.",
+    "sin_voz": "Oraintxe ezin ditut audioak entzun. Idatzi galdera, mesedez.",
+    "audio_vacio": "Ez dut ezer ulertu audioan. Saiatu berriro edo idatzi galdera.",
     "seguir_pregunta": "Nahi duzu taldeak erantzun edo oharra ixten duenean hemen abisatzea? Horretarako zure kontua oharraren zenbakiarekin batera gordetzen dut, itxi arte.",
     "b_si_avisar": "Bai, abisatu",
     "b_no_avisar": "Ez da beharrezkoa",
@@ -254,7 +274,7 @@ EN = {
                         "the program behaves in a certain way, or how to publish your resource on Moodle, Procomún "
                         "or another platform. I search the manual, the documentation of the program and its add-ons, "
                         "and what has been said in the [eXeLearning](https://t.me/exelearning) group, and I tell you "
-                        "where each answer comes from. You can send me a screenshot or your project's .elpx file along with your question. If what you "
+                        "where each answer comes from. You can send me a screenshot or your project's .elpx file along with your question, or tell me in a voice note. If what you "
                         "describe is a bug in the program, I check whether it has already been reported and, if you want, "
                         "I prepare the report for the team that develops it."),
     "ayuda_final": ("ℹ️ Please note: I can make mistakes, so check anything important in the message or document "
@@ -272,7 +292,7 @@ EN = {
     "no_autorizado": "I'm still being tested. I'll soon be open to the eXeLearning group.",
     "solo_privado": "Hi, {nombre}. I'm Karla bot, the eXeLearning assistant. I can't answer you in the group, but I can in private. Write to me here: https://t.me/{usuario}",
     "solo_privado_comando": "Hi, {nombre}. I'm Karla bot, the eXeLearning assistant. This doesn't work in the group, but it does in private. Open it here: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "For now I only understand written messages, screenshots and .elpx files. Please write your question.",
+    "solo_texto": "For now I only understand written messages, screenshots, voice notes and .elpx files. Please write your question.",
     "error": "Something went wrong while searching. Please try again in a moment.",
     "cupo": "You've reached today's {cupo} questions. You can continue tomorrow.",
     "tope": "My budget for this month has run out. I'll answer again on the 1st.",
@@ -289,6 +309,11 @@ EN = {
     "valoracion_si": "Thanks!",
     "valoracion_no": "Thanks. I'm keeping the question, with nothing about you, to improve.",
     "valoracion_antigua": "Thanks.",
+    "escuchando": "I'm listening. It takes me a few seconds to turn the audio into text.",
+    "entendido": "I understood: «{texto}»",
+    "audio_largo": "The audio is longer than {minutos} minutes. Send me a shorter one or write your question.",
+    "sin_voz": "Right now I can't listen to audio. Please write your question.",
+    "audio_vacio": "I couldn't make out anything in the audio. Try again or write your question.",
     "seguir_pregunta": "Do you want me to let you know here when the team replies or closes the report? To do that I keep your account next to the report number until it is closed.",
     "b_si_avisar": "Yes, let me know",
     "b_no_avisar": "No need",

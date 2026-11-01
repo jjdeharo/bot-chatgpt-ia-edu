@@ -52,7 +52,7 @@ ES = {
         "solo uno o dos, nómbralos. Por ejemplo: "
         "«¿quién habló de evaluar con IA el curso pasado?», «¿hay guías sobre IA en infantil?», "
         "«¿hay alguna aplicación para practicar probabilidad?» o "
-        "«¿qué se ha dicho en Vibe Coding Educativo sobre publicar en GitHub Pages?»."),
+        "«¿qué se ha dicho en Vibe Coding Educativo sobre publicar en GitHub Pages?». También puedes preguntar con una nota de voz o una captura."),
     "ayuda_biblioteca": (
         "📄 Añadir un documento a la Biblioteca digital de ChatGPT-IA-edu. Envíame aquí el archivo en PDF "
         "(hasta 20 MB) y yo me encargo de todo: compruebo que trate de IA en educación y que no esté ya en "
@@ -80,7 +80,7 @@ ES = {
     "cupo": "Has llegado a las {cupo} preguntas de hoy. Mañana podrás seguir.",
     "tope": "Este mes se ha agotado el presupuesto del bot. Volverá a funcionar el día 1.",
     "error": "Algo ha fallado al buscar. Prueba otra vez en un momento.",
-    "solo_texto": "Por ahora solo entiendo mensajes escritos y capturas de pantalla. Escríbeme la pregunta, por favor.",
+    "solo_texto": "Por ahora solo entiendo mensajes escritos, capturas de pantalla y notas de voz. Escríbeme la pregunta, por favor.",
     "aviso_80": ("Aviso del Bot de IA Educativa: este mes se han gastado {usd:.2f} USD de los {tope:.0f} del tope "
                  "({n} preguntas). Al llegar al tope dejaré de responder hasta el día 1. Para subirlo: "
                  "TOPE_MES_USD en el compose del NAS y el límite del espacio de trabajo en la Console."),
@@ -211,6 +211,11 @@ ES = {
     "valoracion_si": "¡Gracias!",
     "valoracion_no": "Gracias. Guardo la pregunta, sin nada tuyo, para mejorar.",
     "valoracion_antigua": "Gracias.",
+    "escuchando": "Te escucho. Tardo unos segundos en pasar el audio a texto.",
+    "entendido": "He entendido: «{texto}»",
+    "audio_largo": "El audio dura más de {minutos} minutos. Mándame uno más corto o escríbeme la duda.",
+    "sin_voz": "Ahora mismo no puedo escuchar audios. Escríbeme la pregunta, por favor.",
+    "audio_vacio": "No he entendido nada en el audio. Prueba otra vez o escríbeme la pregunta.",
     "respuesta_vacia": "No he encontrado nada que responda a eso. Prueba a decirlo con otras palabras o a concretar más.",
     "codigo": "Soy software libre (AGPL v3), versión {version}: el código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
@@ -253,7 +258,7 @@ CA = {
         "un o dos, anomena'ls. Per exemple: "
         "«qui va parlar d'avaluar amb IA el curs passat?», «hi ha guies sobre IA a infantil?», "
         "«hi ha alguna aplicació per practicar probabilitat?» o "
-        "«què s'ha dit a Vibe Coding Educativo sobre publicar a GitHub Pages?»."),
+        "«què s'ha dit a Vibe Coding Educativo sobre publicar a GitHub Pages?». També pots preguntar amb una nota de veu o una captura."),
     "ayuda_biblioteca": (
         "📄 Afegir un document a la Biblioteca digital de ChatGPT-IA-edu. Envia'm aquí el fitxer en PDF "
         "(fins a 20 MB) i jo m'encarrego de tot: comprovo que tracti d'IA en educació i que no sigui ja a "
@@ -281,7 +286,7 @@ CA = {
     "cupo": "Has arribat a les {cupo} preguntes d'avui. Demà podràs continuar.",
     "tope": "Aquest mes s'ha esgotat el pressupost del bot. Tornarà a funcionar el dia 1.",
     "error": "Alguna cosa ha fallat en cercar. Torna-ho a provar d'aquí a un moment.",
-    "solo_texto": "De moment només entenc missatges escrits i captures de pantalla. Escriu-me la pregunta, si us plau.",
+    "solo_texto": "De moment només entenc missatges escrits, captures de pantalla i notes de veu. Escriu-me la pregunta, si us plau.",
     "solo_privado": "Hola, {nombre}. Soc el Bot de IA Educativa. Al grup no et puc respondre, però en privat sí. Escriu-me aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soc el Bot de IA Educativa. Això no funciona al grup, però en privat sí. Obre-ho aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Per afegir un document a la Biblioteca digital, envia-me'l en PDF.",
@@ -392,6 +397,11 @@ CA = {
     "valoracion_si": "Gràcies!",
     "valoracion_no": "Gràcies. Guardo la pregunta, sense res teu, per millorar.",
     "valoracion_antigua": "Gràcies.",
+    "escuchando": "T'escolto. Trigo uns segons a passar l'àudio a text.",
+    "entendido": "He entès: «{texto}»",
+    "audio_largo": "L'àudio dura més de {minutos} minuts. Envia-me'n un de més curt o escriu-me el dubte.",
+    "sin_voz": "Ara mateix no puc escoltar àudios. Escriu-me la pregunta, si us plau.",
+    "audio_vacio": "No he entès res a l'àudio. Torna-ho a provar o escriu-me la pregunta.",
     "respuesta_vacia": "No he trobat res que respongui a això. Prova a dir-ho amb altres paraules o a concretar més.",
     "codigo": "Soc programari lliure (AGPL v3), versió {version}: el codi és a https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
@@ -434,7 +444,7 @@ GL = {
         "ou dous, nómeaos. Por exemplo: "
         "«quen falou de avaliar con IA o curso pasado?», «hai guías sobre IA en infantil?», "
         "«hai algunha aplicación para practicar probabilidade?» ou "
-        "«que se dixo en Vibe Coding Educativo sobre publicar en GitHub Pages?»."),
+        "«que se dixo en Vibe Coding Educativo sobre publicar en GitHub Pages?». Tamén podes preguntar cunha nota de voz ou unha captura."),
     "ayuda_biblioteca": (
         "📄 Engadir un documento á Biblioteca dixital de ChatGPT-IA-edu. Envíame aquí o ficheiro en PDF "
         "(ata 20 MB) e eu encárgome de todo: comprobo que trate de IA en educación e que non estea xa na "
@@ -462,7 +472,7 @@ GL = {
     "cupo": "Chegaches ás {cupo} preguntas de hoxe. Mañá poderás seguir.",
     "tope": "Este mes esgotouse o orzamento do bot. Volverá funcionar o día 1.",
     "error": "Algo fallou ao buscar. Proba outra vez nun momento.",
-    "solo_texto": "Polo de agora só entendo mensaxes escritas e capturas de pantalla. Escríbeme a pregunta, por favor.",
+    "solo_texto": "Polo de agora só entendo mensaxes escritas, capturas de pantalla e notas de voz. Escríbeme a pregunta, por favor.",
     "solo_privado": "Ola, {nombre}. Son o Bot de IA Educativa. No grupo non podo contestarche, pero en privado si. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Ola, {nombre}. Son o Bot de IA Educativa. Isto non funciona no grupo, pero en privado si. Ábreo aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Para engadir un documento á Biblioteca dixital, envíamo en PDF.",
@@ -573,6 +583,11 @@ GL = {
     "valoracion_si": "Grazas!",
     "valoracion_no": "Grazas. Gardo a pregunta, sen nada teu, para mellorar.",
     "valoracion_antigua": "Grazas.",
+    "escuchando": "Escóitote. Tardo uns segundos en pasar o audio a texto.",
+    "entendido": "Entendín: «{texto}»",
+    "audio_largo": "O audio dura máis de {minutos} minutos. Mándame un máis curto ou escríbeme a dúbida.",
+    "sin_voz": "Agora mesmo non podo escoitar audios. Escríbeme a pregunta, por favor.",
+    "audio_vacio": "Non entendín nada no audio. Proba outra vez ou escríbeme a pregunta.",
     "respuesta_vacia": "Non atopei nada que responda a iso. Proba a dicilo con outras palabras ou a concretar máis.",
     "codigo": "Son software libre (AGPL v3), versión {version}: o código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
@@ -615,7 +630,7 @@ EU = {
         "berean; bat edo bi bakarrik nahi badituzu, aipatu. "
         "Adibidez: «nork hitz egin zuen iaz IArekin ebaluatzeaz?», «ba al dago haur hezkuntzako IA gidarik?», "
         "«ba al dago probabilitatea lantzeko aplikaziorik?» "
-        "edo «zer esan da Vibe Coding Educativo taldean GitHub Pages-en argitaratzeaz?»."),
+        "edo «zer esan da Vibe Coding Educativo taldean GitHub Pages-en argitaratzeaz?». Ahots-ohar batekin edo pantaila-argazki batekin ere galdetu dezakezu."),
     "ayuda_biblioteca": (
         "📄 Dokumentu bat gehitu ChatGPT-IA-edu taldeko Liburutegi digitalera. Bidali hona PDF fitxategia "
         "(20 MB arte) eta nik egingo dut dena: egiaztatuko dut hezkuntzako IAri buruzkoa dela eta "
@@ -644,7 +659,7 @@ EU = {
     "cupo": "Gaurko {cupo} galderetara iritsi zara. Bihar jarraitu ahal izango duzu.",
     "tope": "Hilabete honetan botaren aurrekontua agortu da. Hilaren 1ean berriro ibiliko da.",
     "error": "Zerbait gaizki atera da bilatzean. Saiatu berriro une batean.",
-    "solo_texto": "Oraingoz idatzizko mezuak eta pantaila-argazkiak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
+    "solo_texto": "Oraingoz idatzizko mezuak, pantaila-argazkiak eta ahots-oharrak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
     "solo_privado": "Kaixo, {nombre}. IA Educativa bota naiz. Taldean ezin dizut erantzun, baina pribatuan bai. Idatzi hemen: https://t.me/{usuario}",
     "solo_privado_comando": "Kaixo, {nombre}. IA Educativa bota naiz. Hau ez dabil taldean, baina pribatuan bai. Ireki hemen: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Liburutegi digitalera dokumentu bat gehitzeko, bidali PDFn.",
@@ -756,6 +771,11 @@ EU = {
     "valoracion_si": "Eskerrik asko!",
     "valoracion_no": "Eskerrik asko. Galdera gordetzen dut, zure daturik gabe, hobetzeko.",
     "valoracion_antigua": "Eskerrik asko.",
+    "escuchando": "Entzuten dizut. Segundo batzuk behar ditut audioa testu bihurtzeko.",
+    "entendido": "Hau ulertu dut: «{texto}»",
+    "audio_largo": "Audioak {minutos} minutu baino gehiago irauten du. Bidali laburrago bat edo idatzi zalantza.",
+    "sin_voz": "Oraintxe ezin ditut audioak entzun. Idatzi galdera, mesedez.",
+    "audio_vacio": "Ez dut ezer ulertu audioan. Saiatu berriro edo idatzi galdera.",
     "respuesta_vacia": "Ez dut horri erantzuten dion ezer aurkitu. Saiatu beste hitz batzuekin esaten edo gehiago zehazten.",
     "codigo": "Software librea naiz (AGPL v3), {version} bertsioa: kodea hemen dago: https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
@@ -797,7 +817,7 @@ EN = {
         "topic, and I'll answer with a link to each one. I search all three groups at once; if you only want one "
         "or two, name them. For example: \"who talked about assessing with AI last school year?\", \"are there "
         "guides on AI in early years?\", \"is there an app to practise probability?\" or \"what has "
-        "been said in Vibe Coding Educativo about publishing on GitHub Pages?\"."),
+        "been said in Vibe Coding Educativo about publishing on GitHub Pages?\" You can also ask with a voice note or a screenshot."),
     "ayuda_biblioteca": (
         "📄 Add a document to the ChatGPT-IA-edu Digital Library. Send me the PDF file here (up to 20 MB) "
         "and I'll take care of everything: I check that it is about AI in education and not already in the "
@@ -825,7 +845,7 @@ EN = {
     "cupo": "You've reached today's {cupo} questions. You can continue tomorrow.",
     "tope": "The bot's budget for this month has run out. It will work again on the 1st.",
     "error": "Something went wrong while searching. Please try again in a moment.",
-    "solo_texto": "For now I only understand written messages and screenshots. Please write your question.",
+    "solo_texto": "For now I only understand written messages, screenshots and voice notes. Please write your question.",
     "solo_privado": "Hi, {nombre}. I'm the IA Educativa Bot. I can't answer you in the group, but I can in private. Write to me here: https://t.me/{usuario}",
     "solo_privado_comando": "Hi, {nombre}. I'm the IA Educativa Bot. This doesn't work in the group, but it does in private. Open it here: https://t.me/{usuario}?start={comando}",
     "no_pdf": "To add a document to the Digital Library, send it to me as a PDF.",
@@ -936,6 +956,11 @@ EN = {
     "valoracion_si": "Thanks!",
     "valoracion_no": "Thanks. I'm keeping the question, with nothing about you, to improve.",
     "valoracion_antigua": "Thanks.",
+    "escuchando": "I'm listening. It takes me a few seconds to turn the audio into text.",
+    "entendido": "I understood: «{texto}»",
+    "audio_largo": "The audio is longer than {minutos} minutes. Send me a shorter one or write your question.",
+    "sin_voz": "Right now I can't listen to audio. Please write your question.",
+    "audio_vacio": "I couldn't make out anything in the audio. Try again or write your question.",
     "respuesta_vacia": "I haven't found anything that answers that. Try saying it in other words or being more specific.",
     "codigo": "I am free software (AGPL v3), version {version}: the code is at https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }

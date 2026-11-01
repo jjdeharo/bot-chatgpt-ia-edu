@@ -536,5 +536,35 @@ class MejorasDelUnoDeNoviembre(unittest.TestCase):
                 self.assertIn(clave, textos_karla.TEXTOS[lengua], (lengua, clave))
 
 
+class NotasDeVoz(unittest.TestCase):
+    """ADR 0022: una nota de voz sigue como pregunta escrita; sin servicio o demasiado larga, un aviso."""
+
+    def test_sin_servicio(self):
+        b = bot_sin_arrancar()
+        with mock.patch.object(bot, "VOZ_URL", ""):
+            self.assertEqual(b.voz_a_texto(7, 7, {"voice": {"file_id": "x", "duration": 5}}), "")
+        self.assertEqual(b.enviados, [textos.texto("es", "sin_voz")])
+        self.assertIsNone(b.voz_a_texto(7, 7, {"text": "hola"}))
+
+    def test_demasiado_larga(self):
+        b = bot_sin_arrancar()
+        with mock.patch.object(bot, "VOZ_URL", "http://voz:8001"):
+            self.assertEqual(b.voz_a_texto(7, 7, {"voice": {"file_id": "x", "duration": 600}}), "")
+        self.assertEqual(b.enviados, [textos.texto("es", "audio_largo", minutos=3)])
+
+    def test_transcripcion_sigue_como_pregunta(self):
+        b = bot_sin_arrancar()
+        b.escribiendo = lambda chat: mock.Mock()
+        b.transcribir = lambda file_id: {"texto": "com exporto a SCORM", "lengua": "ca", "duracion": 4.2}
+        with mock.patch.object(bot, "VOZ_URL", "http://voz:8001"), mock.patch.object(bot, "registrar"):
+            self.assertEqual(b.voz_a_texto(7, 7, {"voice": {"file_id": "x", "duration": 4}}), "com exporto a SCORM")
+        self.assertEqual(b.lenguas[7], "ca")  # el idioma detectado vale para los textos fijos
+        self.assertEqual(b.enviados[-1], textos_karla.texto("ca", "entendido", texto="com exporto a SCORM"))
+        b.transcribir = lambda file_id: {"texto": "", "lengua": ""}
+        with mock.patch.object(bot, "VOZ_URL", "http://voz:8001"):
+            self.assertEqual(b.voz_a_texto(7, 7, {"voice": {"file_id": "x", "duration": 4}}), "")
+        self.assertEqual(b.enviados[-1], textos.texto("ca", "audio_vacio"))
+
+
 if __name__ == "__main__":
     unittest.main()

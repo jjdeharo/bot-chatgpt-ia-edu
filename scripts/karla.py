@@ -808,6 +808,11 @@ class Karla(bot.Bot):
             return self.enviar_tablas(chat, bloques_estado(bot.contabilidad(bot.leer_estado())))
         if comando in ("/start", "/ayuda"):
             return self.enviar(chat, self.ayuda(uid), "HTML")
+        voz = self.voz_a_texto(chat, uid, msg)  # una nota de voz, como pregunta escrita (ADR 0022)
+        if voz is not None:
+            if not voz:
+                return
+            texto, msg = voz, {**msg, "voz": True}
         if msg.get("document"):  # un proyecto de eXeLearning con su duda en el pie (ADR 0021)
             resumen = self.archivo_exe(chat, uid, msg)
             if resumen is None:
@@ -834,7 +839,8 @@ class Karla(bot.Bot):
         try:
             # Con un repositorio de pruebas, solo Juanjo: Karla está abierta al grupo.
             abrir = INCIDENCIAS == "1" or ("/" in INCIDENCIAS and uid in bot.AUTORIZADOS)
-            r = self.consultora.responder(self.pregunta(texto, fotos), historial[-2 * bot.INTERCAMBIOS:], modelo, abrir)
+            r = self.consultora.responder(self.pregunta(f"{bot.NOTA_AUDIO}\n{texto}" if msg.get("voz") else texto, fotos),
+                                          historial[-2 * bot.INTERCAMBIOS:], modelo, abrir)
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             bot.registrar(f"error: {type(error).__name__}: {error}")
             if uid != bot.JUANJO:
