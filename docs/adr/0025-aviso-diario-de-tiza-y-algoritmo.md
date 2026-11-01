@@ -13,8 +13,10 @@ y el bot no se olvida»). Propuse un aviso semanal por miedo al ruido; él prefi
 ## Decisión
 
 - El diario deja cada noche en `datos/diario/<fecha>.json` un aviso por grupo, ya redactado y
-  repasado: corto, distinto cada día y con el titular que más interesa a ese grupo y una línea de la
-  viñeta. El bot no redacta nada: solo publica (`scripts/diario_grupos.py`), sin IA ni gasto.
+  repasado: corto, con el titular que más interesa a ese grupo y una línea de la viñeta. **El texto es
+  siempre distinto** (Juanjo, 01-11-2026): lo escribe la IA del diario cada día, sin plantilla, y se
+  compara con los avisos de los días anteriores para no repetir saludo, arranque ni fórmula. El bot no
+  redacta nada: solo publica (`scripts/diario_grupos.py`), sin IA ni gasto.
 - A las 7:00 de Madrid, en el tema General de cada grupo, con la vista previa del enlace.
 - Solo los días con número: si el diario no deja archivo, no hay aviso.
 - Cada grupo se apunta al publicarse (`<fecha>.publicado.json`): si uno falla, se reintenta en la
