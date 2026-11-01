@@ -21,5 +21,6 @@
 | [0017](0017-cache-de-prompts.md) | Caché de prompts en las preguntas de los dos bots | aceptado |
 | [0018](0018-resumen-semanal-de-los-viernes-en-exelearning-y-vibe-coding-educativo.md) | Resumen semanal de los viernes en eXeLearning y Vibe Coding Educativo | aceptado |
 | [0019](0019-controles-de-publicacion-y-de-entrada-tras-la-revision-de-seguridad.md) | Controles de publicación y de entrada tras la revisión de seguridad | aceptado |
+| [0020](0020-correcciones-del-informe-del-01-11-2026.md) | Correcciones del informe del 01-11-2026: respuesta vacía, botones firmados, 429, repuesto HTML, versión y pruebas en GitHub | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

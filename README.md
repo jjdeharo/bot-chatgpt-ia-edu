@@ -111,13 +111,14 @@ Qué hay que rehacer y de dónde sale:
 | Código | este repositorio |
 | Mensajes e índice (`datos/<grupo>/`) | Telegram: `exportar.py --todo`, `pdfs.py` e `indexar.py` (en el portátil, unos 20 minutos VCE, 25 EduMedia-IAG y 45 ChatGPT-IA-edu) |
 | Modelo de significado | se descarga solo la primera vez (1,2 GB) |
-| Dueños de los recursos y gasto (`catalogo.json`, `estado-bot.json`) | la copia diaria en IONOS: `respaldo/recuperar.sh` |
+| Dueños de los recursos, gasto de los dos bots y preguntas sin resolver (`catalogo.json`, `estado-bot.json`, `estado-karla.json`, `sin-resolver*.jsonl`, avisos, equipo y revisiones) | la copia diaria en IONOS: `respaldo/recuperar.sh` |
 | Credenciales | ver abajo |
 
 Credenciales, en `~/.config/credenciales/` del portátil, con los mismos nombres que en el NAS:
 `bot-chatgpt-ia-edu.json` (token del bot), `telegram-cuenta.json` y
 `telegram-cuenta.session` (cuenta de Juanjo, para descargar los mensajes),
 `catalogo-vce.json` (API de la hoja) y `anthropic-bot.txt` (clave de API de Claude).
+La cuenta de Telegram de Juanjo (avisos y `/estado`) va en la variable `JUANJO` del entorno, como en `nas/compose.yml`.
 La de la copia (`respaldo-ionos.json`) solo está en el NAS: en la máquina nueva
 se genera otra con `NAS_BOT=usuario@máquina respaldo/instalar.sh --testigo`
 (cambiando la ruta `CRED_NAS` del guion).
@@ -143,7 +144,7 @@ avisa a Juanjo por Telegram.
 
 ## Gasto
 
-Cada pregunta cuesta del orden de 0,001–0,003 USD. Tiene un tope mensual en la
+Cada pregunta cuesta del orden de 0,001–0,003 USD; una ficha de recurso para el repositorio, entre 0,03 y 0,10 USD según el tamaño del recurso (la lee Sonnet entera), y un documento de la Biblioteca, unos 0,06 USD. Tiene un tope mensual en la
 consola de Claude y otro en el propio bot. No hay cupos a la vista: los cupos por
 persona solo entran el día que se gasta más del doble de lo que toca, y quien
 hace más de 30 consultas en una hora tiene que esperar (ADR 0006).
@@ -156,6 +157,10 @@ nada de quién pregunta, en `datos/sin-resolver.jsonl`, y se borran a los 60 dí
 
 Karla bot usa Claude Sonnet 5.5 hasta un gasto del mes y, a partir de ahí, Claude Haiku 5.5
 hasta el día 1, con su propio tope.
+
+## Versiones y pruebas
+
+Cada versión lleva su etiqueta en git (`v1.0.0`, …) y su entrada en [CHANGELOG.md](CHANGELOG.md); la versión que corre se ve en la ayuda de los bots y en `/estado`. En cada push, GitHub Actions compila el código, pasa `ruff` y las pruebas de `pruebas/test_revision.py` (`.github/workflows/pruebas.yml`); no se despliega una versión con el flujo en rojo.
 
 ## Licencia
 

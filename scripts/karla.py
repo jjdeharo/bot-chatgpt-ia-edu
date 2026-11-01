@@ -432,6 +432,8 @@ def con_enlaces(texto: str, entidades: list) -> str:
 
 class Karla(bot.Bot):
     """El Bot de IA Educativa sin biblioteca ni catálogo: solo preguntas sobre eXeLearning."""
+    COMANDOS = ["ayuda"]  # los suyos, no los del Bot de IA Educativa (informe del 01-11-2026)
+    COMANDOS_VIEJOS: list = []
 
     def __init__(self):
         cred = json.loads(bot.CRED.read_text())
@@ -610,8 +612,7 @@ class Karla(bot.Bot):
         partes = [html.escape(self.tx(uid, "inicio"), quote=False),
                   bot.negrita_titulo(self.tx(uid, "ayuda_preguntar"), ". "),
                   bot.negrita_titulo(self.tx(uid, "ayuda_final"), ":")]
-        if self.tx(uid, "traduccion"):
-            partes.append(f"<i>{html.escape(self.tx(uid, 'traduccion'), quote=False)}</i>")
+        partes.append(self.pie(uid))
         return bot.enlazar("\n\n".join(partes))
 
     def atender(self, msg: dict) -> None:
@@ -657,7 +658,7 @@ class Karla(bot.Bot):
         try:
             # Con un repositorio de pruebas, solo Juanjo: Karla está abierta al grupo.
             abrir = INCIDENCIAS == "1" or ("/" in INCIDENCIAS and uid in bot.AUTORIZADOS)
-            r = self.consultora.responder(self.pregunta(texto, fotos, 1500), historial[-2 * bot.INTERCAMBIOS:], modelo, abrir)
+            r = self.consultora.responder(self.pregunta(texto, fotos), historial[-2 * bot.INTERCAMBIOS:], modelo, abrir)
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             bot.registrar(f"error: {type(error).__name__}: {error}")
             if uid != bot.JUANJO:
@@ -665,19 +666,21 @@ class Karla(bot.Bot):
             return self.enviar(chat, self.tx(uid, "error"))
         finally:
             hecho.set()
+        entregada = True
         if r.get("incidencia"):
             self.ensenar_borrador(chat, uid, r["texto"], r["incidencia"])
             r["texto"] = (r["texto"] + "\n[Borrador de incidencia preparado: " + r["incidencia"].get("titulo", "")
                           + "]").strip()
         else:
-            self.enviar_valorable(chat, uid, r["texto"], bot.con_fotos(texto, fotos),
-                                  bool(r.get("sin_resolver")), r.get("valorable", True))
+            self.texto_o_nada(uid, r, bot.con_fotos(texto, fotos))
+            entregada = self.enviar_valorable(chat, uid, r["texto"], bot.con_fotos(texto, fotos),
+                                              bool(r.get("sin_resolver")), r.get("valorable", True))
         if r.get("sin_resolver") and uid != bot.JUANJO:  # las pruebas de Juanjo no cuentan
             bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"])
         self.memoria[uid] = (time.time(), historial[-2 * bot.INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},
                                                           {"role": "assistant", "content": r["texto"]}])
         self.apuntar(r["uso"]["usd"], pregunta=uid)
-        bot.registrar(f"pregunta respondida con {modelo}: {len(r['uso']['llamadas'])} búsquedas, "
+        bot.registrar(f"pregunta {'respondida' if entregada else 'sin entregar'} con {modelo}: {len(r['uso']['llamadas'])} búsquedas, "
                       f"{r['uso']['usd']:.4f} USD")
 
     def apuntar(self, usd: float, pregunta: int | None = None) -> None:
@@ -772,7 +775,7 @@ def bloques_estado(e: dict) -> list:
     return [("tabla", "Uso", ["", "Hoy", "Este mes"], filas, nota),
             ("texto", bot.sin_resolver_de(e)),
             ("texto", f"Modelo: {modelo}; pasa a Haiku a los {CAMBIO_USD:.0f} USD del mes."),
-            ("texto", resumen_incidencias(e))] + bot.tabla_dias(e)
+            ("texto", resumen_incidencias(e))] + bot.tabla_dias(e) + [("texto", f"Versión {bot.VERSION}.")]
 
 
 def informe(e: dict) -> str:

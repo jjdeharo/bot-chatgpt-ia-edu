@@ -136,7 +136,8 @@ class Fichero:
 
 # Lo que, en el apartado Licencia, nombra una licencia abierta o un permiso expreso de distribución.
 LICENCIA_ABIERTA = re.compile(
-    r"creative commons|\bCC[ -]?(BY|0)\b|dominio p[uú]blico|public domain|\b(A?GPL|LGPL|MIT|BSD|Apache|MPL|EUPL|ODbL)\b"
+    r"creative commons|\bCC[ -]?(BY|0)\b|reconocimiento|reconeixement|recoñecemento|aitortu|attribution|atribuci[oó]n"
+    r"|dominio p[uú]blico|public domain|\b(A?GPL|LGPL|MIT|BSD|Apache|MPL|EUPL|ODbL)\b"
     r"|licencia (libre|abierta)|libre distribuci[oó]n|distribuci[oó]n libre|permite (expresamente )?(su |la )?(libre )?distribu", re.I)
 # Y lo que lo niega, con la frase que piden las instrucciones o con cualquier otra.
 LICENCIA_CERRADA = re.compile(

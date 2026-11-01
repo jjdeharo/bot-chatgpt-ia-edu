@@ -3,12 +3,13 @@
 
 Todo lo demás se puede rehacer: el código está en GitHub, las fichas del
 repositorio en la hoja de Google y los mensajes en Telegram. Lo único que no
-es quién es dueño de cada recurso (datos/catalogo.json) y los avisos de la
+es quién es dueño de cada recurso (datos/catalogo.json), las preguntas sin
+resolver de los dos bots (datos/sin-resolver*.jsonl) y los avisos de la
 revisión del repositorio (datos/avisos.json, ADR 0013), los rechazos que su autor
 pide revisar a mano (datos/revisiones.json, sin lo leído del recurso, que se
 vuelve a leer; ADR 0004) y quién es del equipo de
 eXeLearning (datos/equipo-exelearning.json, ADR 0008); va también la cuenta
-del gasto (datos/estado-bot.json). Lo llama nas/bucle.sh cada madrugada.
+del gasto de los dos bots (datos/estado-bot.json y datos/estado-karla.json). Lo llama nas/bucle.sh cada madrugada.
 El receptor está en respaldo/ y la recuperación, en el README.
 """
 import json
@@ -23,7 +24,7 @@ from grupos import DATOS
 
 CRED = Path(os.environ.get("RESPALDO_CRED", Path.home() / ".config/credenciales/respaldo-ionos.json"))
 BOT_CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-chatgpt-ia-edu.json"))
-JUANJO = 218499880
+JUANJO = int(os.environ.get("JUANJO") or 0)  # en el entorno, no en el código (ADR 0020)
 
 
 def leer(nombre: str) -> dict:
@@ -31,6 +32,13 @@ def leer(nombre: str) -> dict:
         return json.loads((DATOS / nombre).read_text())
     except (OSError, ValueError):
         return {}
+
+
+def leer_texto(nombre: str) -> str:
+    try:
+        return (DATOS / nombre).read_text()
+    except OSError:
+        return ""
 
 
 def avisar(texto: str) -> None:
@@ -58,6 +66,9 @@ def enviar() -> None:
     copia = {"marca": datetime.now(timezone.utc).isoformat(timespec="seconds"),
              "catalogo": leer("catalogo.json"), "estado": leer("estado-bot.json"), "avisos": leer("avisos.json"),
              "equipo": leer("equipo-exelearning.json"),
+             # Lo de Karla y las preguntas sin resolver faltaban hasta el 01-11-2026 (ADR 0020).
+             "estado_karla": leer("estado-karla.json"),
+             "sin_resolver": leer_texto("sin-resolver.jsonl"), "sin_resolver_karla": leer_texto("sin-resolver-karla.jsonl"),
              "revisiones": {k: {c: v for c, v in r.items() if c != "contenido"}
                             for k, r in leer("revisiones.json").items()}}
     pet = urllib.request.Request(c["url"], json.dumps(copia, ensure_ascii=False).encode(),

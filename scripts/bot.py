@@ -29,6 +29,7 @@ Uso: bot.py          en marcha (lo que hace el contenedor)
 import base64
 import calendar
 import hashlib
+import hmac
 import html
 import json
 import os
@@ -62,8 +63,10 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-JUANJO = 218499880
-AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", "218499880").split(",") if x}
+VERSION = "1.0.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+# La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
+JUANJO = int(os.environ.get("JUANJO") or 0)
+AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
 ABIERTO = os.environ.get("ABIERTO") == "1"
 # Sin cupos a la vista (ADR 0006). Los cupos por persona solo entran el día que se gasta más del doble de lo
 # que toca para no pasar del tope del mes; contra el uso automático, un máximo de consultas por hora.
@@ -80,6 +83,10 @@ ADMIN_HORAS = 6  # de reserva: los cambios llegan al momento con «chat_member»
 POR_PAGINA = 10  # recursos por página en /misrecursos (Juanjo, 27-10-2026: «20 son muchos»)
 ESPERA_MIN = 60  # minutos que el bot espera la respuesta a algo que ha pedido (un cambio, un código)
 SOLO_URL = re.compile(r"^\s*(https?://\S+)\s*$")
+# Un enlace a un mensaje de Telegram no es un recurso para el repositorio: es una pregunta sobre ese mensaje (ADR 0020).
+ENLACE_TELEGRAM = re.compile(r"^https?://(t\.me|telegram\.me|telegram\.dog)/", re.I)
+LARGO_PREGUNTA = 6000  # caracteres de la pregunta que lee Claude: un reenvío de varios mensajes cabe (antes, 1.000)
+NOTA_RECORTE = "\n[El mensaje era más largo: solo he recibido el principio.]"
 FRASE = re.compile(r"[^\W\d_]{2,}\W+[^\W\d_]{2,}")  # dos palabras al menos: un «ok» o un código no cuentan
 LENGUA = {"type": "object", "properties": {"lengua": {"type": "string", "enum": [*textos.LENGUAS, "dudoso"]}},
           "required": ["lengua"], "additionalProperties": False}
@@ -155,12 +162,22 @@ class Telegram:
         # Un parámetro a None no se manda: Telegram rechaza el mensaje entero (reply_markup=None, 30-10-2026).
         datos = urllib.parse.urlencode({k: json.dumps(v) if isinstance(v, (dict, list)) else v
                                         for k, v in params.items() if v is not None}).encode()
-        try:
-            with urllib.request.urlopen(self.url + metodo, datos, timeout=espera + 10) as r:
-                return json.load(r).get("result")
-        except urllib.error.HTTPError as e:
-            registrar(f"Telegram {metodo}: {e.code} {e.read()[:200]!r}")
-            return None
+        for intento in (1, 2):
+            try:
+                with urllib.request.urlopen(self.url + metodo, datos, timeout=espera + 10) as r:
+                    return json.load(r).get("result")
+            except urllib.error.HTTPError as e:
+                cuerpo = e.read()[:300]
+                if e.code == 429 and intento == 1:  # Telegram pide esperar: se espera y se repite una vez (ADR 0020)
+                    try:
+                        pausa = min(int(json.loads(cuerpo)["parameters"]["retry_after"]), 60)
+                    except (ValueError, KeyError, TypeError):
+                        pausa = 5
+                    registrar(f"Telegram {metodo}: 429, espero {pausa} s")
+                    time.sleep(pausa)
+                    continue
+                registrar(f"Telegram {metodo}: {e.code} {cuerpo[:200]!r}")
+                return None
 
 
 def registrar(texto: str) -> None:
@@ -307,9 +324,26 @@ def respuesta_html(texto: str) -> str:
         clase = f' class="language-{lenguaje}"' if lenguaje else ""
         return apartar(f"<pre><code{clase}>{cuerpo}</code></pre>")
 
+    def tabla(m: re.Match) -> str:
+        """Una tabla Markdown, como líneas «celda: celda»: Telegram no admite tablas en HTML (ADR 0020)."""
+        filas = [[c.strip() for c in f.strip().strip("|").split("|")] for f in m.group(0).strip().splitlines()]
+        filas = [f for f in filas if not all(re.fullmatch(r":?-+:?", c or "-") for c in f)]
+        if not filas:
+            return ""
+        cabecera, cuerpo = filas[0], filas[1:]
+        lineas = []
+        for f in cuerpo:
+            primera, resto = f[0], [f"{cabecera[i]}: {c}" if i < len(cabecera) and cabecera[i] else c
+                                    for i, c in enumerate(f[1:], 1) if c]
+            lineas.append(f"• <b>{primera}</b>" + (" — " + "; ".join(resto) if resto else ""))
+        return "\n".join(lineas) + "\n"
+
     t = html.escape(texto, quote=False)
     t = re.sub(r"^[ \t]*```([\w+-]*)[ \t]*\n(.*?)^[ \t]*```[ \t]*$", bloque, t, flags=re.S | re.M)
     t = re.sub(r"`([^`\n]+)`", lambda m: apartar(f"<code>{m.group(1)}</code>"), t)
+    t = re.sub(r"^(?:[ \t]*\|.*\|[ \t]*\n?){2,}", tabla, t, flags=re.M)
+    t = re.sub(r"^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$", r"<b>\1</b>", t, flags=re.M)  # encabezados, en negrita
+    t = re.sub(r"^&gt;[ \t]?(.*)$", r"<blockquote>\1</blockquote>", t, flags=re.M)  # citas
     t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t, flags=re.S)
     t = re.sub(r"(?<![*\w])\*(?![\s*])([^*\n]+?)(?<!\s)\*(?![*\w])", r"<i>\1</i>", t)
     return re.sub(r"\x00(\d+)\x00", lambda m: codigos[int(m.group(1))], t)
@@ -383,7 +417,7 @@ def bloques_estado(e: dict) -> list:
     return [("tabla", "Uso", ["", "Hoy", "Este mes"], filas, nota),
             ("texto", sin_resolver_de(e)),
             ("texto", f"Cupos a partir de {usd(FRENO_VECES * diario(e))} USD hoy"
-                      + (" (activos)." if frenado(e) else "."))] + tabla_dias(e)
+                      + (" (activos)." if frenado(e) else "."))] + tabla_dias(e) + [("texto", f"Versión {VERSION}.")]
 
 
 def a_texto(bloques: list) -> str:
@@ -581,6 +615,17 @@ class Bot:
         if ref:
             self.tg("editMessageReplyMarkup", chat_id=ref[0], message_id=ref[1], reply_markup={"inline_keyboard": []})
 
+    def firma(self, uid: int, *partes) -> str:
+        """Una firma corta para los botones que borran lo publicado («Quitarlo de la Biblioteca», «Quitarlo del
+        grupo»): va atada a la cuenta de quien lo publicó y a los mensajes, con el token del bot, y sobrevive a
+        un reinicio. Sin ella, cualquiera que mandara ese dato con un cliente modificado podía borrar lo de
+        otro (informe del 01-11-2026, ADR 0020)."""
+        mensaje = ":".join(str(p) for p in (uid, *partes)).encode()
+        return hmac.new(self.token.encode(), mensaje, hashlib.sha256).hexdigest()[:10]
+
+    def firmado(self, uid: int, firma: str, *partes) -> bool:
+        return hmac.compare_digest(firma, self.firma(uid, *partes))
+
     @staticmethod
     def clave_borrador() -> str:
         """Cada borrador lleva una clave en sus botones: lo que se confirma es lo que se vio, no lo último que
@@ -621,9 +666,16 @@ class Bot:
             partes.append(negrita_titulo(self.tx(uid, "ayuda_recurso"), ". "))
         partes.append(html.escape(self.tx(uid, "ayuda_menu"), quote=False))  # Juanjo, 28-10-2026
         partes.append(negrita_titulo(self.tx(uid, "ayuda_final"), ":"))
-        if self.tx(uid, "traduccion"):
-            partes.append(f"<i>{html.escape(self.tx(uid, 'traduccion'), quote=False)}</i>")
+        partes.append(self.pie(uid))
         return enlazar("\n\n".join(partes))
+
+    def pie(self, uid: int) -> str:
+        """La licencia, el código y la versión, que la AGPL pide ofrecer a quien usa el programa por red, y el aviso
+        de traducción automática si lo hay (ADR 0020). En HTML, con [texto](enlace) para enlazar()."""
+        partes = [html.escape(self.tx(uid, "codigo", version=VERSION), quote=False)]
+        if self.tx(uid, "traduccion"):
+            partes.append(html.escape(self.tx(uid, "traduccion"), quote=False))
+        return f"<i>{' '.join(partes)}</i>"
 
     def en_hilo(self, funcion, *args) -> None:
         """Lo que tarda (leer un documento, preparar una ficha) va aparte, para no parar las búsquedas."""
@@ -650,7 +702,7 @@ class Bot:
                         link_preview_options={"is_disabled": True})
 
     def enviar_valorable(self, chat: int, uid: int, texto_md: str, pregunta: str, guardada: bool,
-                         valorable: bool = True) -> None:
+                         valorable: bool = True) -> bool:
         """La respuesta, como mensaje enriquecido en Markdown (Bot API 10.1: negrita, listas, tablas…), con 👍/👎
         debajo, solo en la última: los de la anterior se quitan (Juanjo, 30-10-2026). Si Telegram no acepta el
         Markdown, va como antes, en HTML. Solo en memoria: tras reiniciar el bot, los botones de antes no se
@@ -674,6 +726,19 @@ class Bot:
                 hecho = self.tg("sendMessage", text=html.unescape(re.sub(r"<[^>]+>", "", texto_html[corte:])), **comun)
         if hecho and valorable:
             self.valorables[uid] = {"chat": chat, "id": hecho["message_id"], "pregunta": pregunta, "guardada": guardada}
+        if hecho is None:  # Telegram no ha aceptado ninguna de las formas: que conste, no como respondida
+            registrar("respuesta sin entregar: Telegram ha rechazado el mensaje en todas sus formas")
+        return hecho is not None
+
+    def texto_o_nada(self, uid: int, r: dict, pregunta: str) -> None:
+        """Si Claude no deja texto (solo la marca final, o una revisión que lo quita todo), Telegram rechazaría el
+        mensaje vacío y la persona se quedaría sin nada, como el 31-10-2026 a las 08:02 (ADR 0020). En su lugar, un
+        texto fijo, y la pregunta queda como sin resolver."""
+        if r.get("texto", "").strip():
+            return
+        r["texto"] = self.tx(uid, "respuesta_vacia")
+        r["sin_resolver"] = r.get("sin_resolver") or "respuesta vacía"
+        registrar("respuesta vacía de Claude: va el texto fijo")
 
     def valorar(self, cq: dict) -> None:
         """👍/👎: se cuentan sin decir quién; con 👎, la pregunta va a las sin resolver, anónima.
@@ -684,8 +749,9 @@ class Bot:
             del self.valorables[uid]
         else:
             v = None
+        # Sin v (botones de antes de reiniciar, o un segundo toque) no se sabe qué era: un «Gracias» neutro.
         self.tg("answerCallbackQuery", callback_query_id=cq["id"],
-                text=self.tx(uid, "valoracion_no" if not util and v else "valoracion_si"))
+                text=self.tx(uid, "valoracion_antigua" if not v else "valoracion_no" if not util else "valoracion_si"))
         if m:
             self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
                     reply_markup={"inline_keyboard": []})
@@ -723,11 +789,18 @@ class Bot:
             updates = updates + mas
         return juntar(updates)
 
-    def pregunta(self, texto: str, fotos: list[str], largo: int):
+    @staticmethod
+    def recortar(texto: str, largo: int = LARGO_PREGUNTA) -> str:
+        """Si la pregunta pasa del tope, se queda el principio y se dice: antes se cortaba a 1.000 caracteres
+        sin que Claude ni la persona lo supieran (informe del 01-11-2026)."""
+        return texto if len(texto) <= largo else texto[:largo] + NOTA_RECORTE
+
+    def pregunta(self, texto: str, fotos: list[str], largo: int = LARGO_PREGUNTA):
         """Lo que se manda a Claude: el texto o, si hay fotos, las imágenes delante y el texto detrás,
         como recomienda Anthropic."""
+        texto = self.recortar(texto, largo)
         if not fotos:
-            return texto[:largo]
+            return texto
         bloques = []
         for f in fotos[:MAX_FOTOS]:
             info = self.tg("getFile", file_id=f)
@@ -735,7 +808,7 @@ class Bot:
                                         timeout=60) as r:
                 bloques.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
                                                             "data": base64.b64encode(r.read()).decode()}})
-        bloques.append({"type": "text", "text": texto[:largo] or "(Sin texto: solo las imágenes.)"})
+        bloques.append({"type": "text", "text": texto or "(Sin texto: solo las imágenes.)"})
         return bloques
 
     def avisar_juanjo(self, uid: int, clave: str, **datos) -> None:
@@ -809,18 +882,23 @@ class Bot:
         if destino and destino.lower() != self.usuario.lower():
             return ""
         nombre = nombre.lower()
-        return nombre if nombre in COMANDOS + ["start", "recurso"] else ""
+        return nombre if nombre in self.COMANDOS + ["start"] + self.COMANDOS_VIEJOS else ""
+
+    COMANDOS = COMANDOS           # los del menú; Karla pone los suyos (informe del 01-11-2026)
+    COMANDOS_VIEJOS = ["recurso"]  # nombres antiguos que siguen valiendo
 
     def le_hablan(self, msg: dict) -> bool:
-        """Si un mensaje de un grupo va dirigido al bot: lo menciona, le responde o usa su comando.
+        """Si un mensaje de un grupo va dirigido al bot: lo menciona, usa su comando o le responde con una pregunta.
 
-        Como administrador recibe todo lo del grupo, así que no basta con que llegue.
+        Como administrador recibe todo lo del grupo, así que no basta con que llegue. Una respuesta a un
+        mensaje suyo sin pregunta (un «gracias» al resumen de los viernes) no cuenta: contestarle «escríbeme
+        por privado» no venía a cuento (ADR 0020).
         """
         texto = msg.get("text") or msg.get("caption") or ""
         if f"@{self.usuario}".lower() in texto.lower() or self.comando_en_grupo(msg):
             return True
         r = msg.get("reply_to_message") or {}
-        return (r.get("from") or {}).get("id") == self.id
+        return (r.get("from") or {}).get("id") == self.id and ("?" in texto or "¿" in texto)
 
     def atender(self, msg: dict) -> None:
         chat, uid = msg["chat"]["id"], msg["from"]["id"]
@@ -882,8 +960,9 @@ class Bot:
         if espera and not fotos and self.contestar_espera(chat, uid, msg, texto, espera):
             return
         enlace = not fotos and SOLO_URL.match(texto)
-        if enlace and CATALOGO.clave in suyos:
-            # Un enlace suelto no es una pregunta: es un recurso para el catálogo.
+        if enlace and CATALOGO.clave in suyos and not ENLACE_TELEGRAM.match(enlace.group(1)):
+            # Un enlace suelto no es una pregunta: es un recurso para el catálogo. El de un mensaje de
+            # Telegram sí es una pregunta («¿de qué va este mensaje?»): sigue como consulta (ADR 0020).
             return self.en_hilo(self.recurso, chat, uid, msg["from"], enlace.group(1))
 
         e = contabilidad(leer_estado())
@@ -900,7 +979,7 @@ class Bot:
             historial = []
         hecho = self.escribiendo(chat)
         try:
-            r = self.consultor.responder(self.pregunta(texto, fotos, 1000), historial[-2 * INTERCAMBIOS:], self.ambito(uid),
+            r = self.consultor.responder(self.pregunta(texto, fotos), historial[-2 * INTERCAMBIOS:], self.ambito(uid),
                                          self.lenguas.get(uid, "es"))
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             registrar(f"error: {type(error).__name__}: {error}")
@@ -924,15 +1003,17 @@ class Bot:
         busco = any(ll.startswith(("buscar_mensajes", "leer_periodo")) for ll in r["uso"]["llamadas"])
         aviso = (f"_{self.tx(uid, 'buscando_en', grupos=nombres)}_\n\n"
                  if nombres and busco else "")  # solo si ha buscado: no en «¿quién administra…?»
-        self.enviar_valorable(chat, uid, aviso + r["texto"], con_fotos(texto, fotos),
-                              bool(r.get("sin_resolver")), r.get("valorable", True))
+        self.texto_o_nada(uid, r, con_fotos(texto, fotos))
+        entregada = self.enviar_valorable(chat, uid, aviso + r["texto"], con_fotos(texto, fotos),
+                                          bool(r.get("sin_resolver")), r.get("valorable", True))
         if r.get("sin_resolver") and uid != JUANJO:  # las pruebas de Juanjo no cuentan
             guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"])
         # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.
         self.memoria[uid] = (time.time(), historial[-2 * INTERCAMBIOS + 2:] + [{"role": "user", "content": con_fotos(texto[:1000], fotos)},
                                                           {"role": "assistant", "content": r["texto"]}])
         self.apuntar(r["uso"]["usd"], pregunta=uid)
-        registrar(f"pregunta respondida: {len(r['uso']['llamadas'])} búsquedas, {r['uso']['usd']:.4f} USD")
+        registrar(f"pregunta {'respondida' if entregada else 'sin entregar'}: {len(r['uso']['llamadas'])} búsquedas, "
+                  f"{r['uso']['usd']:.4f} USD")
 
     def apuntar(self, usd: float, pregunta: int | None = None, documento: int | None = None,
                 publicado: int | None = None, recurso: int | None = None, recurso_publicado: int | None = None) -> None:
@@ -1055,7 +1136,9 @@ class Bot:
         if accion == "bm":
             return self.enviar(uid, self.tx(uid, "mantenido"))
         if accion.startswith("bq:"):  # quitar de la Biblioteca lo que publicó el bot en su nombre
-            _, destino, ids = accion.split(":")
+            _, destino, ids, firma = (accion.split(":") + [""])[:4]
+            if not self.firmado(uid, firma, destino, ids):  # solo quien lo publicó
+                return self.enviar(uid, self.tx(uid, "no_tuyo"))
             borrados = [self.tg("deleteMessage", chat_id=int(destino), message_id=int(i)) for i in ids.split("-")]
             if all(borrados):
                 registrar("documento quitado de la biblioteca a petición de quien lo aportó")
@@ -1083,7 +1166,8 @@ class Bot:
         self.tg("sendMessage", chat_id=uid, text=self.tx(uid, "publicado", enlace=enlace),
                 link_preview_options={"is_disabled": True},
                 reply_markup={"inline_keyboard": [[
-                    {"text": self.tx(uid, "b_quitar_biblioteca"), "callback_data": f"bq:{destino}:{'-'.join(map(str, ids))}"},
+                    {"text": self.tx(uid, "b_quitar_biblioteca"),
+                     "callback_data": f"bq:{destino}:{'-'.join(map(str, ids))}:{self.firma(uid, destino, '-'.join(map(str, ids)))}"},
                     {"text": self.tx(uid, "b_mantener"), "callback_data": "bm"}]]})
         registrar("documento publicado en la biblioteca")
         self.avisar_juanjo(uid, "nuevo_biblioteca", autor=p["autor"], titulo=fichas.titulo(p["ficha"]), enlace=enlace)
@@ -1436,7 +1520,10 @@ class Bot:
                 self.fichas_rec.pop(uid, None)
                 self.espera.pop(uid, None)
                 return self.enviar(uid, self.tx(uid, "cancelado_recurso"))
-            if orden == "rcq" and n.isdigit():  # quitar del grupo lo que publicó el bot en su nombre
+            if orden == "rcq":  # quitar del grupo lo que publicó el bot en su nombre
+                n, _, firma = n.partition(":")
+                if not n.isdigit() or not self.firmado(uid, firma, n):  # solo quien lo publicó
+                    return self.enviar(uid, self.tx(uid, "no_tuyo"))
                 if self.tg("deleteMessage", chat_id=CATALOGO.id, message_id=int(n)):
                     registrar("mensaje de «¡Comparte tu App!» quitado a petición de su autor")
                     return self.enviar(uid, self.tx(uid, "quitado_grupo"))
@@ -1668,7 +1755,7 @@ class Bot:
         self.tg("sendMessage", chat_id=uid, link_preview_options={"is_disabled": True},
                 text=self.tx(uid, "compartido", enlace=f"{CATALOGO.enlace}/{COMPARTE_TU_APP}/{r['message_id']}"),
                 reply_markup={"inline_keyboard": [[
-                    {"text": self.tx(uid, "b_quitar_grupo"), "callback_data": f"rcq:{r['message_id']}"},
+                    {"text": self.tx(uid, "b_quitar_grupo"), "callback_data": f"rcq:{r['message_id']}:{self.firma(uid, r['message_id'])}"},
                     {"text": self.tx(uid, "b_mantener"), "callback_data": "rcm"}]]})
         registrar("recurso compartido en «¡Comparte tu App!»")
 

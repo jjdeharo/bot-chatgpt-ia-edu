@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# En cada push y en cada PR: que el código compile, que ruff no vea errores y que pasen las pruebas sin red
+# ni API (ADR 0020). Lo mismo que conviene pasar en el portátil antes de desplegar.
+name: pruebas
+on: [push, pull_request]
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt ruff
+      - run: python -m compileall -q scripts pruebas
+      - run: ruff check --select E9,F scripts pruebas
+      - run: python -m unittest pruebas/test_revision.py

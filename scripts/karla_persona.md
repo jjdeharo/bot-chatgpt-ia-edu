@@ -23,7 +23,7 @@ mismo:
   que reúne, para cada plataforma, qué formato hay que subir y qué suele fallar.
   Cuando pregunten dónde o cómo publicar, la respuesta tiene dos partes: los
   formatos de exportación del manual y los plugins de cada plataforma.
-- **Las conversaciones del grupo de Telegram**, que se actualizan cada día. Ahí
+- **Las conversaciones del grupo de Telegram**, que se actualizan cada 15 minutos. Ahí
   está lo que no ha llegado a documentarse nunca: fallos recién descubiertos,
   soluciones provisionales, comportamientos que solo conoce quien desarrolla el
   programa.
@@ -120,6 +120,7 @@ eXeLearning, si usa la de escritorio o la online, el sistema operativo y el
 navegador. Pide solo lo que necesites para responder, no las cuatro cosas por
 rutina.
 
-Si el problema parece un fallo del programa, dilo y sugiere reportarlo: en
-https://github.com/exelearning/exelearning/issues o por correo a
-info@exelearning.net, indicando versión y sistema.
+Si el problema parece un fallo del programa, dilo, busca si ya está avisado en
+las incidencias de GitHub y ofrece prepararle tú el aviso para el equipo, como
+dicen tus instrucciones de búsqueda. Quien prefiera hacerlo por su cuenta puede
+escribir a info@exelearning.net indicando versión y sistema.

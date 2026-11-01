@@ -345,5 +345,103 @@ class Limpieza(unittest.TestCase):
         self.assertEqual(k.borradores, {})
 
 
+class InformeDelUnoDeNoviembre(unittest.TestCase):
+    """Las correcciones del informe del 01-11-2026 (ADR 0020)."""
+
+    def test_respuesta_vacia_lleva_texto_fijo(self):
+        b = bot_sin_arrancar()
+        b.lenguas[7] = "ca"
+        r = {"texto": "", "sin_resolver": None}
+        with mock.patch.object(bot, "registrar"):
+            b.texto_o_nada(7, r, "pregunta")
+        self.assertEqual(r["texto"], textos.texto("ca", "respuesta_vacia"))
+        self.assertEqual(r["sin_resolver"], "respuesta vacía")
+        r = {"texto": "Hola", "sin_resolver": None}
+        b.texto_o_nada(7, r, "pregunta")
+        self.assertEqual(r["texto"], "Hola")
+
+    def test_envio_rechazado_no_cuenta_como_entregado(self):
+        b = bot_sin_arrancar()
+        b.tg = lambda metodo, **k: (b.llamadas.append(metodo), None)[1]
+        with mock.patch.object(bot, "registrar"):
+            self.assertFalse(b.enviar_valorable(7, 7, "x", "p", False))
+        b.tg = lambda metodo, **k: {"message_id": 5}
+        self.assertTrue(b.enviar_valorable(7, 7, "x", "p", False))
+
+    def test_quitar_solo_quien_publico(self):
+        """«Quitarlo de la Biblioteca» y «Quitarlo del grupo» llevan una firma atada a la cuenta."""
+        b = bot_sin_arrancar()
+        b.token, b.hoja, b.listas = "token-de-prueba", None, {}
+        firma = b.firma(7, "-100", "11-12")
+        self.assertTrue(b.firmado(7, firma, "-100", "11-12"))
+        self.assertFalse(b.firmado(8, firma, "-100", "11-12"))  # otra cuenta
+        self.assertFalse(b.firmado(7, firma, "-100", "11-13"))  # otros mensajes
+        borrados = []
+        b.tg = lambda metodo, **k: (borrados.append(k) if metodo == "deleteMessage" else None, {"message_id": 1})[1]
+        b.boton({"id": "q", "from": {"id": 8, "language_code": "es"}, "data": f"bq:-100:11-12:{firma}"})
+        b.boton({"id": "q", "from": {"id": 8, "language_code": "es"}, "data": "bq:-100:11-12"})
+        self.assertEqual(borrados, [])
+        self.assertEqual(b.enviados, [textos.texto("es", "no_tuyo")] * 2)
+        b.boton_recurso(8, f"rcq:11:{b.firma(7, 11)}")
+        b.boton_recurso(8, "rcq:11")
+        self.assertEqual(borrados, [])
+        with mock.patch.object(bot, "registrar"):
+            b.boton_recurso(7, f"rcq:11:{b.firma(7, 11)}")
+        self.assertEqual(len(borrados), 1)
+
+    def test_telegram_reintenta_tras_429(self):
+        tg = bot.Telegram("x")
+        respuestas = [urllib.error.HTTPError("u", 429, "x", {}, io.BytesIO(b'{"parameters":{"retry_after":1}}')),
+                      mock.MagicMock(**{"__enter__.return_value": io.BytesIO(b'{"ok":true,"result":{"id":1}}')})]
+        with mock.patch.object(urllib.request, "urlopen", side_effect=respuestas), \
+                mock.patch.object(bot.time, "sleep") as dormir, mock.patch.object(bot, "registrar"):
+            self.assertEqual(tg("getMe"), {"id": 1})
+        dormir.assert_called_once_with(1)
+
+    def test_repuesto_html_con_encabezados_tablas_y_citas(self):
+        h = bot.respuesta_html("### Pasos\n\n| Opción | Qué hace |\n|---|---|\n| A | algo |\n\n> cita\n\n**ok**")
+        self.assertIn("<b>Pasos</b>", h)
+        self.assertIn("• <b>A</b> — Qué hace: algo", h)
+        self.assertIn("<blockquote>cita</blockquote>", h)
+        self.assertNotIn("###", h)
+        self.assertNotIn("|", h)
+
+    def test_pregunta_larga_avisa_del_recorte(self):
+        b = bot_sin_arrancar()
+        self.assertEqual(b.pregunta("x" * 100, []), "x" * 100)
+        larga = b.pregunta("x" * (bot.LARGO_PREGUNTA + 1), [])
+        self.assertTrue(larga.endswith(bot.NOTA_RECORTE))
+        self.assertEqual(len(larga), bot.LARGO_PREGUNTA + len(bot.NOTA_RECORTE))
+
+    def test_enlace_de_telegram_es_una_pregunta(self):
+        self.assertTrue(bot.ENLACE_TELEGRAM.match("https://t.me/vceduca/7674/13698"))
+        self.assertFalse(bot.ENLACE_TELEGRAM.match("https://ejemplo.github.io/app/"))
+
+    def test_responder_al_bot_sin_pregunta_no_cuenta(self):
+        b = bot_sin_arrancar()
+        b.id, b.usuario = 1, "IAEducativa_bot"
+        respuesta = {"reply_to_message": {"from": {"id": 1}}, "text": "gracias"}
+        self.assertFalse(b.le_hablan(respuesta))
+        self.assertTrue(b.le_hablan({**respuesta, "text": "¿y esto cómo se usa?"}))
+        self.assertTrue(b.le_hablan({"text": "@IAEducativa_bot hola"}))
+        k = bot_sin_arrancar(karla.Karla)
+        k.id, k.usuario = 2, "eXeKarlaBot"
+        self.assertEqual(k.comando_en_grupo({"text": "/misrecursos"}), "")  # no es suyo
+        self.assertEqual(k.comando_en_grupo({"text": "/ayuda"}), "ayuda")
+
+    def test_nombres_largos_de_creative_commons(self):
+        f = "**T**\n\n**Licencia**\nReconocimiento-CompartirIgual 4.0 Internacional\n\n(x)"
+        self.assertTrue(fichas.se_puede_compartir(f))
+        self.assertTrue(fichas.se_puede_compartir(f.replace("Reconocimiento-CompartirIgual 4.0 Internacional", "Attribution 4.0 International")))
+
+    def test_textos_nuevos_en_los_cinco_idiomas(self):
+        for mod in (textos, textos_karla):
+            for lengua in textos.LENGUAS:
+                for clave in ("respuesta_vacia", "codigo", "valoracion_antigua"):
+                    self.assertIn(clave, mod.TEXTOS[lengua], (mod.__name__, lengua, clave))
+                self.assertIn("{version}", mod.TEXTOS[lengua]["codigo"])
+                self.assertNotIn("anónim", mod.TEXTOS[lengua]["ayuda_final"].lower())
+
+
 if __name__ == "__main__":
     unittest.main()

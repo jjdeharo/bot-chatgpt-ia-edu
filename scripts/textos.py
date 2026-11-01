@@ -67,7 +67,7 @@ ES = {
     "ayuda_final": (
         "Cómo funciono: soy un programa que usa Claude, una IA de Anthropic. Lo que me escribes, los "
         "mensajes de los grupos que encuentro y lo que me envías se procesan en servidores de "
-        "Anthropic, en Estados Unidos. Solo guardo, de forma anónima, las preguntas que no consigo responder o que marcas con 👎, para mejorar el bot, y las borro a los 60 días. Puedo equivocarme: comprueba siempre "
+        "Anthropic, en Estados Unidos. Solo guardo las preguntas que no consigo responder o que marcas con 👎, sin tu nombre ni tu cuenta, para mejorar el bot, y las borro a los 60 días. Puedo equivocarme: comprueba siempre "
         "el mensaje enlazado. Te hablo en el idioma en que me escribes."),
     "traduccion": "",
     "buscar": 'Escríbeme lo que buscas, con tus palabras. Busco en los grupos marcados; toca uno para marcarlo o desmarcarlo. Lo mantendré mientras sigamos hablando.',
@@ -80,7 +80,7 @@ ES = {
     "cupo": "Has llegado a las {cupo} preguntas de hoy. Mañana podrás seguir.",
     "tope": "Este mes se ha agotado el presupuesto del bot. Volverá a funcionar el día 1.",
     "error": "Algo ha fallado al buscar. Prueba otra vez en un momento.",
-    "solo_texto": "Por ahora solo entiendo mensajes escritos. Escríbeme la pregunta, por favor.",
+    "solo_texto": "Por ahora solo entiendo mensajes escritos y capturas de pantalla. Escríbeme la pregunta, por favor.",
     "aviso_80": ("Aviso del Bot de IA Educativa: este mes se han gastado {usd:.2f} USD de los {tope:.0f} del tope "
                  "({n} preguntas). Al llegar al tope dejaré de responder hasta el día 1. Para subirlo: "
                  "TOPE_MES_USD en el compose del NAS y el límite del espacio de trabajo en la Console."),
@@ -210,6 +210,9 @@ ES = {
     "c_ayuda": "Qué hago y cómo",
     "valoracion_si": "¡Gracias!",
     "valoracion_no": "Gracias. Guardo la pregunta, sin nada tuyo, para mejorar.",
+    "valoracion_antigua": "Gracias.",
+    "respuesta_vacia": "No he encontrado nada que responda a eso. Prueba a decirlo con otras palabras o a concretar más.",
+    "codigo": "Soy software libre (AGPL v3), versión {version}: el código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 CA = {
@@ -265,7 +268,7 @@ CA = {
     "ayuda_final": (
         "Com funciono: soc un programa que fa servir Claude, una IA d'Anthropic. El que m'escrius, els "
         "missatges dels grups que trobo i el que m'envies es processen en servidors d'Anthropic, als "
-        "Estats Units. Només guardo, de manera anònima, les preguntes que no aconsegueixo respondre o que marques amb 👎, per millorar el bot, i les esborro al cap de 60 dies. Em puc equivocar: comprova sempre el missatge "
+        "Estats Units. Només guardo les preguntes que no aconsegueixo respondre o que marques amb 👎, sense el teu nom ni el teu compte, per millorar el bot, i les esborro al cap de 60 dies. Em puc equivocar: comprova sempre el missatge "
         "enllaçat. Et parlo en l'idioma en què m'escrius."),
     "traduccion": "Textos traduïts automàticament amb IA, sense revisió professional.",
     "buscar": "Escriu-me el que cerques, amb les teves paraules. Cerco als grups marcats; toca'n un per marcar-lo o desmarcar-lo. Ho mantindré mentre continuem parlant.",
@@ -278,7 +281,7 @@ CA = {
     "cupo": "Has arribat a les {cupo} preguntes d'avui. Demà podràs continuar.",
     "tope": "Aquest mes s'ha esgotat el pressupost del bot. Tornarà a funcionar el dia 1.",
     "error": "Alguna cosa ha fallat en cercar. Torna-ho a provar d'aquí a un moment.",
-    "solo_texto": "De moment només entenc missatges escrits. Escriu-me la pregunta, si us plau.",
+    "solo_texto": "De moment només entenc missatges escrits i captures de pantalla. Escriu-me la pregunta, si us plau.",
     "solo_privado": "Hola, {nombre}. Soc el Bot de IA Educativa. Al grup no et puc respondre, però en privat sí. Escriu-me aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soc el Bot de IA Educativa. Això no funciona al grup, però en privat sí. Obre-ho aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Per afegir un document a la Biblioteca digital, envia-me'l en PDF.",
@@ -388,6 +391,9 @@ CA = {
     "c_ayuda": "Què faig i com",
     "valoracion_si": "Gràcies!",
     "valoracion_no": "Gràcies. Guardo la pregunta, sense res teu, per millorar.",
+    "valoracion_antigua": "Gràcies.",
+    "respuesta_vacia": "No he trobat res que respongui a això. Prova a dir-ho amb altres paraules o a concretar més.",
+    "codigo": "Soc programari lliure (AGPL v3), versió {version}: el codi és a https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 GL = {
@@ -443,7 +449,7 @@ GL = {
     "ayuda_final": (
         "Como funciono: son un programa que usa Claude, unha IA de Anthropic. O que me escribes, as "
         "mensaxes dos grupos que atopo e o que me envías procésanse en servidores de Anthropic, nos "
-        "Estados Unidos. Só gardo, de forma anónima, as preguntas que non consigo responder ou que marcas con 👎, para mellorar o bot, e bórroas aos 60 días. Podo equivocarme: comproba sempre a mensaxe "
+        "Estados Unidos. Só gardo as preguntas que non consigo responder ou que marcas con 👎, sen o teu nome nin a túa conta, para mellorar o bot, e bórroas aos 60 días. Podo equivocarme: comproba sempre a mensaxe "
         "ligada. Fálote no idioma no que me escribes."),
     "traduccion": "Textos traducidos automaticamente con IA, sen revisión profesional.",
     "buscar": 'Escríbeme o que buscas, coas túas palabras. Busco nos grupos marcados; toca un para marcalo ou desmarcalo. Mantereino mentres sigamos falando.',
@@ -456,7 +462,7 @@ GL = {
     "cupo": "Chegaches ás {cupo} preguntas de hoxe. Mañá poderás seguir.",
     "tope": "Este mes esgotouse o orzamento do bot. Volverá funcionar o día 1.",
     "error": "Algo fallou ao buscar. Proba outra vez nun momento.",
-    "solo_texto": "Polo de agora só entendo mensaxes escritas. Escríbeme a pregunta, por favor.",
+    "solo_texto": "Polo de agora só entendo mensaxes escritas e capturas de pantalla. Escríbeme a pregunta, por favor.",
     "solo_privado": "Ola, {nombre}. Son o Bot de IA Educativa. No grupo non podo contestarche, pero en privado si. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Ola, {nombre}. Son o Bot de IA Educativa. Isto non funciona no grupo, pero en privado si. Ábreo aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Para engadir un documento á Biblioteca dixital, envíamo en PDF.",
@@ -566,6 +572,9 @@ GL = {
     "c_ayuda": "Que fago e como",
     "valoracion_si": "Grazas!",
     "valoracion_no": "Grazas. Gardo a pregunta, sen nada teu, para mellorar.",
+    "valoracion_antigua": "Grazas.",
+    "respuesta_vacia": "Non atopei nada que responda a iso. Proba a dicilo con outras palabras ou a concretar máis.",
+    "codigo": "Son software libre (AGPL v3), versión {version}: o código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 EU = {
@@ -622,7 +631,7 @@ EU = {
     "ayuda_final": (
         "Nola funtzionatzen dudan: Claude erabiltzen duen programa bat naiz, Anthropic-en IA bat. Idazten "
         "didazuna, taldeetan aurkitzen ditudan mezuak eta bidaltzen didazuna Anthropic-en zerbitzarietan "
-        "prozesatzen dira, Ameriketako Estatu Batuetan. Erantzun ezin ditudan galderak edo 👎 batekin markatzen dituzunak bakarrik gordetzen ditut, modu anonimoan, bota hobetzeko, eta 60 egunera ezabatzen ditut. Oker egon naiteke: "
+        "prozesatzen dira, Ameriketako Estatu Batuetan. Erantzun ezin ditudan galderak edo 👎 batekin markatzen dituzunak bakarrik gordetzen ditut, zure izenik eta konturik gabe, bota hobetzeko, eta 60 egunera ezabatzen ditut. Oker egon naiteke: "
         "egiaztatu beti estekatutako mezua. Idazten didazun hizkuntzan hitz egiten dizut."),
     "traduccion": "Testuak IArekin automatikoki itzuliak, berrikuspen profesionalik gabe.",
     "buscar": 'Idatzi zer bilatzen duzun, zure hitzekin. Markatutako taldeetan bilatzen dut; ukitu bat markatzeko edo desmarkatzeko. Hitz egiten jarraitzen dugun bitartean mantenduko dut.',
@@ -635,7 +644,7 @@ EU = {
     "cupo": "Gaurko {cupo} galderetara iritsi zara. Bihar jarraitu ahal izango duzu.",
     "tope": "Hilabete honetan botaren aurrekontua agortu da. Hilaren 1ean berriro ibiliko da.",
     "error": "Zerbait gaizki atera da bilatzean. Saiatu berriro une batean.",
-    "solo_texto": "Oraingoz idatzizko mezuak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
+    "solo_texto": "Oraingoz idatzizko mezuak eta pantaila-argazkiak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
     "solo_privado": "Kaixo, {nombre}. IA Educativa bota naiz. Taldean ezin dizut erantzun, baina pribatuan bai. Idatzi hemen: https://t.me/{usuario}",
     "solo_privado_comando": "Kaixo, {nombre}. IA Educativa bota naiz. Hau ez dabil taldean, baina pribatuan bai. Ireki hemen: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Liburutegi digitalera dokumentu bat gehitzeko, bidali PDFn.",
@@ -746,6 +755,9 @@ EU = {
     "c_ayuda": "Zer egiten dudan eta nola",
     "valoracion_si": "Eskerrik asko!",
     "valoracion_no": "Eskerrik asko. Galdera gordetzen dut, zure daturik gabe, hobetzeko.",
+    "valoracion_antigua": "Eskerrik asko.",
+    "respuesta_vacia": "Ez dut horri erantzuten dion ezer aurkitu. Saiatu beste hitz batzuekin esaten edo gehiago zehazten.",
+    "codigo": "Software librea naiz (AGPL v3), {version} bertsioa: kodea hemen dago: https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 EN = {
@@ -800,7 +812,7 @@ EN = {
     "ayuda_final": (
         "How I work: I'm a program that uses Claude, an AI by Anthropic. What you write to me, the group "
         "messages I find and what you send me are processed on Anthropic's servers in the United States. "
-        "I only keep, anonymously, the questions I can't answer or that you mark with 👎, to improve the bot, and I delete them after 60 days. I can make mistakes: always check the linked message. I reply in "
+        "I only keep the questions I can't answer or that you mark with 👎, without your name or account, to improve the bot, and I delete them after 60 days. I can make mistakes: always check the linked message. I reply in "
         "the language you write to me in."),
     "traduccion": "Texts machine-translated with AI, without professional review.",
     "buscar": "Tell me what you're looking for, in your own words. I search the ticked groups; tap one to tick or untick it. I'll keep it while we keep talking.",
@@ -813,7 +825,7 @@ EN = {
     "cupo": "You've reached today's {cupo} questions. You can continue tomorrow.",
     "tope": "The bot's budget for this month has run out. It will work again on the 1st.",
     "error": "Something went wrong while searching. Please try again in a moment.",
-    "solo_texto": "For now I only understand written messages. Please write your question.",
+    "solo_texto": "For now I only understand written messages and screenshots. Please write your question.",
     "solo_privado": "Hi, {nombre}. I'm the IA Educativa Bot. I can't answer you in the group, but I can in private. Write to me here: https://t.me/{usuario}",
     "solo_privado_comando": "Hi, {nombre}. I'm the IA Educativa Bot. This doesn't work in the group, but it does in private. Open it here: https://t.me/{usuario}?start={comando}",
     "no_pdf": "To add a document to the Digital Library, send it to me as a PDF.",
@@ -923,6 +935,9 @@ EN = {
     "c_ayuda": "What I do and how",
     "valoracion_si": "Thanks!",
     "valoracion_no": "Thanks. I'm keeping the question, with nothing about you, to improve.",
+    "valoracion_antigua": "Thanks.",
+    "respuesta_vacia": "I haven't found anything that answers that. Try saying it in other words or being more specific.",
+    "codigo": "I am free software (AGPL v3), version {version}: the code is at https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 TEXTOS = {"es": ES, "ca": CA, "gl": GL, "eu": EU, "en": EN}

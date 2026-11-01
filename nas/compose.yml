@@ -43,6 +43,7 @@ services:
       SIGNIFICADO_URL: http://significado:8000
       # Abierto a todo miembro del grupo desde el 24-10-2026 (antes, solo Juanjo).
       ABIERTO: "1"
+      JUANJO: "218499880"  # la cuenta de Juanjo (avisos, /estado); fuera del código público (ADR 0020)
       HOME: /home/jjdeharo
       TG_CRED: /credenciales/telegram-cuenta.json
       TG_SESION: /credenciales/telegram-cuenta.session
@@ -64,6 +65,7 @@ services:
     environment:
       HOME: /home/jjdeharo
       ABIERTO: "1"  # abierta al grupo eXeLearning desde el 27-10-2026
+      JUANJO: "218499880"
       GRUPOS: exelearning
       BOT_CRED: /credenciales/karla-bot.json
       CLAVE_ANTHROPIC: /credenciales/anthropic-karla.txt

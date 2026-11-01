@@ -18,11 +18,13 @@ ES = {
                         "por qué el programa se comporta de una manera o cómo publicar tu recurso en Moodle, "
                         "Procomún u otra plataforma. Busco en el manual, en la documentación del programa y de sus "
                         "complementos y en lo que se ha hablado en el grupo [eXeLearning](https://t.me/exelearning), "
-                        "y te digo de dónde sale cada cosa."),
+                        "y te digo de dónde sale cada cosa. Puedes mandarme una captura de pantalla con la duda. Si lo que "
+                        "cuentas es un fallo del programa, busco si ya está avisado y, si quieres, preparo el aviso para el "
+                        "equipo que lo desarrolla."),
     "ayuda_final": ("ℹ️ Ten en cuenta: puedo equivocarme, así que comprueba lo importante en el mensaje o el "
                     "documento que cito. Lo que me escribes se procesa con Claude, una IA de Anthropic, en "
-                    "servidores de Estados Unidos. Solo guardo, de forma anónima, las preguntas que no consigo "
-                    "responder o que marcas con 👎, para mejorar, y las borro a los 60 días. Respondo a los miembros del grupo "
+                    "servidores de Estados Unidos. Solo guardo las preguntas que no consigo "
+                    "responder o que marcas con 👎, sin tu nombre ni tu cuenta, para mejorar, y las borro a los 60 días. Respondo a los miembros del grupo "
                     "eXeLearning. Me ha creado @jjdeharo."),
     "traduccion": "",
     "perfil": ("Soy Karla, una asistente para resolver dudas sobre eXeLearning. Busco en su manual, en la "
@@ -35,7 +37,7 @@ ES = {
     "no_autorizado": "Todavía estoy en pruebas. Pronto estaré abierta al grupo eXeLearning.",
     "solo_privado": "Hola, {nombre}. Soy Karla bot, la asistente de eXeLearning. En el grupo no puedo contestarte, pero por privado sí. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soy Karla bot, la asistente de eXeLearning. Esto no funciona en el grupo, pero por privado sí. Ábrelo aquí: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "Por ahora solo entiendo mensajes escritos. Escríbeme la pregunta, por favor.",
+    "solo_texto": "Por ahora solo entiendo mensajes escritos y capturas de pantalla. Escríbeme la pregunta, por favor.",
     "error": "Algo ha fallado al buscar. Prueba otra vez en un momento.",
     "cupo": "Has llegado a las {cupo} preguntas de hoy. Mañana podrás seguir.",
     "tope": "Este mes se ha agotado mi presupuesto. Volveré a responder el día 1.",
@@ -68,6 +70,9 @@ ES = {
     "incidencia_error": 'No he podido enviar el aviso. Prueba más tarde o cuéntalo en el grupo eXeLearning.',
     "valoracion_si": "¡Gracias!",
     "valoracion_no": "Gracias. Guardo la pregunta, sin nada tuyo, para mejorar.",
+    "valoracion_antigua": "Gracias.",
+    "respuesta_vacia": "No he encontrado nada que responda a eso. Prueba a decirlo con otras palabras o a concretar más.",
+    "codigo": "Soy software libre (AGPL v3), versión {version}: el código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 CA = {
@@ -77,11 +82,13 @@ CA = {
                         "una cosa, per què el programa es comporta d'una manera o com publicar el teu recurs a "
                         "Moodle, Procomún o una altra plataforma. Cerco al manual, a la documentació del programa i "
                         "dels seus complements i en el que s'ha parlat al grup [eXeLearning](https://t.me/exelearning), "
-                        "i et dic d'on surt cada cosa."),
+                        "i et dic d'on surt cada cosa. Em pots enviar una captura de pantalla amb el dubte. Si el que "
+                        "expliques és una errada del programa, busco si ja està avisada i, si vols, preparo l'avís per a "
+                        "l'equip que el desenvolupa."),
     "ayuda_final": ("ℹ️ Tingues en compte: em puc equivocar, així que comprova el que sigui important al missatge "
                     "o al document que cito. El que m'escrius es processa amb Claude, una IA d'Anthropic, en "
-                    "servidors dels Estats Units. Només guardo, de forma anònima, les preguntes que no aconsegueixo "
-                    "respondre o que marques amb 👎, per millorar, i les esborro als 60 dies. Responc als membres del grup eXeLearning. "
+                    "servidors dels Estats Units. Només guardo les preguntes que no aconsegueixo "
+                    "respondre o que marques amb 👎, sense el teu nom ni el teu compte, per millorar, i les esborro als 60 dies. Responc als membres del grup eXeLearning. "
                     "M'ha creat @jjdeharo."),
     "traduccion": "Traducció automàtica feta amb IA, sense revisió professional.",
     "perfil": ("Soc la Karla, una assistent per resoldre dubtes sobre eXeLearning. Cerco al seu manual, a la "
@@ -94,7 +101,7 @@ CA = {
     "no_autorizado": "Encara estic en proves. Aviat estaré oberta al grup eXeLearning.",
     "solo_privado": "Hola, {nombre}. Soc la Karla bot, l'assistent d'eXeLearning. Al grup no et puc respondre, però en privat sí. Escriu-me aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soc la Karla bot, l'assistent d'eXeLearning. Això no funciona al grup, però en privat sí. Obre-ho aquí: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "De moment només entenc missatges escrits. Escriu-me la pregunta, si us plau.",
+    "solo_texto": "De moment només entenc missatges escrits i captures de pantalla. Escriu-me la pregunta, si us plau.",
     "error": "Alguna cosa ha fallat en cercar. Torna-ho a provar d'aquí a una estona.",
     "cupo": "Has arribat a les {cupo} preguntes d'avui. Demà podràs continuar.",
     "tope": "Aquest mes s'ha esgotat el meu pressupost. Tornaré a respondre el dia 1.",
@@ -110,6 +117,9 @@ CA = {
     "incidencia_error": "No he pogut enviar l'avís. Prova-ho més tard o explica-ho al grup eXeLearning.",
     "valoracion_si": "Gràcies!",
     "valoracion_no": "Gràcies. Guardo la pregunta, sense res teu, per millorar.",
+    "valoracion_antigua": "Gràcies.",
+    "respuesta_vacia": "No he trobat res que respongui a això. Prova a dir-ho amb altres paraules o a concretar més.",
+    "codigo": "Soc programari lliure (AGPL v3), versió {version}: el codi és a https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 GL = {
@@ -119,10 +129,12 @@ GL = {
                         "algo, por que o programa se comporta dunha maneira ou como publicar o teu recurso en "
                         "Moodle, Procomún ou outra plataforma. Busco no manual, na documentación do programa e dos "
                         "seus complementos e no que se falou no grupo [eXeLearning](https://t.me/exelearning), e "
-                        "dígoche de onde sae cada cousa."),
+                        "dígoche de onde sae cada cousa. Podes mandarme unha captura de pantalla coa dúbida. Se o que "
+                        "contas é un fallo do programa, busco se xa está avisado e, se queres, preparo o aviso para o "
+                        "equipo que o desenvolve."),
     "ayuda_final": ("ℹ️ Ten en conta: podo equivocarme, así que comproba o importante na mensaxe ou no documento "
                     "que cito. O que me escribes procésase con Claude, unha IA de Anthropic, en servidores dos "
-                    "Estados Unidos. Só gardo, de forma anónima, as preguntas que non consigo responder ou que marcas con 👎, para "
+                    "Estados Unidos. Só gardo as preguntas que non consigo responder ou que marcas con 👎, sen o teu nome nin a túa conta, para "
                     "mellorar, e bórroas aos 60 días. Respondo aos membros do grupo eXeLearning. Creoume @jjdeharo."),
     "traduccion": "Tradución automática feita con IA, sen revisión profesional.",
     "perfil": ("Son Karla, unha asistente para resolver dúbidas sobre eXeLearning. Busco no seu manual, na "
@@ -135,7 +147,7 @@ GL = {
     "no_autorizado": "Aínda estou en probas. Pronto estarei aberta ao grupo eXeLearning.",
     "solo_privado": "Ola, {nombre}. Son Karla bot, a asistente de eXeLearning. No grupo non podo contestarche, pero en privado si. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Ola, {nombre}. Son Karla bot, a asistente de eXeLearning. Isto non funciona no grupo, pero en privado si. Ábreo aquí: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "Polo de agora só entendo mensaxes escritas. Escríbeme a pregunta, por favor.",
+    "solo_texto": "Polo de agora só entendo mensaxes escritas e capturas de pantalla. Escríbeme a pregunta, por favor.",
     "error": "Algo fallou ao buscar. Proba outra vez nun momento.",
     "cupo": "Chegaches ás {cupo} preguntas de hoxe. Mañá poderás seguir.",
     "tope": "Este mes esgotouse o meu orzamento. Volverei responder o día 1.",
@@ -151,6 +163,9 @@ GL = {
     "incidencia_error": 'Non puiden enviar o aviso. Proba máis tarde ou cóntao no grupo eXeLearning.',
     "valoracion_si": "Grazas!",
     "valoracion_no": "Grazas. Gardo a pregunta, sen nada teu, para mellorar.",
+    "valoracion_antigua": "Grazas.",
+    "respuesta_vacia": "Non atopei nada que responda a iso. Proba a dicilo con outras palabras ou a concretar máis.",
+    "codigo": "Son software libre (AGPL v3), versión {version}: o código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 EU = {
@@ -160,11 +175,13 @@ EU = {
                         "programak zergatik jokatzen duen modu batean edo zure baliabidea Moodlen, Procomúnen edo "
                         "beste plataforma batean nola argitaratu. Eskuliburuan, programaren eta bere osagarrien "
                         "dokumentazioan eta [eXeLearning](https://t.me/exelearning) taldean hitz egindakoan "
-                        "bilatzen dut, eta gauza bakoitza nondik datorren esaten dizut."),
+                        "bilatzen dut, eta gauza bakoitza nondik datorren esaten dizut. Zalantzarekin batera pantaila-argazki "
+                        "bat bidal diezadakezu. Kontatzen duzuna programaren akats bat bada, jada jakinarazita dagoen "
+                        "bilatzen dut eta, nahi baduzu, garatzen duen taldearentzako oharra prestatzen dut."),
     "ayuda_final": ("ℹ️ Kontuan izan: oker egon naiteke, beraz egiaztatu garrantzitsua aipatzen dudan mezuan edo "
                     "dokumentuan. Idazten didazuna Claude-rekin prozesatzen da, Anthropic-en IA bat, Estatu "
-                    "Batuetako zerbitzarietan. Erantzun ezin ditudan galderak edo 👎 batekin markatzen dituzunak bakarrik gordetzen ditut, modu "
-                    "anonimoan, hobetzeko, eta 60 egunera ezabatzen ditut. eXeLearning taldeko kideei erantzuten "
+                    "Batuetako zerbitzarietan. Erantzun ezin ditudan galderak edo 👎 batekin markatzen dituzunak bakarrik gordetzen ditut, zure "
+                    "izenik eta konturik gabe, hobetzeko, eta 60 egunera ezabatzen ditut. eXeLearning taldeko kideei erantzuten "
                     "diet. @jjdeharo-k sortu nau."),
     "traduccion": "IArekin egindako itzulpen automatikoa, berrikuspen profesionalik gabe.",
     "perfil": ("Karla naiz, eXeLearning-i buruzko zalantzak argitzeko laguntzailea. Bere eskuliburuan, "
@@ -177,7 +194,7 @@ EU = {
     "no_autorizado": "Oraindik probetan nago. Laster eXeLearning taldearentzat irekita egongo naiz.",
     "solo_privado": "Kaixo, {nombre}. Karla bot naiz, eXeLearning-en laguntzailea. Taldean ezin dizut erantzun, baina pribatuan bai. Idatzi hemen: https://t.me/{usuario}",
     "solo_privado_comando": "Kaixo, {nombre}. Karla bot naiz, eXeLearning-en laguntzailea. Hau ez dabil taldean, baina pribatuan bai. Ireki hemen: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "Oraingoz idatzizko mezuak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
+    "solo_texto": "Oraingoz idatzizko mezuak eta pantaila-argazkiak bakarrik ulertzen ditut. Idatzi galdera, mesedez.",
     "error": "Zerbait gaizki atera da bilatzean. Saiatu berriro une batean.",
     "cupo": "Gaurko {cupo} galderetara iritsi zara. Bihar jarraitu ahal izango duzu.",
     "tope": "Hilabete honetan nire aurrekontua agortu da. Hilaren 1ean erantzungo dut berriro.",
@@ -193,6 +210,9 @@ EU = {
     "incidencia_error": 'Ezin izan dut oharra bidali. Saiatu geroago edo kontatu eXeLearning taldean.',
     "valoracion_si": "Eskerrik asko!",
     "valoracion_no": "Eskerrik asko. Galdera gordetzen dut, zure daturik gabe, hobetzeko.",
+    "valoracion_antigua": "Eskerrik asko.",
+    "respuesta_vacia": "Ez dut horri erantzuten dion ezer aurkitu. Saiatu beste hitz batzuekin esaten edo gehiago zehazten.",
+    "codigo": "Software librea naiz (AGPL v3), {version} bertsioa: kodea hemen dago: https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 EN = {
@@ -202,10 +222,12 @@ EN = {
                         "the program behaves in a certain way, or how to publish your resource on Moodle, Procomún "
                         "or another platform. I search the manual, the documentation of the program and its add-ons, "
                         "and what has been said in the [eXeLearning](https://t.me/exelearning) group, and I tell you "
-                        "where each answer comes from."),
+                        "where each answer comes from. You can send me a screenshot along with your question. If what you "
+                        "describe is a bug in the program, I check whether it has already been reported and, if you want, "
+                        "I prepare the report for the team that develops it."),
     "ayuda_final": ("ℹ️ Please note: I can make mistakes, so check anything important in the message or document "
                     "I cite. What you write to me is processed with Claude, an AI by Anthropic, on servers in the "
-                    "United States. I only keep, anonymously, the questions I can't answer or that you mark with 👎, to improve, and I delete "
+                    "United States. I only keep the questions I can't answer or that you mark with 👎, without your name or account, to improve, and I delete "
                     "them after 60 days. I answer members of the eXeLearning group. Created by @jjdeharo."),
     "traduccion": "Automatic translation made with AI, without professional review.",
     "perfil": ("I'm Karla, an assistant for questions about eXeLearning. I search its manual, the documentation of "
@@ -218,7 +240,7 @@ EN = {
     "no_autorizado": "I'm still being tested. I'll soon be open to the eXeLearning group.",
     "solo_privado": "Hi, {nombre}. I'm Karla bot, the eXeLearning assistant. I can't answer you in the group, but I can in private. Write to me here: https://t.me/{usuario}",
     "solo_privado_comando": "Hi, {nombre}. I'm Karla bot, the eXeLearning assistant. This doesn't work in the group, but it does in private. Open it here: https://t.me/{usuario}?start={comando}",
-    "solo_texto": "For now I only understand written messages. Please write your question.",
+    "solo_texto": "For now I only understand written messages and screenshots. Please write your question.",
     "error": "Something went wrong while searching. Please try again in a moment.",
     "cupo": "You've reached today's {cupo} questions. You can continue tomorrow.",
     "tope": "My budget for this month has run out. I'll answer again on the 1st.",
@@ -234,6 +256,9 @@ EN = {
     "incidencia_error": "I couldn't send the report. Try again later or tell the eXeLearning group.",
     "valoracion_si": "Thanks!",
     "valoracion_no": "Thanks. I'm keeping the question, with nothing about you, to improve.",
+    "valoracion_antigua": "Thanks.",
+    "respuesta_vacia": "I haven't found anything that answers that. Try saying it in other words or being more specific.",
+    "codigo": "I am free software (AGPL v3), version {version}: the code is at https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
 }
 
 TEXTOS = {"es": ES, "ca": CA, "gl": GL, "eu": EU, "en": EN}
