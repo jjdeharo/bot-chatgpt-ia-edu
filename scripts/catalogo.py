@@ -682,7 +682,7 @@ if __name__ == "__main__":
     texto, aviso = leer_url(sys.argv[1])
     print(aviso or f"{len(texto)} caracteres leídos")
     if texto:
-        import anthropic
-        cliente = anthropic.Anthropic(api_key=consultar.CLAVE.read_text().strip())
+        import saldo
+        cliente = saldo.cliente(consultar.CLAVE)
         f, usd = Fichas(cliente).analizar(sys.argv[1], texto)
         print(json.dumps(f, ensure_ascii=False, indent=1), f"\n[{usd:.4f} USD]")

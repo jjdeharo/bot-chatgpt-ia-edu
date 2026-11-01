@@ -768,5 +768,71 @@ class SinResolverPorTemas(unittest.TestCase):
         self.assertIn("<b>2. Exportar a SCORM: 2 preguntas</b>", html_)
 
 
+class AvisoDeSaldo(unittest.TestCase):
+    """ADR 0024: si Anthropic corta por saldo o por un límite de gasto, se avisa a Juanjo una vez."""
+
+    @staticmethod
+    def error(codigo: int, texto: str):
+        import anthropic
+        import httpx2
+        respuesta = httpx2.Response(codigo, request=httpx2.Request("POST", "https://api.anthropic.com/v1/messages"))
+        cuerpo = {"type": "error", "error": {"type": "invalid_request_error", "message": texto}}
+        return anthropic.APIStatusError(texto, response=respuesta, body=cuerpo)
+
+    def setUp(self):
+        import saldo
+        self.saldo = saldo
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        cred = Path(self.dir.name) / "karla-bot.json"
+        cred.write_text(json.dumps({"token": "x"}))
+        self.enviados = []
+        for p in (mock.patch.object(saldo, "DATOS", Path(self.dir.name)),
+                  mock.patch.dict(os.environ, {"BOT_CRED": str(cred), "JUANJO": "1"}),
+                  mock.patch.object(urllib.request, "urlopen",
+                                    lambda url, datos, timeout: self.enviados.append(datos.decode()))):
+            p.start()
+            self.addCleanup(p.stop)
+
+    def llamar(self, error):
+        def crear(**_):
+            if error:
+                raise error
+            return "ok"
+        return self.saldo.vigilar(crear)
+
+    def test_reconoce_los_cortes_y_no_el_429_corriente(self):
+        self.assertTrue(self.saldo.sin_saldo(self.error(400, "Your credit balance is too low to access the API.")))
+        self.assertTrue(self.saldo.sin_saldo(self.error(400, "You have reached your specified workspace API usage limits.")))
+        self.assertTrue(self.saldo.sin_saldo(self.error(402, "Billing problem")))
+        self.assertFalse(self.saldo.sin_saldo(self.error(429, "Number of request tokens has exceeded your rate limit")))
+        self.assertFalse(self.saldo.sin_saldo(self.error(400, "messages: field required")))
+
+    def test_avisa_una_vez_y_otra_tras_volver_a_funcionar(self):
+        corte = self.error(400, "Your credit balance is too low to access the API.")
+        for _ in range(3):
+            with self.assertRaises(Exception):
+                self.llamar(corte)()
+        self.assertEqual(len(self.enviados), 1)
+        self.assertIn("Karla+bot", self.enviados[0])
+        self.assertEqual(self.llamar(None)(), "ok")
+        with self.assertRaises(Exception):
+            self.llamar(corte)()
+        self.assertEqual(len(self.enviados), 2)
+
+    def test_otros_errores_no_avisan(self):
+        with self.assertRaises(Exception):
+            self.llamar(self.error(400, "messages: field required"))()
+        self.assertEqual(self.enviados, [])
+
+    def test_el_cliente_vigila_las_dos_vias(self):
+        clave = Path(self.dir.name) / "clave.txt"
+        clave.write_text("sk-ant-prueba")
+        c = self.saldo.cliente(clave)
+        self.assertEqual(c.messages.create.__name__, "create")
+        self.assertIn("vigilar", c.messages.create.__qualname__)
+        self.assertIn("vigilar", c.beta.messages.create.__qualname__)
+
+
 if __name__ == "__main__":
     unittest.main()

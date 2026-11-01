@@ -155,7 +155,7 @@ avisa a Juanjo por Telegram.
 ## Gasto
 
 Cada pregunta cuesta del orden de 0,001–0,003 USD; una ficha de recurso para el repositorio, entre 0,03 y 0,10 USD según el tamaño del recurso (la lee Sonnet entera), y un documento de la Biblioteca, unos 0,06 USD. Tiene un tope mensual en la
-consola de Claude y otro en el propio bot. No hay cupos a la vista: los cupos por
+consola de Claude y otro en el propio bot, que avisa a Juanjo al 80 %; si Anthropic corta por falta de créditos o por el límite de la consola, el bot también le avisa (ADR 0024). No hay cupos a la vista: los cupos por
 persona solo entran el día que se gasta más del doble de lo que toca, y quien
 hace más de 30 consultas en una hora tiene que esperar (ADR 0006).
 Juanjo ve las consultas y el gasto escribiendo `/estado` al bot (solo a él le responde), o con

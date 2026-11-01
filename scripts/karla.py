@@ -32,14 +32,13 @@ from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-import anthropic
-
 os.environ.setdefault("GRUPOS", "exelearning")  # antes de importar grupos: Karla solo mira este grupo
 import bot  # noqa: E402
 import buscador  # noqa: E402
 import consultar  # noqa: E402
 import documentacion  # noqa: E402
 import grupos  # noqa: E402
+import saldo  # noqa: E402
 import textos_karla  # noqa: E402
 
 GRUPO = grupos.TODOS["exelearning"]
@@ -401,7 +400,7 @@ class Consultora:
         self.grupo = buscador.Buscador(GRUPO, modelo)
         self.docs = documentacion.Documentacion(DOCS, modelo)
         self.docs_firma = (DOCS / "trozos.json").stat().st_mtime
-        self.cliente = anthropic.Anthropic(api_key=CLAVE.read_text().strip())
+        self.cliente = saldo.cliente(CLAVE)
 
     def al_dia(self) -> None:
         self.grupo.al_dia()
@@ -996,7 +995,7 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["estado"]:
         print(informe(bot.contabilidad(bot.leer_estado())))
     elif sys.argv[1:] == ["sinresolver"]:  # para revisarlas desde la terminal del NAS; el gasto no se apunta
-        print(bot.a_texto(bot.bloques_temas(*bot.temas_sin_resolver(anthropic.Anthropic(api_key=CLAVE.read_text().strip()),
+        print(bot.a_texto(bot.bloques_temas(*bot.temas_sin_resolver(saldo.cliente(CLAVE),
                                                                      Karla.CONTEXTO_TEMAS, Karla.SOLUCIONES))))
     elif sys.argv[1:]:
         c = Consultora()

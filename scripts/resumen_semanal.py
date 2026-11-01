@@ -322,10 +322,10 @@ if __name__ == "__main__":
     hasta = ultimo_cierre() - timedelta(days=7 * atras)
     cliente = modelo = None
     if grupo == "exelearning":
-        import anthropic
+        import saldo
         import consultar
         import karla  # noqa: F401 — pone las credenciales de Karla en bot
-        cliente, modelo = anthropic.Anthropic(api_key=karla.CLAVE.read_text().strip()), karla.MODELO
+        cliente, modelo = saldo.cliente(karla.CLAVE), karla.MODELO
     import bot
     tg = bot.Telegram(json.loads(bot.CRED.read_text())["token"])
     texto, u = generar(grupo, hasta, tg("getMe")["username"], cliente, modelo)

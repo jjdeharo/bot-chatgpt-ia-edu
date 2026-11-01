@@ -9,11 +9,10 @@ import re
 import sys
 from pathlib import Path
 
-import anthropic
-
 import buscador
 import grupos
 import repositorio
+import saldo
 
 MODELO_CLAUDE = os.environ.get("MODELO_CLAUDE", "claude-haiku-5-5")
 ESFUERZO = os.environ.get("ESFUERZO", "medium")
@@ -383,7 +382,7 @@ class Consultor:
         self.b = self.buscadores[grupos.con_biblioteca().clave]  # el de la Biblioteca digital
         self.repositorio = repositorio.Repositorio(modelo=modelo)  # ADR 0016
         self.repositorio.al_dia(esperar=False)  # que empiece a leer las fichas ya, no con la primera pregunta
-        self.cliente = anthropic.Anthropic(api_key=CLAVE.read_text().strip())
+        self.cliente = saldo.cliente(CLAVE)
 
     def mensajes(self, consulta, donde=None, autor_ids=None, desde=None, hasta=None, n=12) -> list[dict]:
         """Los mejores de todos los grupos juntos, por sus puntos de fusión."""

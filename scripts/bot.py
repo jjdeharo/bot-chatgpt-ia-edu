@@ -75,7 +75,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.3.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.3.2"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -2301,8 +2301,8 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["estado"]:
         print(informe(contabilidad(leer_estado())))
     elif sys.argv[1:] == ["sinresolver"]:  # para revisarlas desde la terminal del NAS; el gasto no se apunta
-        import anthropic
-        print(a_texto(bloques_temas(*temas_sin_resolver(anthropic.Anthropic(api_key=consultar.CLAVE.read_text().strip()),
+        import saldo
+        print(a_texto(bloques_temas(*temas_sin_resolver(saldo.cliente(consultar.CLAVE),
                                                          Bot.CONTEXTO_TEMAS, Bot.SOLUCIONES))))
     else:
         Bot().en_marcha()
