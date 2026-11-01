@@ -17,12 +17,14 @@ Uso: karla.py            en marcha (lo que hace el contenedor)
      karla.py "pregunta" responde en la terminal, para probar
 """
 import html
+import io
 import json
 import os
 import re
 import sys
 import time
 import unicodedata
+import zipfile
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -101,6 +103,13 @@ enlace: los enlaces t.me son solo de mensajes.
 - Si la consulta trae imágenes, son capturas o fotos de quien pregunta (a veces reenviadas del grupo): \
 míralas como parte de la pregunta, porque a menudo muestran el problema mejor que el texto. Si sin texto \
 no se entiende qué duda tiene, pídele en una frase que la explique.
+- Un trozo que empieza por «[Mensaje reenviado, escrito por … el …]» es un mensaje del grupo que la persona \
+te reenvía: búscalo con buscar_mensajes acotando «desde» y «hasta» a ese día y lee su hilo con leer_hilo, \
+para responder sobre esa conversación (lo que se contestó allí, si se resolvió) y no sobre una parecida.
+- Si la consulta trae «[Archivo adjunto: …]», es un proyecto de eXeLearning que te ha mandado, resumido por el \
+programa: la versión con que se guardó, sus páginas e iDevices y el principio de su contenido. Úsalo para \
+diagnosticar (una versión antigua, un iDevice que ya no existe, un archivo sin content.xml), sin inventar lo \
+que el resumen no dice.
 - Si lo que cuenta parece un fallo del programa, y no una duda de uso ni de configuración de la \
 plataforma donde publica, mira el registro de cambios y busca en las incidencias de GitHub \
 (buscar_incidencias, con palabras en inglés). Si ya hay una, da su enlace y su estado; si se cerró como \
@@ -248,7 +257,7 @@ def incidencia(repositorio: str, numero: int) -> dict:
     comentarios = github(f"/repos/{repositorio}/issues/{int(numero)}/comments", per_page=100) if i["comments"] else []
     return {"titulo": i["title"], "estado": i["state"], "motivo": i.get("state_reason"),
             "abierta": i["created_at"][:10], "cerrada": (i.get("closed_at") or "")[:10] or None,
-            "enlace": i["html_url"], "texto": (i.get("body") or "")[:3000],
+            "enlace": i["html_url"], "texto": (i.get("body") or "")[:3000], "n_comentarios": i["comments"],
             "comentarios": [{"autor": c["user"]["login"], "fecha": c["created_at"][:10], "texto": c["body"][:1500]}
                             for c in comentarios[-8:]]}
 
@@ -263,6 +272,68 @@ def abrir_incidencia(repositorio: str, titulo: str, cuerpo: str) -> str:
         raise ValueError(f"no se abren incidencias en {repositorio!r}")
     i = github(f"/repos/{repositorio}/issues", {"title": titulo[:250], "body": cuerpo[:60000] + PIE_INCIDENCIA})
     return i["html_url"]
+
+
+# --- archivos .elpx / .elp (ADR 0021) -----------------------------------------
+ARCHIVO_EXE = re.compile(r"\.(elpx?|zip)$", re.I)
+MAX_XML = 6000  # caracteres del content.xml que ve Claude, sin el HTML de los iDevices
+
+
+def leer_elpx(nombre: str, datos: bytes) -> str:
+    """Un resumen del proyecto para Claude: qué lleva el ZIP, con qué versión se guardó, cuántas páginas e
+    iDevices tiene y el principio de su content.xml. Un .elp antiguo (eXe 2.x) lleva contentv3.xml o
+    contentv2.xml y se dice así. Nunca se extrae nada a disco."""
+    try:
+        z = zipfile.ZipFile(io.BytesIO(datos))
+        nombres = z.namelist()
+    except zipfile.BadZipFile:
+        return f"[Archivo adjunto: {nombre}] No es un archivo ZIP válido: puede estar dañado o a medio descargar."
+    raiz = sorted(n for n in nombres if "/" not in n)
+    partes = [f"[Archivo adjunto: {nombre}] {len(nombres)} entradas; en la raíz: {', '.join(raiz[:20]) or 'nada'}."]
+    principal = next((n for n in ("content.xml", "contentv3.xml", "contentv2.xml") if n in nombres), None)
+    if not principal:
+        partes.append("No lleva content.xml ni contentv3.xml: no es un proyecto de eXeLearning reconocible "
+                      "(quizá sea una exportación a sitio web o SCORM, no el proyecto).")
+        return "\n".join(partes)
+    with z.open(principal) as f:
+        xml = f.read(2_000_000).decode("utf-8", "replace")
+    if principal != "content.xml":
+        partes.append(f"Formato antiguo ({principal}): un proyecto de eXeLearning 2.x, que la versión 4 importa.")
+    props = dict(re.findall(r"<key>(pp_title|pp_lang|pp_author|pp_license|pp_theme|pp_exelearning_version|exe_version|theme)"
+                            r"</key>\s*<value>(.*?)</value>", xml, re.S))
+    if props:
+        partes.append("Propiedades: " + "; ".join(f"{k}={html.unescape(v.strip())[:120]}" for k, v in props.items()))
+    paginas = re.findall(r"<pageName>(.*?)</pageName>", xml, re.S)
+    idevices = Counter(re.findall(r"<odeIdeviceTypeName>(.*?)</odeIdeviceTypeName>", xml, re.S))
+    if paginas or idevices:
+        partes.append(f"Páginas ({len(paginas)}): " + ", ".join(html.unescape(p)[:60] for p in paginas[:40]))
+        partes.append("iDevices: " + (", ".join(f"{t} ×{n}" for t, n in idevices.most_common()) or "ninguno"))
+    sin_html = re.sub(r"<htmlView>.*?</htmlView>|<!\[CDATA\[.*?\]\]>", "[…]", xml, flags=re.S)
+    partes.append(f"Principio de {principal} (sin el HTML de los iDevices):\n{sin_html[:MAX_XML]}")
+    return "\n".join(partes)
+
+
+# Seguimiento de las incidencias abiertas, para quien lo pide (ADR 0021): {«dueño/repo#n»: {uid, lengua, titulo,
+# comentarios, estado, desde}}. Fuera del repositorio y en la copia diaria: liga una cuenta a una incidencia.
+SEGUIMIENTO = bot.BASE / "datos" / "seguimiento-incidencias.json"
+SEGUIMIENTO_S = 15 * 60  # cada cuánto se miran las incidencias seguidas
+
+
+def leer_seguimiento() -> dict:
+    try:
+        return json.loads(SEGUIMIENTO.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def guardar_seguimiento(d: dict) -> None:
+    tmp = SEGUIMIENTO.with_suffix(".tmp")
+    tmp.write_text(json.dumps(d, ensure_ascii=False, indent=1))
+    tmp.replace(SEGUIMIENTO)
+
+
+MOTIVO_CIERRE = {"completed": "corregida o resuelta", "not_planned": "no se va a hacer", "duplicate": "repetida",
+                 "reopened": "reabierta"}
 
 
 # Quién es del equipo de eXeLearning, por su cuenta de Telegram: sus respuestas en el grupo valen como oficiales.
@@ -555,6 +626,8 @@ class Karla(bot.Bot):
         self.tg("answerCallbackQuery", callback_query_id=cq["id"])
         if accion.startswith("eq:") and uid == bot.JUANJO:
             return self.decidir_equipo(accion, m)
+        if accion.startswith("sig:"):
+            return self.decidir_seguimiento(uid, accion, m)
         if not accion.startswith("inc:"):
             return
         partes = accion.split(":")
@@ -594,6 +667,11 @@ class Karla(bot.Bot):
             bot.guardar_estado(e)
         bot.registrar(f"incidencia abierta: {url}")
         self.enviar(uid, self.tx(uid, "incidencia_abierta", url=url))
+        # Seguirla, si quiere (ADR 0021): guarda su cuenta junto a la incidencia, así que se pide permiso.
+        ref = f"{inc['repositorio']}#{url.rstrip('/').rsplit('/', 1)[-1]}"
+        self.tg("sendMessage", chat_id=uid, text=self.tx(uid, "seguir_pregunta"),
+                reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_si_avisar"), "callback_data": f"sig:si:{ref}"},
+                                                   {"text": self.tx(uid, "b_no_avisar"), "callback_data": "sig:no"}]]})
         de = cq["from"]
         quien = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
         self.avisar_juanjo(uid, "nueva_incidencia", titulo=inc["titulo"], url=url,
@@ -601,6 +679,97 @@ class Karla(bot.Bot):
 
     def tx(self, uid: int, clave: str, **datos) -> str:
         return textos_karla.texto(self.lenguas.get(uid, "es"), clave, **datos)
+
+    # --- seguimiento de incidencias (ADR 0021) ---------------------------------
+    def decidir_seguimiento(self, uid: int, accion: str, m: dict) -> None:
+        if m:
+            self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
+                    reply_markup={"inline_keyboard": []})
+        partes = accion.split(":", 2)
+        if partes[1] != "si" or len(partes) < 3:
+            return self.enviar(uid, self.tx(uid, "seguir_no"))
+        repositorio, _, numero = partes[2].partition("#")
+        if not re.fullmatch(rf"{ORG}/[\w.-]+", repositorio) or not numero.isdigit():
+            return self.enviar(uid, self.tx(uid, "seguir_no"))
+        try:
+            i = incidencia(repositorio, int(numero))
+        except Exception as error:  # noqa: BLE001 — sin GitHub ahora, se apunta con lo que se sabe
+            bot.registrar(f"seguimiento: no se ha podido leer la incidencia: {type(error).__name__}: {error}")
+            i = {"titulo": "", "estado": "open", "comentarios": []}
+        with bot.CERROJO:
+            d = leer_seguimiento()
+            d[partes[2]] = {"uid": uid, "lengua": self.lenguas.get(uid, "es"), "titulo": i.get("titulo", ""),
+                            "comentarios": i.get("n_comentarios", 0), "estado": i.get("estado", "open"),
+                            "desde": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            guardar_seguimiento(d)
+        bot.registrar("seguimiento de una incidencia activado")
+        self.enviar(uid, self.tx(uid, "seguir_si"))
+
+    def revisar_seguimientos(self) -> None:
+        """Cada SEGUIMIENTO_S, las incidencias seguidas: un comentario nuevo o el cierre se le cuenta a quien la
+        envió, en su idioma; cerrada, se deja de seguir. Un programa normal, sin IA."""
+        d = leer_seguimiento()
+        if not d:
+            return
+        antes = json.dumps(d, sort_keys=True)
+        for ref, s in list(d.items()):
+            repositorio, _, numero = ref.partition("#")
+            try:
+                i = incidencia(repositorio, int(numero))
+            except Exception as error:  # noqa: BLE001 — GitHub caído o incidencia borrada: se vuelve a mirar luego
+                bot.registrar(f"seguimiento de {ref}: {type(error).__name__}: {error}")
+                continue
+            uid, lengua = s["uid"], s.get("lengua", "es")
+            # «comentarios» trae los 8 últimos; «n_comentarios», cuántos hay en total.
+            nuevos = i["comentarios"][-(i["n_comentarios"] - s.get("comentarios", 0)):] \
+                if i["n_comentarios"] > s.get("comentarios", 0) else []
+            for c in nuevos:
+                self.enviar(uid, textos_karla.texto(lengua, "incidencia_novedad", titulo=i["titulo"], autor=c["autor"],
+                                                    texto=c["texto"][:700], url=i["enlace"]))
+            if i["estado"] != "open" and s.get("estado") == "open":
+                motivo = MOTIVO_CIERRE.get(i.get("motivo") or "", i.get("motivo") or "")
+                self.enviar(uid, textos_karla.texto(lengua, "incidencia_cerrada", titulo=i["titulo"], motivo=motivo,
+                                                    url=i["enlace"]))
+                d.pop(ref, None)
+                bot.registrar(f"seguimiento de {ref}: cerrada, se deja de seguir")
+            else:
+                s.update(comentarios=i["n_comentarios"], estado=i["estado"], titulo=i["titulo"])
+        if json.dumps(d, sort_keys=True) != antes:
+            with bot.CERROJO:
+                guardar_seguimiento(d)
+
+    def seguimientos_si_toca(self) -> None:
+        if time.time() - getattr(self, "seguido", 0) < SEGUIMIENTO_S:
+            return
+        self.seguido = time.time()
+
+        def hacer():
+            try:
+                self.revisar_seguimientos()
+            except Exception as error:  # noqa: BLE001
+                bot.registrar(f"error al revisar los seguimientos: {type(error).__name__}: {error}")
+
+        self.en_hilo(hacer)
+
+    def archivo_exe(self, chat: int, uid: int, msg: dict) -> str | None:
+        """Un .elpx, .elp o .zip que manda con su duda: se lee en memoria y se resume para Claude (ADR 0021).
+        None si no es un archivo de esos. Lo que pese más de lo que Telegram deja bajar se dice."""
+        d = msg.get("document") or {}
+        nombre = d.get("file_name") or ""
+        if not ARCHIVO_EXE.search(nombre):
+            return None
+        if (d.get("file_size") or 0) > bot.MAX_BYTES:
+            self.enviar(chat, self.tx(uid, "archivo_grande"))
+            return ""
+        try:
+            info = self.tg("getFile", file_id=d["file_id"])
+            with urllib.request.urlopen(f"https://api.telegram.org/file/bot{self.token}/{info['file_path']}",
+                                        timeout=120) as r:
+                return leer_elpx(nombre, r.read())
+        except Exception as error:  # noqa: BLE001
+            bot.registrar(f"error al leer un archivo de eXeLearning: {type(error).__name__}: {error}")
+            self.enviar(chat, self.tx(uid, "error"))
+            return ""
 
     def limpiar(self) -> None:
         super().limpiar()
@@ -639,6 +808,13 @@ class Karla(bot.Bot):
             return self.enviar_tablas(chat, bloques_estado(bot.contabilidad(bot.leer_estado())))
         if comando in ("/start", "/ayuda"):
             return self.enviar(chat, self.ayuda(uid), "HTML")
+        if msg.get("document"):  # un proyecto de eXeLearning con su duda en el pie (ADR 0021)
+            resumen = self.archivo_exe(chat, uid, msg)
+            if resumen is None:
+                return self.enviar(chat, self.tx(uid, "solo_texto"))
+            if not resumen:
+                return
+            texto = f"{(msg.get('caption') or '').strip()}\n\n{resumen}".strip()
         if not texto and not fotos:
             return self.enviar(chat, self.tx(uid, "solo_texto"))
 
@@ -728,6 +904,7 @@ class Karla(bot.Bot):
             if time.time() - getattr(self, "limpiado", 0) > bot.LIMPIAR_S:
                 self.limpiar()
             self.resumen_si_toca("exelearning")
+            self.seguimientos_si_toca()
             try:
                 updates = self.tg("getUpdates", espera=50, timeout=50, offset=siguiente, **tipos)
                 updates = self.esperar_seguidos(updates, **tipos) if updates else updates
@@ -764,7 +941,9 @@ def resumen_incidencias(e: dict) -> str:
     linea = (f"Incidencias en eXeLearning: {len(todas)} ({bot.cuenta(abiertas, 'abierta', 'abiertas')}, "
              f"{bot.cuenta(len(todas) - abiertas, 'cerrada', 'cerradas')})"
              + ("" if INCIDENCIAS else "; abrir está desactivado: solo las busca") + ".")
-    return linea + "".join(f"\n· {i['enlace']} ({i['estado']})" for i in todas[:5]) + f"\nTodas: {LISTA_MIAS}"
+    seguidas = len(leer_seguimiento())
+    return (linea + "".join(f"\n· {i['enlace']} ({i['estado']})" for i in todas[:5]) + f"\nTodas: {LISTA_MIAS}"
+            + f"\nCon seguimiento para quien las envió: {seguidas}.")
 
 
 def bloques_estado(e: dict) -> list:

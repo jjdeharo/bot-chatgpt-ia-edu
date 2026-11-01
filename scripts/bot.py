@@ -63,7 +63,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.0.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.1.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -111,6 +111,28 @@ def con_fotos(texto: str, fotos: list) -> str:
     return f"{texto}\n[{len(fotos)} imagen(es) adjunta(s)]".strip() if fotos else texto
 
 
+def origen(msg: dict) -> str:
+    """Si el mensaje es un reenvío, quién lo escribió y cuándo, para ponerlo delante del texto: con la fecha y
+    el autor, el bot puede dar con el mensaje exacto del grupo y leer su hilo (ADR 0021). Sin reenvío, «»."""
+    o = msg.get("forward_origin") or {}
+    if not o:
+        return ""
+    if o.get("type") == "user":
+        u = o.get("sender_user") or {}
+        quien = " ".join(x for x in (u.get("first_name"), u.get("last_name")) if x) or "alguien"
+    elif o.get("type") == "hidden_user":
+        quien = o.get("sender_user_name") or "alguien"
+    else:  # chat o canal
+        quien = (o.get("sender_chat") or o.get("chat") or {}).get("title") or "un grupo"
+        if o.get("author_signature"):
+            quien += f" ({o['author_signature']})"
+    try:
+        cuando = datetime.fromtimestamp(int(o["date"]), ZONA).strftime("%Y-%m-%d %H:%M")
+    except (KeyError, ValueError, TypeError, OSError):
+        cuando = "fecha desconocida"
+    return f"[Mensaje reenviado, escrito por {quien} el {cuando}]"
+
+
 def juntable(msg: dict) -> bool:
     """Un trozo de consulta en privado: texto o foto, sin comandos, enlaces sueltos ni archivos,
     que siguen su propio camino."""
@@ -148,8 +170,9 @@ def juntar(updates: list) -> list:
             partes = m.pop("partes")
             m.pop("photo", None)
             m.pop("caption", None)
-            m["text"] = "\n\n".join(t for t in ((p.get("text") or p.get("caption") or "").strip()
-                                               for p in partes) if t)
+            m["text"] = "\n\n".join(t for t in ((f"{origen(p)}\n" if origen(p) else "")
+                                               + (p.get("text") or p.get("caption") or "").strip()
+                                               for p in partes) if t.strip())
             m["fotos"] = [p["photo"][-1]["file_id"] for p in partes if p.get("photo")]  # la más grande
     return salida
 

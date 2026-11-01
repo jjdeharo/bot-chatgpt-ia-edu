@@ -24,7 +24,8 @@ copia = json.load(sys.stdin)
 for clave, nombre in (("catalogo", "catalogo.json"), ("estado", "estado-bot.json"), ("avisos", "avisos.json"),
                      ("equipo", "equipo-exelearning.json"), ("revisiones", "revisiones.json"),
                      ("estado_karla", "estado-karla.json"), ("sin_resolver", "sin-resolver.jsonl"),
-                     ("sin_resolver_karla", "sin-resolver-karla.jsonl")):
+                     ("sin_resolver_karla", "sin-resolver-karla.jsonl"),
+                     ("seguimiento", "seguimiento-incidencias.json")):
     if clave not in copia:  # las anteriores al 29-10-2026 no llevan avisos, ni las del 30-10 el equipo ni las revisiones
         continue
     f = destino / nombre

@@ -27,6 +27,9 @@ while true; do
   if [ -n "${DOCS_FUENTES:-}" ]; then
     # shellcheck disable=SC2086 — son varias carpetas separadas por espacios
     python documentacion.py indexar $DOCS_FUENTES --salida /proyecto/datos/exelearning/documentacion || ok=0
+    # Si memoria-telegram dejara de rehacerla, Karla seguiría con lo viejo sin que nadie lo notara (ADR 0021).
+    # shellcheck disable=SC2086
+    python documentacion.py vigilar $DOCS_FUENTES --dias 3 || true
   fi
   date '+%F %T' > /proyecto/datos/ultimo-intento   # cada pasada, haya ido bien o mal
   if [ "$ok" -eq 1 ]; then

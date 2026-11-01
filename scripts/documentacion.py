@@ -13,6 +13,7 @@ ruta de encabezados, para que se entienda solo.
 
 Uso: documentacion.py indexar CARPETA... --salida DIR
      documentacion.py buscar DIR "consulta"
+     documentacion.py vigilar CARPETA... [--dias 3]   avisa a Juanjo si nada ha cambiado en esos días
 """
 import argparse
 import json
@@ -126,6 +127,38 @@ def indexar(carpetas: list[Path], destino: Path) -> None:
     print(f"{len(textos)} documentos, {len(todos)} trozos")
 
 
+def vigilar(carpetas: list[Path], dias: int) -> bool:
+    """Si ningún documento de las carpetas ha cambiado en «dias» días, avisa a Juanjo por el bot, una vez al día:
+    los documentos los genera memoria-telegram y, si dejara de hacerlo, el bot seguiría contestando con lo viejo
+    sin que nadie lo notara (ADR 0021). Devuelve si están al día."""
+    import os, time, urllib.parse, urllib.request  # noqa: E401 — solo aquí
+    archivos = [f for c in carpetas for f in c.glob("*.md")]
+    ultimo = max((f.stat().st_mtime for f in archivos), default=0)
+    edad = (time.time() - ultimo) / 86400
+    if archivos and edad <= dias:
+        return True
+    marca = Path(os.environ.get("DATOS_BOT", Path(__file__).resolve().parent.parent / "datos")) / "aviso-docs"
+    hoy = time.strftime("%Y-%m-%d")
+    try:
+        if marca.read_text().strip() == hoy:
+            return False  # ya avisado hoy
+    except OSError:
+        pass
+    juanjo = int(os.environ.get("JUANJO") or 0)
+    cred = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-chatgpt-ia-edu.json"))
+    texto = ("Aviso de Karla bot: la documentación de eXeLearning que leo (manual, documentación técnica, "
+             f"complementos) lleva {edad:.0f} días sin cambiar; memoria-telegram la rehace cada día. Sigo contestando "
+             "con la que tengo." if archivos else "Aviso de Karla bot: no encuentro ningún documento de eXeLearning "
+             "en las carpetas de memoria-telegram. Contesto solo con las conversaciones del grupo.")
+    print(texto)
+    if juanjo and cred.exists():
+        token = json.loads(cred.read_text())["token"]
+        datos = urllib.parse.urlencode({"chat_id": juanjo, "text": texto}).encode()
+        urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", datos, timeout=30)
+        marca.write_text(hoy)
+    return False
+
+
 class Documentacion:
     def __init__(self, carpeta: Path, modelo=None):
         self.modelo = modelo or buscador.modelo_significado()
@@ -188,9 +221,14 @@ if __name__ == "__main__":
     b = sub.add_parser("buscar")
     b.add_argument("carpeta", type=Path)
     b.add_argument("consulta")
+    vg = sub.add_parser("vigilar", help="avisa a Juanjo si la documentación lleva días sin cambiar")
+    vg.add_argument("carpetas", nargs="+", type=Path)
+    vg.add_argument("--dias", type=int, default=3)
     a = p.parse_args()
     if a.orden == "indexar":
         indexar(a.carpetas, a.salida)
+    elif a.orden == "vigilar":
+        vigilar(a.carpetas, a.dias)
     else:
         for r in Documentacion(a.carpeta).buscar(a.consulta):
             print(f"· {r['documento']} › {r['apartado']}\n  {r['texto'][:200]!r}")

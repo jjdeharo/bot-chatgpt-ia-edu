@@ -32,11 +32,13 @@ por privado y en los mismos cinco idiomas. Responde con lo que se ha dicho en
 el grupo y con la documentación del programa (manual, documentación técnica y
 complementos), siempre con sus fuentes, y en un lenguaje pensado para el
 profesorado. Si la duda es un fallo o una mejora de eXeLearning, busca si ya
-hay una incidencia en GitHub y, si la persona lo confirma, la abre. Sustituye
+hay una incidencia en GitHub y, si la persona lo confirma, la abre; si lo pide, le avisa de cada
+respuesta del equipo y del cierre (ADR 0021). Entiende capturas de pantalla y archivos `.elpx` del
+proyecto, que resume antes de responder. Sustituye
 al cuaderno de NotebookLM «Karla - Experta en eXeLearning». Usa el mismo
 programa que el Bot de IA Educativa (`scripts/karla.py`, con sus textos en
 `scripts/textos_karla.py` y sus instrucciones en `scripts/karla_persona.md`).
-Las razones, en los ADR 0008 a 0010.
+Las razones, en los ADR 0008 a 0010 y 0021.
 
 El porqué de cada decisión está en [docs/adr](docs/adr/).
 

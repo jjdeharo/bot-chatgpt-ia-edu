@@ -8,6 +8,7 @@ habla con fuera se sustituye por funciones que apuntan lo que se les pide.
 """
 import io
 import json
+import os
 import sys
 import tempfile
 import time
@@ -24,6 +25,7 @@ import bot  # noqa: E402
 import catalogo  # noqa: E402
 import consultar  # noqa: E402
 import fichas  # noqa: E402
+import documentacion  # noqa: E402
 import karla  # noqa: E402
 import textos  # noqa: E402
 import textos_karla  # noqa: E402
@@ -441,6 +443,97 @@ class InformeDelUnoDeNoviembre(unittest.TestCase):
                     self.assertIn(clave, mod.TEXTOS[lengua], (mod.__name__, lengua, clave))
                 self.assertIn("{version}", mod.TEXTOS[lengua]["codigo"])
                 self.assertNotIn("anónim", mod.TEXTOS[lengua]["ayuda_final"].lower())
+
+
+class MejorasDelUnoDeNoviembre(unittest.TestCase):
+    """Las mejoras 3 a 7 del informe del 01-11-2026 (ADR 0021)."""
+
+    def test_reenvio_con_su_origen(self):
+        fecha = int(datetime(2026, 10, 30, 10, 0, tzinfo=timezone.utc).timestamp())
+        msg = {"chat": {"id": 7, "type": "private"}, "from": {"id": 7}, "text": "¿esto se arregló?",
+               "forward_origin": {"type": "user", "date": fecha, "sender_user": {"first_name": "Ana", "last_name": "Pérez"}}}
+        self.assertEqual(bot.origen(msg), "[Mensaje reenviado, escrito por Ana Pérez el 2026-10-30 11:00]")
+        self.assertEqual(bot.origen({**msg, "forward_origin": {"type": "hidden_user", "sender_user_name": "Luis", "date": fecha}}),
+                         "[Mensaje reenviado, escrito por Luis el 2026-10-30 11:00]")
+        self.assertEqual(bot.origen({"text": "hola"}), "")
+        salida = bot.juntar([{"update_id": 1, "message": msg}])
+        self.assertTrue(salida[0]["message"]["text"].startswith("[Mensaje reenviado, escrito por Ana Pérez"))
+        self.assertTrue(salida[0]["message"]["text"].endswith("¿esto se arregló?"))
+
+    def test_leer_elpx(self):
+        """Un .elpx se resume sin extraer nada a disco; uno que no es ZIP o sin content.xml se dice."""
+        xml = ("<ode><odeProperties><odeProperty><key>pp_title</key><value>Prueba</value></odeProperty>"
+               "<odeProperty><key>pp_exelearning_version</key><value>v4.0.6</value></odeProperty></odeProperties>"
+               "<odeNavStructures><odeNavStructure><pageName>Inicio</pageName><odeIdeviceTypeName>text</odeIdeviceTypeName>"
+               "<htmlView><![CDATA[<p>mucho html</p>]]></htmlView></odeNavStructure></odeNavStructures></ode>")
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("content.xml", xml)
+            z.writestr("index.html", "<html></html>")
+        r = karla.leer_elpx("proyecto.elpx", buf.getvalue())
+        self.assertIn("[Archivo adjunto: proyecto.elpx] 2 entradas", r)
+        self.assertIn("pp_exelearning_version=v4.0.6", r)
+        self.assertIn("Páginas (1): Inicio", r)
+        self.assertIn("text ×1", r)
+        self.assertNotIn("mucho html", r)
+        self.assertIn("No es un archivo ZIP válido", karla.leer_elpx("x.elpx", b"no soy un zip"))
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("index.html", "")
+        self.assertIn("No lleva content.xml", karla.leer_elpx("x.zip", buf.getvalue()))
+
+    def test_seguimiento_de_incidencias(self):
+        k = bot_sin_arrancar(karla.Karla)
+        k.lenguas[7] = "ca"
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / "seguimiento.json"
+            leida = {"titulo": "Bug", "estado": "open", "motivo": None, "enlace": "https://github.com/x/y/issues/5",
+                     "comentarios": [], "n_comentarios": 0}
+            with mock.patch.object(karla, "SEGUIMIENTO", f), mock.patch.object(karla, "incidencia", return_value=leida), \
+                    mock.patch.object(bot, "registrar"):
+                k.decidir_seguimiento(7, "sig:si:exelearning/exelearning#5", {})
+                self.assertEqual(karla.leer_seguimiento()["exelearning/exelearning#5"]["uid"], 7)
+                self.assertEqual(k.enviados[-1], textos_karla.texto("ca", "seguir_si"))
+                k.decidir_seguimiento(7, "sig:si:otro/repo#5", {})  # fuera de la organización: no se sigue
+                self.assertEqual(k.enviados[-1], textos_karla.texto("ca", "seguir_no"))
+                # Un comentario nuevo se cuenta en el idioma de la persona; el cierre, y se deja de seguir
+                leida["comentarios"], leida["n_comentarios"] = [{"autor": "dev", "fecha": "2026-11-02", "texto": "Fixed"}], 1
+                k.revisar_seguimientos()
+                self.assertIn("dev", k.enviados[-1])
+                self.assertTrue(k.enviados[-1].startswith("Novetat"))
+                k.revisar_seguimientos()
+                self.assertTrue(k.enviados[-1].startswith("Novetat"))  # el mismo comentario no se repite
+                self.assertEqual(len([e for e in k.enviados if e.startswith("Novetat")]), 1)
+                leida.update(estado="closed", motivo="completed")
+                k.revisar_seguimientos()
+                self.assertIn("corregida o resuelta", k.enviados[-1])
+                self.assertEqual(karla.leer_seguimiento(), {})
+
+    def test_archivo_elpx_entra_como_pregunta(self):
+        k = bot_sin_arrancar(karla.Karla)
+        k.token = "t"
+        self.assertIsNone(k.archivo_exe(7, 7, {"document": {"file_name": "foto.pdf"}}))
+        self.assertEqual(k.archivo_exe(7, 7, {"document": {"file_name": "p.elpx", "file_size": 30 * 1024 * 1024}}), "")
+        self.assertEqual(k.enviados[-1], textos_karla.texto("es", "archivo_grande"))
+
+    def test_vigilar_documentacion(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            c = Path(tmp) / "docs"
+            c.mkdir()
+            (c / "manual.md").write_text("x")
+            self.assertTrue(documentacion.vigilar([c], 3))
+            viejo = time.time() - 10 * 86400
+            os.utime(c / "manual.md", (viejo, viejo))
+            with mock.patch.dict(os.environ, {"DATOS_BOT": tmp, "JUANJO": ""}), \
+                    mock.patch("sys.stdout", new_callable=io.StringIO) as salida:
+                self.assertFalse(documentacion.vigilar([c], 3))
+            self.assertIn("10 días sin cambiar", salida.getvalue())
+
+    def test_textos_del_seguimiento_en_los_cinco_idiomas(self):
+        for lengua in textos.LENGUAS:
+            for clave in ("seguir_pregunta", "b_si_avisar", "b_no_avisar", "seguir_si", "seguir_no",
+                          "incidencia_novedad", "incidencia_cerrada", "archivo_grande"):
+                self.assertIn(clave, textos_karla.TEXTOS[lengua], (lengua, clave))
 
 
 if __name__ == "__main__":

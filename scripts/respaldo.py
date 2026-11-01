@@ -67,7 +67,7 @@ def enviar() -> None:
              "catalogo": leer("catalogo.json"), "estado": leer("estado-bot.json"), "avisos": leer("avisos.json"),
              "equipo": leer("equipo-exelearning.json"),
              # Lo de Karla y las preguntas sin resolver faltaban hasta el 01-11-2026 (ADR 0020).
-             "estado_karla": leer("estado-karla.json"),
+             "estado_karla": leer("estado-karla.json"), "seguimiento": leer("seguimiento-incidencias.json"),
              "sin_resolver": leer_texto("sin-resolver.jsonl"), "sin_resolver_karla": leer_texto("sin-resolver-karla.jsonl"),
              "revisiones": {k: {c: v for c, v in r.items() if c != "contenido"}
                             for k, r in leer("revisiones.json").items()}}
