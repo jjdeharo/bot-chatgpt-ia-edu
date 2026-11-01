@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.3.3 — 2026-11-01
+
+Cuando un bot llega a su tope del mes, dice solo que ahora no puede responder y que volverá a funcionar el día 1, sin hablar de presupuesto: los problemas de dinero se le avisan a Juanjo, no a quien pregunta (ADR 0024).
+
 ## 1.3.2 — 2026-11-01
 
 Si Anthropic deja de atender a un bot porque se han acabado los créditos o se ha llegado a un límite de gasto de la Console, el bot avisa a Juanjo una vez, con la causa, hasta que vuelva a funcionar (ADR 0024). A quien pregunta no se le dice nada de dinero.

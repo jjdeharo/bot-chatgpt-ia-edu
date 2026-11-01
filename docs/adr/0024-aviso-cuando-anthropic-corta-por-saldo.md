@@ -26,8 +26,10 @@ deben transmitirse al usuario».
    Anthropic, y deja una marca en `datos/aviso-saldo-<credencial>`. No vuelve a avisar hasta que una
    llamada vaya bien, que borra la marca. El índice usa la credencial del Bot de IA Educativa y comparte
    su marca.
-4. **A quien pregunta no se le dice nada nuevo.** El error sigue su camino de antes; el bot no menciona
-   saldo ni créditos.
+4. **A quien pregunta no se le habla de dinero.** El error sigue su camino de antes; el bot no menciona
+   saldo ni créditos. Lo mismo al llegar a su propio tope del mes: desde la 1.3.3 dice «Ahora no puedo
+   responder. Volveré a funcionar el día 1.», sin la palabra «presupuesto» que llevaba antes (Juanjo,
+   01-11-2026).
 
 ## Consecuencias
 
