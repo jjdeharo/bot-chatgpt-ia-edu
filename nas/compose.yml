@@ -35,14 +35,14 @@ services:
 
   # El servicio de voz (ADR 0022): pasa a texto las notas de voz con faster-whisper «small», con la imagen,
   # el entorno de Python y el modelo ya descargado del boletín semanal; nada nuevo que instalar. El modelo
-  # se carga en cada petición y se suelta: en reposo no ocupa memoria. Si se para, los bots lo dicen y siguen.
+  # se carga con la primera nota y se suelta tras diez minutos sin uso. Si se para, los bots lo dicen y siguen.
   voz:
     image: boletin-semanal:local
     container_name: bot-voz
     restart: unless-stopped
     user: "1000:10"
     command: ["/proyecto/.venv/bin/python", "/bot/scripts/voz.py"]
-    cpus: 1.5
+    cpus: 2.0
     environment:
       HOME: /home/jjdeharo
       HF_HUB_OFFLINE: "1"  # el modelo está en la caché; sin salir a la red

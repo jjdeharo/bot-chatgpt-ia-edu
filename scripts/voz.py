@@ -4,8 +4,9 @@
 
 Usa faster-whisper con el modelo «small», el mismo que el boletín semanal, y corre
 con la imagen y el entorno de Python del boletín, con el modelo ya descargado en
-su caché: nada nuevo que instalar ni que pagar. El modelo se carga en cada
-petición y se suelta después, así que en reposo no ocupa memoria.
+su caché: nada nuevo que instalar ni que pagar. El modelo se carga con la
+primera petición y se suelta tras diez minutos sin uso, así que en reposo no
+ocupa memoria.
 
     POST /transcribir   el audio tal cual (ogg/opus de Telegram, mp3, wav…)
                         → {"texto": …, "lengua": "es", "duracion": 12.3}
@@ -14,11 +15,15 @@ petición y se suelta después, así que en reposo no ocupa memoria.
 Un audio de más de MAX_S segundos se rechaza con 413: la CPU del NAS es de
 todos. Sin red para el modelo: HF_HUB_OFFLINE=1 en el compose.
 """
+import ctypes
+import gc
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Lock
@@ -48,11 +53,39 @@ def a_wav(origen: Path, destino: Path) -> None:
                     "-c:a", "pcm_s16le", str(destino)], check=True, capture_output=True, timeout=120)
 
 
+VIVO_S = int(os.environ.get("VOZ_VIVO_S", "600"))  # el modelo se queda cargado este tiempo tras el último uso
+_modelo, _ultimo_uso = None, 0.0
+
+
+def modelo_cargado():
+    """Cargar el modelo cuesta 10-20 s en el NAS; se mantiene VIVO_S segundos tras cada uso, para que una
+    conversación con varias notas vaya rápida, y después se suelta (ADR 0022)."""
+    global _modelo, _ultimo_uso
+    if _modelo is None:
+        from faster_whisper import WhisperModel
+        _modelo = WhisperModel(MODELO, device="cpu", compute_type="int8", cpu_threads=HILOS)
+    _ultimo_uso = time.time()
+    return _modelo
+
+
+def soltar_si_toca() -> None:
+    global _modelo
+    while True:
+        time.sleep(30)
+        with Servicio.turno:
+            if _modelo is not None and time.time() - _ultimo_uso > VIVO_S:
+                _modelo = None
+                gc.collect()
+                try:
+                    ctypes.CDLL("libc.so.6").malloc_trim(0)  # que la memoria vuelva de verdad al sistema
+                except (OSError, AttributeError):
+                    pass
+                print("voz: modelo descargado por inactividad", flush=True)
+
+
 def transcribir(wav: Path) -> dict:
-    """El modelo se carga aquí y muere con la función: la memoria vuelve al sistema."""
-    from faster_whisper import WhisperModel
-    modelo = WhisperModel(MODELO, device="cpu", compute_type="int8", cpu_threads=HILOS)
-    segmentos, info = modelo.transcribe(str(wav), vad_filter=True, initial_prompt=TERMINOS, beam_size=3)
+    modelo = modelo_cargado()
+    segmentos, info = modelo.transcribe(str(wav), vad_filter=True, initial_prompt=TERMINOS, beam_size=2)
     texto = " ".join(s.text.strip() for s in segmentos).strip()
     lengua = info.language if info.language in LENGUAS else ""
     return {"texto": texto, "lengua": lengua, "duracion": round(info.duration, 1)}
@@ -104,4 +137,5 @@ class Servicio(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print(f"voz: faster-whisper «{MODELO}» en el puerto {PUERTO}", flush=True)
+    threading.Thread(target=soltar_si_toca, daemon=True).start()
     ThreadingHTTPServer(("", PUERTO), Servicio).serve_forever()
