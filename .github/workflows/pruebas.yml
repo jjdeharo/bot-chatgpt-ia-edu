@@ -15,4 +15,4 @@ jobs:
       - run: pip install -r requirements.txt ruff
       - run: python -m compileall -q scripts pruebas
       - run: ruff check --select E9,F scripts pruebas
-      - run: python -m unittest pruebas/test_revision.py
+      - run: python -m unittest pruebas/test_revision.py pruebas/test_diario_grupos.py

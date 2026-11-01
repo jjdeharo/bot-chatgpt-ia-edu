@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.4.0 — 2026-11-01
+
+Cada mañana a las 7:00, el aviso de «Tiza y Algoritmo», el diario de los grupos, en el tema General de ChatGPT-IA-edu, Vibe Coding Educativo y EduMedia-IAG. El texto llega redactado y repasado del diario; el bot solo lo publica, una vez por grupo y día (ADR 0025).
+
 ## 1.3.3 — 2026-11-01
 
 Cuando un bot llega a su tope del mes, dice solo que ahora no puede responder y que volverá a funcionar el día 1, sin hablar de presupuesto: los problemas de dinero se le avisan a Juanjo, no a quien pregunta (ADR 0024).

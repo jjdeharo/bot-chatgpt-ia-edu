@@ -26,5 +26,6 @@
 | [0022](0022-notas-de-voz-con-el-modelo-del-boletin.md) | Notas de voz, pasadas a texto con el modelo de voz del boletín semanal | aceptado |
 | [0023](0023-preguntar-en-el-grupo-y-preguntas-sin-resolver-por-temas.md) | Preguntar en el grupo lo que el bot no resuelve, y preguntas sin resolver por temas | aceptado |
 | [0024](0024-aviso-cuando-anthropic-corta-por-saldo.md) | Aviso a Juanjo cuando Anthropic corta por saldo o por un límite de gasto | aceptado |
+| [0025](0025-aviso-diario-de-tiza-y-algoritmo.md) | Aviso diario de «Tiza y Algoritmo» en los tres grupos | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

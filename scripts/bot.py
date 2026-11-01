@@ -48,6 +48,7 @@ from zoneinfo import ZoneInfo
 
 import catalogo
 import resumen_semanal
+import diario_grupos
 import consultar
 import fichas
 import grupos
@@ -75,7 +76,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.3.3"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.4.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1205,6 +1206,18 @@ class Bot:
 
         self.en_hilo(hacer)
 
+    def diario_si_toca(self) -> None:
+        """A las 7:00 de Madrid, el aviso de «Tiza y Algoritmo» en cada grupo (diario_grupos.py, ADR 0025).
+        El texto llega hecho del diario; aquí solo se publica, una vez por grupo y día."""
+        dia, lista = diario_grupos.pendientes(activos=grupos.ACTIVOS)
+        if not lista:
+            return
+        try:
+            hechos = diario_grupos.publicar(self.tg, dia, lista)
+            registrar(f"diario {dia}: publicado en {', '.join(hechos) or 'ningún grupo'}")
+        except Exception as error:  # noqa: BLE001 — se reintenta en la vuelta siguiente, dentro de la ventana
+            registrar(f"error en el aviso del diario: {type(error).__name__}: {error}")
+
     def solo_privado(self, chat: int, uid: int, msg: dict) -> None:
         """Responde en el grupo que se le escriba por privado, con freno (Juanjo, 27-10-2026): si no, quien
         lo mencionara una y otra vez llenaría el grupo de avisos iguales. Pasado el freno, calla."""
@@ -2274,6 +2287,7 @@ class Bot:
                 self.limpiar()
             if "vce" in grupos.ACTIVOS:
                 self.resumen_si_toca("vce")
+            self.diario_si_toca()
             try:
                 tipos = {"allowed_updates": ["message", "callback_query", "chat_member"]}
                 updates = self.tg("getUpdates", espera=50, timeout=50, offset=siguiente, **tipos)
