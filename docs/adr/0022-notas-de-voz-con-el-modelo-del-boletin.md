@@ -43,7 +43,7 @@ y el entorno de Python ya hechos. No hay nada que instalar ni que pagar.
   modelo no está cargado, su carga) y no cuesta nada de API; el bot avisa «Te escucho» y muestra «escribiendo».
 - El servicio depende de dos carpetas del boletín: si el boletín cambia de entorno o de caché, hay
   que ajustar `nas/compose.yml`. Los lunes de madrugada compite por CPU con la transcripción del
-  boletín, que usa tres núcleos; con 1,5 núcleos propios, ninguno se queda sin.
+  boletín, que usa tres núcleos; con dos núcleos propios, ninguno se queda sin.
 - El audio no se guarda en ningún sitio: va de Telegram al servicio en memoria y a un archivo
   temporal que se borra.
 
