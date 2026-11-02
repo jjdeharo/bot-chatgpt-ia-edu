@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.4.2 — 2026-11-02
+
+El Bot de IA Educativa sabe que publica el aviso del Diario de IA Educativa: a «¿publicas tú el diario?» o «¿qué es el diario?» responde que cada mañana a las 7:00 publica el aviso en los tres grupos, qué recoge el diario y su web, en castellano y en catalán; como no lo lee, para lo que trae un número remite a la web (ADR 0025).
+
 ## 1.4.1 — 2026-11-02
 
 Responder en el grupo a un mensaje que el bot publica por su cuenta (el aviso del diario, el resumen de los viernes) ya no recibe «escríbeme por privado», aunque lleve una pregunta: el bot calla. La mención y los comandos siguen remitiendo al privado (ADR 0020).
