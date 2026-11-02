@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.4.3 — 2026-11-02
+
+A quien pregunta cómo recibir el Diario de IA Educativa, el Bot de IA Educativa le dice que no hay boletín por correo, que el número del día se publica cada mañana en los tres grupos y que fuera de ellos se puede seguir por RSS, en castellano o en catalán. Ya no remite a nadie las dudas sobre el diario.
+
 ## 1.4.2 — 2026-11-02
 
 El Bot de IA Educativa sabe que publica el aviso del Diario de IA Educativa: a «¿publicas tú el diario?» o «¿qué es el diario?» responde que cada mañana a las 7:00 publica el aviso en los tres grupos, qué recoge el diario y su web, en castellano y en catalán; como no lo lee, para lo que trae un número remite a la web (ADR 0025).
