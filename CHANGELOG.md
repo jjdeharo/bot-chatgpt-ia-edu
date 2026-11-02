@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.4.1 — 2026-11-02
+
+Responder en el grupo a un mensaje que el bot publica por su cuenta (el aviso del diario, el resumen de los viernes) ya no recibe «escríbeme por privado», aunque lleve una pregunta: el bot calla. La mención y los comandos siguen remitiendo al privado (ADR 0020).
+
 ## 1.4.0 — 2026-11-01
 
 Cada mañana a las 7:00, el aviso de «Tiza y Algoritmo», el diario de los grupos, en el tema General de ChatGPT-IA-edu, Vibe Coding Educativo y EduMedia-IAG. El texto llega redactado y repasado del diario; el bot solo lo publica, una vez por grupo y día (ADR 0025).

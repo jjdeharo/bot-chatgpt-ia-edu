@@ -419,13 +419,16 @@ class InformeDelUnoDeNoviembre(unittest.TestCase):
         self.assertTrue(bot.ENLACE_TELEGRAM.match("https://t.me/vceduca/7674/13698"))
         self.assertFalse(bot.ENLACE_TELEGRAM.match("https://ejemplo.github.io/app/"))
 
-    def test_responder_al_bot_sin_pregunta_no_cuenta(self):
+    def test_responder_al_bot_en_el_grupo_no_cuenta(self):
         b = bot_sin_arrancar()
         b.id, b.usuario = 1, "IAEducativa_bot"
         respuesta = {"reply_to_message": {"from": {"id": 1}}, "text": "gracias"}
         self.assertFalse(b.le_hablan(respuesta))
-        self.assertTrue(b.le_hablan({**respuesta, "text": "¿y esto cómo se usa?"}))
+        # Una pregunta en respuesta al aviso del diario va a las personas, no al bot (02-11-2026)
+        self.assertFalse(b.le_hablan({**respuesta, "text": "¿Hay algún artículo para aprender el flujo?"}))
+        self.assertTrue(b.le_hablan({**respuesta, "text": "@IAEducativa_bot ¿y esto?"}))
         self.assertTrue(b.le_hablan({"text": "@IAEducativa_bot hola"}))
+        self.assertTrue(b.le_hablan({"text": "/buscar"}))
         k = bot_sin_arrancar(karla.Karla)
         k.id, k.usuario = 2, "eXeKarlaBot"
         self.assertEqual(k.comando_en_grupo({"text": "/misrecursos"}), "")  # no es suyo

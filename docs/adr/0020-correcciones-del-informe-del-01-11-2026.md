@@ -56,8 +56,13 @@ además de lo ya resuelto en el ADR 0019:
 - **Un enlace `t.me` suelto es una pregunta** (`ENLACE_TELEGRAM`), no un recurso. El resto de enlaces
   sueltos siguen yendo al repositorio: sin botón de elegir, porque el valor por defecto resuelve
   casi todos los casos.
-- **Responder al bot en el grupo solo cuenta si lleva una pregunta** (`?` o `¿`). La mención y el
-  comando siguen contando siempre.
+- **Responder al bot en el grupo no cuenta**: solo la mención y el comando reciben «escríbeme por
+  privado». Al principio contaba la respuesta con pregunta (`?` o `¿`), pero el 02-11-2026 una pregunta
+  sobre el diario en respuesta a su aviso (https://t.me/vceduca/14514) recibió esa contestación, que no
+  venía a cuento: lo que responde a un mensaje que el bot publica por su cuenta se dirige a las personas
+  del grupo, y el bot calla (Juanjo: o un «gracias» breve, o no responder; se eligió callar porque no
+  exige adivinar el tono del mensaje). Las respuestas a una pregunta que llevó el bot siguen su camino
+  (ADR 0023).
 - **Pie con licencia, versión y código** en la ayuda de los dos bots (`Bot.pie`, texto `codigo` en
   cinco idiomas), y `Versión x.y.z` al final de `/estado`. `bot.VERSION` y la etiqueta de git llevan
   el mismo número; `CHANGELOG.md` resume cada versión.

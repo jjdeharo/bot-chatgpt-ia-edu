@@ -76,7 +76,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.4.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.4.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1257,17 +1257,15 @@ class Bot:
     COMANDOS_VIEJOS = ["recurso"]  # nombres antiguos que siguen valiendo
 
     def le_hablan(self, msg: dict) -> bool:
-        """Si un mensaje de un grupo va dirigido al bot: lo menciona, usa su comando o le responde con una pregunta.
+        """Si un mensaje de un grupo va dirigido al bot: lo menciona o usa su comando.
 
         Como administrador recibe todo lo del grupo, así que no basta con que llegue. Una respuesta a un
-        mensaje suyo sin pregunta (un «gracias» al resumen de los viernes) no cuenta: contestarle «escríbeme
-        por privado» no venía a cuento (ADR 0020).
+        mensaje que el bot publica por su cuenta (el aviso del diario, el resumen de los viernes) no cuenta,
+        lleve o no pregunta: se dirige a las personas del grupo, y el bot calla (Juanjo, 02-11-2026,
+        ADR 0020). Las respuestas a una pregunta que llevó el bot las atiende antes `respuesta_a_pregunta`.
         """
         texto = msg.get("text") or msg.get("caption") or ""
-        if f"@{self.usuario}".lower() in texto.lower() or self.comando_en_grupo(msg):
-            return True
-        r = msg.get("reply_to_message") or {}
-        return (r.get("from") or {}).get("id") == self.id and ("?" in texto or "¿" in texto)
+        return f"@{self.usuario}".lower() in texto.lower() or bool(self.comando_en_grupo(msg))
 
     def atender(self, msg: dict) -> None:
         chat, uid = msg["chat"]["id"], msg["from"]["id"]
