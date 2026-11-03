@@ -19,7 +19,13 @@ LARGO = 1500         # el modelo de significado no lee mucho más
 
 def cargar(g: Grupo) -> dict:
     with (g.datos / "mensajes.jsonl").open() as f:
-        return {d["id"]: d for d in map(json.loads, f)}
+        ms = {d["id"]: d for d in map(json.loads, f)}
+    imagenes = g.datos / "imagenes"   # lo que se ve en cada imagen, descrito por imagenes.py (ADR 0028)
+    if imagenes.is_dir():
+        for f in imagenes.glob("*.txt"):
+            if f.stem.isdigit() and int(f.stem) in ms:
+                ms[int(f.stem)]["imagen"] = f.read_text().strip()
+    return ms
 
 
 def temas(g: Grupo) -> dict:
@@ -34,6 +40,8 @@ def contenido(m: dict) -> str:
             partes.append(w[k])
     if m.get("archivo"):
         partes.append(f"[archivo: {m['archivo']}]")
+    if m.get("imagen"):
+        partes.append(f"[imagen: {m['imagen']}]")
     return "\n".join(p for p in partes if p)
 
 

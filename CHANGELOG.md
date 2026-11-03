@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.6.0 — 2026-11-03
+
+- El bot describe con Claude Haiku las imágenes que se comparten en los grupos, con el texto que se lee en ellas, y las usa al buscar y al ayudar a preparar clases; el Diario de IA Educativa también las lee (ADR 0028).
+
 ## 1.5.2 — 2026-11-03
 
 - Cuando el bot no admite un recurso por no tener licencia abierta, explica que la licencia tiene que ponerla su autor en el propio recurso y qué pedir a la IA con la que lo hizo: la línea SPDX al principio del código y la licencia visible en el pie (ADR 0004).

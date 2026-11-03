@@ -79,7 +79,7 @@ def indexar(g: grupos.Grupo, modelo=None):
     """Devuelve el modelo de significado, para no cargarlo otra vez en el grupo siguiente."""
     indice = buscador.indice(g)
     nuevo = indice.with_name(indice.name + ".nuevo")
-    fuentes = [g.datos / "mensajes.jsonl", g.datos / "pdf-texto"]
+    fuentes = [g.datos / "mensajes.jsonl", g.datos / "pdf-texto", g.datos / "imagenes"]
     hecho = indice / "palabras.db"
     if hecho.exists() and all(f.stat().st_mtime < hecho.stat().st_mtime for f in fuentes if f.exists()):
         print(f"{g.clave} índice: nada nuevo")

@@ -22,6 +22,9 @@ while true; do
     python exportar.py || ok=0
   fi
   python pdfs.py || ok=0
+  # Lo que se ve en las imágenes nuevas, con Claude Haiku (ADR 0028). Si falla, la pasada sigue y la
+  # marca no se pierde: es un añadido, no la puesta al día.
+  python imagenes.py || echo "imágenes: con fallos; se reintenta en la siguiente pasada"
   python indexar.py || ok=0
   # La documentación de eXeLearning para Karla bot, tal como la deja memoria-telegram (ADR 0008).
   if [ -n "${DOCS_FUENTES:-}" ]; then

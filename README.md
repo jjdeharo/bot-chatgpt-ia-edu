@@ -53,6 +53,8 @@ El porqué de cada decisión está en [docs/adr](docs/adr/).
    Juanjo (`--todo` rehace el historial y retira lo borrado).
 2. `scripts/pdfs.py` saca el texto de las primeras páginas de los PDF de la
    biblioteca.
+   `scripts/imagenes.py` describe con Claude Haiku 5.5 las imágenes nuevas
+   (`datos/<grupo>/imagenes/`, ADR 0028).
 3. `scripts/indexar.py` calcula el significado de lo nuevo y rehace el índice
    de palabras en `datos/<grupo>/indice/`.
 4. `scripts/bot.py` atiende en Telegram; cada pregunta la resuelve
@@ -119,7 +121,7 @@ Qué hay que rehacer y de dónde sale:
 | Pieza | De dónde se recupera |
 |---|---|
 | Código | este repositorio |
-| Mensajes e índice (`datos/<grupo>/`) | Telegram: `exportar.py --todo`, `pdfs.py` e `indexar.py` (en el portátil, unos 20 minutos VCE, 25 EduMedia-IAG y 45 ChatGPT-IA-edu) |
+| Mensajes, descripciones de las imágenes e índice (`datos/<grupo>/`) | Telegram: `exportar.py --todo`, `pdfs.py`, `imagenes.py` e `indexar.py` (en el portátil, unos 20 minutos VCE, 25 EduMedia-IAG y 45 ChatGPT-IA-edu) |
 | Modelo de significado | se descarga solo la primera vez (1,2 GB) |
 | Dueños de los recursos, gasto de los dos bots y preguntas sin resolver (`catalogo.json`, `estado-bot.json`, `estado-karla.json`, `sin-resolver*.jsonl`, avisos, equipo y revisiones) | la copia diaria en IONOS: `respaldo/recuperar.sh` |
 | Credenciales | ver abajo |
