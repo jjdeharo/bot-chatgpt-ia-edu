@@ -28,6 +28,20 @@ Juanjo («yo estaré atento»), y que descarte lo que no trate de IA educativa.
 - El índice atribuye la obra a la persona del «Aportado por», no al bot.
 - Límite de 3 documentos al día por persona.
 
+- La ficha lleva la dirección del documento (03-11-2026, Juanjo: «falta el
+  enlace»; «si el bot no encuentra el enlace que lo pida al usuario»). Si la
+  referencia no trae DOI ni dirección, Claude Haiku 5.5 la busca con la
+  búsqueda web de la API (hasta tres búsquedas): la página oficial dedicada al
+  documento o, si no la hay, su PDF en el sitio oficial, nunca una copia de
+  terceros. La dirección solo vale si abre. Si no la encuentra, el bot la pide
+  a la persona antes de enseñarle la ficha, con un botón «Sin enlace» para
+  quien no la tenga.
+- La última línea de la ficha no es la de la página de resúmenes («Para crear
+  un resumen como este, utiliza…»), que sirve a quien la hace a mano, sino
+  «(Para publicar un documento en la Biblioteca digital, envíaselo por privado
+  a @IAEducativa_bot)» (03-11-2026: «la frase final entre paréntesis no debe
+  aparecer»).
+
 ## Alternativas descartadas
 
 - **Aprobación de Juanjo antes de publicar**: él prefirió vigilar después.
@@ -42,6 +56,9 @@ Juanjo («yo estaré atento»), y que descarte lo que no trate de IA educativa.
 
 - Coste: unos 0,0005 USD la comprobación y 0,03–0,08 USD cada ficha (medido
   con tres PDF el 24-10-2026). Sale del mismo tope mensual.
+- Buscar la dirección cuesta algo más de un céntimo (0,011 USD medido el
+  03-11-2026: una búsqueda a 0,01 USD más los tokens de Haiku), y solo se
+  gasta cuando el documento no la trae.
 - El bot publica en el grupo: no puede hacerlo en nombre de la persona, así
   que firma con «Aportado por».
 
@@ -53,6 +70,15 @@ metodología de sistemas adaptativos bayesianos de Juanjo (ficha y publicación
 correctas). La primera versión del filtro descartó esta última por no ser IA
 generativa; se amplió el criterio («ante la duda, encaja»). Publicación probada
 en un chat privado (`BIBLIOTECA_PRUEBA`) antes de abrirla al grupo.
+
+Dirección del documento, 03-11-2026: con el informe del comité del MIT sobre
+IA en la docencia, que no trae su dirección, la búsqueda dio
+https://sites.mit.edu/ai-use/ai-committee-final-report-aug-13/ en tres
+intentos seguidos (lleva al PDF en el sitio del MIT); con la primera redacción
+de la instrucción dio la portada del sitio, y se pidió la página del propio
+documento. Con un documento inventado devolvió la cadena vacía, y el bot pide
+el enlace. Pruebas sin red de los tres caminos (da el enlace, escribe otra
+cosa, pulsa «Sin enlace») en `pruebas/test_revision.py`.
 
 ## Riesgos y limitaciones
 

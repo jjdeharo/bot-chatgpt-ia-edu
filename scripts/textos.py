@@ -99,6 +99,11 @@ ES = {
     "repetido": "Este documento ya está en la Biblioteca digital: {enlace}",
     "vista": ("Esta es la ficha. Si te parece bien, publicaré en la Biblioteca digital el documento con "
               "«Aportado por {autor}» y la ficha en respuesta."),
+    "pide_enlace": ("No he encontrado dónde está publicado este documento. Para que la ficha lleve su enlace, "
+                    "mándame la dirección de la página oficial (la de su autor o su editorial). Si no la tienes, "
+                    "pulsa «Sin enlace»."),
+    "falta_enlace": "Necesito la dirección completa, empezando por https://. Si no la tienes, pulsa «Sin enlace».",
+    "b_sin_enlace": "Sin enlace",
     "vista_sin_archivo": ("Esta es la ficha. Su licencia no permite compartir el archivo, así que publicaré "
                           "en la Biblioteca digital solo la ficha, con «Aportado por {autor}»."),
     "publicado": 'Publicado en la Biblioteca digital: {enlace}\nSi cambias de idea, puedes quitarlo con el botón de abajo durante las próximas 48 horas.',
@@ -318,6 +323,11 @@ CA = {
     "repetido": "Aquest document ja és a la Biblioteca digital: {enlace}",
     "vista": ("Aquesta és la fitxa, en castellà com tota la biblioteca. Si et sembla bé, publicaré a la "
               "Biblioteca digital el document amb «Aportado por {autor}» i la fitxa en resposta."),
+    "pide_enlace": ("No he trobat on està publicat aquest document. Perquè la fitxa porti el seu enllaç, "
+                    "envia'm l'adreça de la pàgina oficial (la del seu autor o la seva editorial). Si no la tens, "
+                    "prem «Sense enllaç»."),
+    "falta_enlace": "Necessito l'adreça completa, començant per https://. Si no la tens, prem «Sense enllaç».",
+    "b_sin_enlace": "Sense enllaç",
     "vista_sin_archivo": ("Aquesta és la fitxa, en castellà com tota la biblioteca. La seva llicència no permet "
                           "compartir el fitxer, així que publicaré a la Biblioteca digital només la fitxa, amb "
                           "«Aportado por {autor}»."),
@@ -518,6 +528,11 @@ GL = {
     "repetido": "Este documento xa está na Biblioteca dixital: {enlace}",
     "vista": ("Esta é a ficha, en castelán como toda a biblioteca. Se che parece ben, publicarei na "
               "Biblioteca dixital o documento con «Aportado por {autor}» e a ficha en resposta."),
+    "pide_enlace": ("Non atopei onde está publicado este documento. Para que a ficha leve a súa ligazón, "
+                    "mándame o enderezo da páxina oficial (a do seu autor ou da súa editorial). Se non o tes, "
+                    "preme «Sen ligazón»."),
+    "falta_enlace": "Necesito o enderezo completo, comezando por https://. Se non o tes, preme «Sen ligazón».",
+    "b_sin_enlace": "Sen ligazón",
     "vista_sin_archivo": ("Esta é a ficha, en castelán como toda a biblioteca. A súa licenza non permite "
                           "compartir o ficheiro, así que publicarei na Biblioteca dixital só a ficha, con "
                           "«Aportado por {autor}»."),
@@ -720,6 +735,11 @@ EU = {
     "repetido": "Dokumentu hau Liburutegi digitalean dago jada: {enlace}",
     "vista": ("Hau da fitxa, gaztelaniaz liburutegi osoa bezala. Ados bazaude, dokumentua «Aportado por "
               "{autor}» testuarekin argitaratuko dut Liburutegi digitalean, eta fitxa erantzun gisa."),
+    "pide_enlace": ("Ez dut aurkitu dokumentu hau non argitaratu den. Fitxak bere esteka izan dezan, "
+                    "bidali orri ofizialaren helbidea (egilearena edo argitaletxearena). Ez baduzu, "
+                    "sakatu «Estekarik gabe»."),
+    "falta_enlace": "Helbide osoa behar dut, https:// hasita. Ez baduzu, sakatu «Estekarik gabe».",
+    "b_sin_enlace": "Estekarik gabe",
     "vista_sin_archivo": ("Hau da fitxa, gaztelaniaz liburutegi osoa bezala. Haren lizentziak ez du fitxategia "
                           "partekatzen uzten; beraz, fitxa bakarrik argitaratuko dut Liburutegi digitalean, "
                           "«Aportado por {autor}» testuarekin."),
@@ -919,6 +939,11 @@ EN = {
     "repetido": "This document is already in the Digital Library: {enlace}",
     "vista": ("This is the record, in Spanish like the whole library. If you agree, I'll publish the document "
               "in the Digital Library with \"Aportado por {autor}\" and the record as a reply."),
+    "pide_enlace": ("I couldn't find where this document is published. So that the record carries its link, "
+                    "send me the address of the official page (its author's or publisher's). If you don't have it, "
+                    "tap \"No link\"."),
+    "falta_enlace": "I need the full address, starting with https://. If you don't have it, tap \"No link\".",
+    "b_sin_enlace": "No link",
     "vista_sin_archivo": ("This is the record, in Spanish like the whole library. Its licence doesn't allow "
                           "sharing the file, so I'll publish only the record in the Digital Library, with "
                           "\"Aportado por {autor}\"."),

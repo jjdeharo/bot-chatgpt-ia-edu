@@ -837,5 +837,67 @@ class AvisoDeSaldo(unittest.TestCase):
         self.assertIn("vigilar", c.beta.messages.create.__qualname__)
 
 
+class EnlaceDeLaFicha(unittest.TestCase):
+    """03-11-2026: la ficha lleva la dirección del documento y cierra remitiendo al bot, no a la página."""
+    SIN = ("**INFORME**\n\nComité. (2026). __Informe__. MIT.\n\n**Resumen**\nTexto.\n\n**Licencia**\n"
+           "No se podrá compartir con el grupo ChatGPT-IA-edu: no indica licencia.\n\n"
+           "(Para crear un resumen como este, utiliza: https://chatgpt-ia-edu.github.io/resumen/)")
+
+    def test_linea_final(self):
+        f = fichas.con_linea_final(self.SIN)
+        self.assertNotIn("Para crear un resumen", f)
+        self.assertTrue(f.endswith(fichas.LINEA_FINAL))
+        self.assertEqual(fichas.con_linea_final(f), f)  # aplicarla dos veces no la repite
+
+    def test_enlace_en_la_referencia(self):
+        self.assertFalse(fichas.tiene_enlace(self.SIN))  # la dirección de la última línea no cuenta
+        f = fichas.con_enlace(self.SIN, "https://ejemplo.org/informe/")
+        self.assertTrue(fichas.tiene_enlace(f))
+        self.assertIn("MIT. https://ejemplo.org/informe/\n\n**Resumen**", f)
+
+    def bot_con_ficha(self):
+        b = bot_sin_arrancar()
+        b.pendientes[7] = {"clave": "k1", "momento": time.time(), "ficha": fichas.con_linea_final(self.SIN),
+                           "compartir": False, "autor": "Ana", "mensaje": (7, 3)}
+        b.espera[7] = {"que": "enlace_ficha", "clave": "k1", "momento": time.time()}
+        return b
+
+    def test_la_persona_da_el_enlace(self):
+        b = self.bot_con_ficha()
+        self.assertTrue(b.contestar_espera(7, 7, {"from": {"id": 7}}, "Está en https://ejemplo.org/informe/.", b.espera[7]))
+        self.assertNotIn(7, b.espera)
+        self.assertIn("MIT. https://ejemplo.org/informe/\n", b.pendientes[7]["ficha"])
+        vista = [k for m, k in b.llamadas if m == "sendMessage"][-1]
+        self.assertIn("publicar:k1", json.dumps(vista["reply_markup"]))
+
+    def test_sin_direccion_la_vuelve_a_pedir_y_una_pregunta_se_responde(self):
+        b = self.bot_con_ficha()
+        self.assertTrue(b.contestar_espera(7, 7, {"from": {"id": 7}}, "no sé", b.espera[7]))
+        self.assertEqual(b.enviados, [textos.texto("es", "falta_enlace")])
+        self.assertFalse(b.contestar_espera(7, 7, {"from": {"id": 7}}, "¿dónde lo busco?", b.espera[7]))
+        self.assertIn(7, b.espera)
+
+    def test_boton_sin_enlace(self):
+        b = self.bot_con_ficha()
+        b.boton({"id": "1", "from": {"id": 7, "language_code": "es"}, "data": "sinenlace:k1",
+                 "message": {"chat": {"id": 7}, "message_id": 3}})
+        self.assertNotIn(7, b.espera)
+        self.assertIn(7, b.pendientes)
+        self.assertFalse(fichas.tiene_enlace(b.pendientes[7]["ficha"]))
+        self.assertIn("publicar:k1", json.dumps([k for m, k in b.llamadas if m == "sendMessage"][-1]["reply_markup"]))
+
+    def test_buscar_enlace_que_no_abre(self):
+        f = fichas.Fichero.__new__(fichas.Fichero)
+        f.c = mock.Mock()
+        uso = mock.Mock(input_tokens=1000, output_tokens=100, cache_read_input_tokens=0,
+                        cache_creation_input_tokens=0, server_tool_use=mock.Mock(web_search_requests=1))
+        f.c.cliente.messages.create.return_value = mock.Mock(
+            usage=uso, content=[mock.Mock(type="text", text='{"url": "https://no-existe.invalid/x"}')])
+        with mock.patch.object(fichas, "responde", return_value=False):
+            url, usd = f.buscar_enlace(self.SIN)
+        self.assertEqual(url, "")
+        self.assertGreater(usd, 0.01)
+
+
 if __name__ == "__main__":
     unittest.main()

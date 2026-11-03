@@ -76,7 +76,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.4.3"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.4.4"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1459,6 +1459,12 @@ class Bot:
             usd += coste
             compartir, coste = self.fichero.compartible(ficha)
             usd += coste
+            if not fichas.tiene_enlace(ficha):  # sin DOI ni dirección: se busca, y si no, se pide (Juanjo, 03-11-2026)
+                url, coste = self.fichero.buscar_enlace(ficha)
+                usd += coste
+                if url:
+                    ficha = fichas.con_enlace(ficha, url)
+            ficha = fichas.con_linea_final(ficha)
         except Exception as error:  # noqa: BLE001 — un documento fallido no tumba el bot
             registrar(f"error con un documento: {type(error).__name__}: {error}")
             return self.enviar(chat, self.tx(uid, "error_doc"))
@@ -1473,15 +1479,44 @@ class Bot:
         clave = self.clave_borrador()
         self.pendientes[uid] = {"ficha": ficha, "file_id": d["file_id"], "autor": autor,
                                 "compartir": compartir, "momento": time.time(), "clave": clave}
-        aviso = self.tx(uid, "vista" if compartir else "vista_sin_archivo", autor=autor)
-        self.enviar(chat, aviso)
-        m = self.tg("sendMessage", chat_id=chat, text=fichas.a_html(ficha), parse_mode="HTML",
-                    link_preview_options={"is_disabled": True},
-                    reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_publicar"), "callback_data": f"publicar:{clave}"},
-                                                       {"text": self.tx(uid, "b_cancelar"), "callback_data": f"cancelar:{clave}"}]]})
+        registrar(f"ficha preparada: {usd:.4f} USD, compartir={compartir}, enlace={fichas.tiene_enlace(ficha)}")
+        if fichas.tiene_enlace(ficha):
+            return self.ensenar_documento(chat, uid)
+        self.espera[uid] = {"que": "enlace_ficha", "clave": clave, "momento": time.time()}
+        m = self.tg("sendMessage", chat_id=chat, text=self.tx(uid, "pide_enlace"),
+                    reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_sin_enlace"),
+                                                        "callback_data": f"sinenlace:{clave}"}]]})
         if m:
             self.pendientes[uid]["mensaje"] = (chat, m["message_id"])
-        registrar(f"ficha preparada: {usd:.4f} USD, compartir={compartir}")
+
+    def ensenar_documento(self, chat: int, uid: int) -> None:
+        """La vista previa de la ficha, con «Publicar» y «Cancelar»."""
+        p = self.pendientes[uid]
+        self.quitar_botones(p.get("mensaje"))  # el «Sin enlace» de la petición, si lo había
+        self.enviar(chat, self.tx(uid, "vista" if p["compartir"] else "vista_sin_archivo", autor=p["autor"]))
+        m = self.tg("sendMessage", chat_id=chat, text=fichas.a_html(p["ficha"]), parse_mode="HTML",
+                    link_preview_options={"is_disabled": True},
+                    reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_publicar"), "callback_data": f"publicar:{p['clave']}"},
+                                                       {"text": self.tx(uid, "b_cancelar"), "callback_data": f"cancelar:{p['clave']}"}]]})
+        if m:
+            p["mensaje"] = (chat, m["message_id"])
+
+    def enlace_documento(self, chat: int, uid: int, texto: str, e: dict) -> bool:
+        """La dirección del documento que el bot ha pedido porque no la encontró. False si es otra cosa."""
+        p = self.pendientes.get(uid)
+        if not p or p.get("clave") != e.get("clave"):
+            self.espera.pop(uid, None)
+            return False
+        enlace = re.search(r"https?://\S+", texto)
+        if not enlace:
+            if "?" in texto:
+                return False  # una pregunta se responde; la ficha sigue esperando su enlace
+            self.enviar(chat, self.tx(uid, "falta_enlace"))
+            return True
+        self.espera.pop(uid, None)
+        p["ficha"] = fichas.con_enlace(p["ficha"], enlace.group(0).rstrip(".,;)»\""))
+        self.ensenar_documento(chat, uid)
+        return True
 
     def boton(self, cq: dict) -> None:
         uid, accion = cq["from"]["id"], cq.get("data")
@@ -1527,6 +1562,12 @@ class Bot:
             return self.enviar(uid, self.tx(uid, "no_quitar_ya"))
         orden, _, clave = accion.partition(":")
         p = self.pendientes.get(uid)
+        if orden == "sinenlace":  # no tiene la dirección del documento: la ficha sale sin ella
+            if not p or clave != p.get("clave"):
+                return self.enviar(uid, self.tx(uid, "sustituido" if p else "caducado"))
+            if (self.espera.get(uid) or {}).get("que") == "enlace_ficha":
+                self.espera.pop(uid, None)
+            return self.ensenar_documento(uid, uid)
         if p and clave != p.get("clave"):  # el botón de una ficha anterior, o sin clave: la vigente se queda
             return self.enviar(uid, self.tx(uid, "sustituido"))
         p = self.pendientes.pop(uid, None)
@@ -1591,6 +1632,8 @@ class Bot:
 
     def contestar_espera(self, chat: int, uid: int, msg: dict, texto: str, e: dict) -> bool:
         """Lo que escribe cuando el bot le ha pedido algo. False si no era eso: entonces es una pregunta."""
+        if e["que"] == "enlace_ficha":
+            return self.enlace_documento(chat, uid, texto, e)
         enlace = re.search(r"https?://\S+", texto)
         if e["que"] == "recurso":
             if not enlace:

@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.4.4 — 2026-11-03
+
+Las fichas de la Biblioteca digital llevan la dirección del documento. Si el documento no la trae, el Bot de IA Educativa la busca en internet (la página oficial de su autor o su editorial) y, si no la encuentra, la pide a quien lo envía, con un botón «Sin enlace» para quien no la tenga. La ficha ya no termina con «Para crear un resumen como este, utiliza…», sino con «(Para publicar un documento en la Biblioteca digital, envíaselo por privado a @IAEducativa_bot)» (ADR 0002).
+
 ## 1.4.3 — 2026-11-02
 
 A quien pregunta cómo recibir el Diario de IA Educativa, el Bot de IA Educativa le dice que no hay boletín por correo, que el número del día se publica cada mañana en los tres grupos y que fuera de ellos se puede seguir por RSS, en castellano o en catalán. Ya no remite a nadie las dudas sobre el diario.
