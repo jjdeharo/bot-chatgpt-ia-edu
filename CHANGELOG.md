@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.5.2 — 2026-11-03
+
+- Cuando el bot no admite un recurso por no tener licencia abierta, explica que la licencia tiene que ponerla su autor en el propio recurso y qué pedir a la IA con la que lo hizo: la línea SPDX al principio del código y la licencia visible en el pie (ADR 0004).
+
 ## 1.5.1 — 2026-11-03
 
 - Si se cambia el autor de una ficha y la persona tiene más recursos con otro nombre, al publicar el bot pregunta si lo cambia en todos o solo en ese, para los recursos firmados a varias manos (ADR 0027).

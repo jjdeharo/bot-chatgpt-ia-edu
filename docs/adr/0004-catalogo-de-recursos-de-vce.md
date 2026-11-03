@@ -112,6 +112,12 @@ de su grupo.
    explica cómo ponerla (LICENSE en GitHub, línea SPDX y pie en el HTML, o
    pedírselo a la IA con que lo hizo) y enlaza el capítulo 9 de la guía en su
    idioma. Después le deja volver a enviar el recurso, que vuelve a leer.
+   El propio mensaje de rechazo dice que la licencia va dentro del recurso y
+   que solo puede ponerla su autor, con lo que hay que pedir a la IA (la línea
+   SPDX y el pie visible, con CC BY-SA 4.0 de ejemplo): una autora le pidió al
+   bot «agrega Licencia: CC BY-SA 4.0», creyendo que la pondría él (Juanjo,
+   03-11-2026). La página de una aplicación de Apps Script llega entera al
+   bot, así que la licencia puesta en su HTML se encuentra.
    Primero enlazaba el generador de licencias de Juanjo, que no le convence
    (27-10-2026).
    Lo compartido en Gemini o en Claude también necesita la licencia en su
