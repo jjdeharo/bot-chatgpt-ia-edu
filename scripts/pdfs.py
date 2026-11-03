@@ -6,6 +6,11 @@ texto no se pueden encontrar por el tema que tratan. Se guarda solo el
 texto (datos/<grupo>/pdf-texto/<id>.txt) y el PDF se borra después: el
 documento sigue en el grupo y el bot enlaza allí. Solo en los grupos con
 biblioteca.
+
+De los documentos desde COMPLETO_DESDE se guarda además el texto entero
+(datos/<grupo>/pdf-completo/<id>.txt): con él escribe el Diario de IA Educativa
+el artículo de cada documento de la Biblioteca cuando su web oficial no se
+encuentra o no deja leer (ADR 0006 del diario, ADR 0026 de este bot).
 """
 import asyncio
 import subprocess
@@ -18,6 +23,8 @@ import grupos
 
 PAGINAS = 4
 MAXIMO = 60 * 1024 * 1024  # bytes: lo que pase de aquí no se descarga
+COMPLETO_DESDE = "2026-10-01"   # texto entero solo de lo nuevo: no se descarga otra vez toda la biblioteca
+COMPLETO_MAX = 400_000          # caracteres del texto entero (un libro de unas 250 páginas)
 
 
 def limpiar(t: str) -> str:
@@ -33,11 +40,19 @@ async def principal():
 
 async def textos(g: grupos.Grupo):
     salida = g.datos / "pdf-texto"
+    completo = g.datos / "pdf-completo"
     salida.mkdir(parents=True, exist_ok=True)
+    completo.mkdir(parents=True, exist_ok=True)
     ms = corpus.cargar(g)
+
+    def falta(m):
+        if not (salida / f"{m['id']}.txt").exists():
+            return True
+        return m.get("fecha", "") >= COMPLETO_DESDE and not (completo / f"{m['id']}.txt").exists()
+
     pendientes = [m for m in ms.values()
                   if m["tema"] == g.biblioteca and m.get("mime") == "application/pdf"
-                  and not (salida / f"{m['id']}.txt").exists() and (m.get("tamano") or 0) <= MAXIMO]
+                  and falta(m) and (m.get("tamano") or 0) <= MAXIMO]
     if not pendientes:
         print(f"{g.clave} pdf: nada nuevo")
         return
@@ -55,6 +70,9 @@ async def textos(g: grupos.Grupo):
                 r = subprocess.run(["pdftotext", "-l", str(PAGINAS), "-enc", "UTF-8", str(ruta), "-"],
                                    capture_output=True, text=True)
                 (salida / f"{m['id']}.txt").write_text(limpiar(r.stdout))
+                if m.get("fecha", "") >= COMPLETO_DESDE:
+                    entero = subprocess.run(["pdftotext", "-enc", "UTF-8", str(ruta), "-"], capture_output=True, text=True)
+                    (completo / f"{m['id']}.txt").write_text(entero.stdout[:COMPLETO_MAX])
                 ruta.unlink(missing_ok=True)
                 print(f"  {m['id']} {m.get('archivo')}: {len(r.stdout)} caracteres", flush=True)
     finally:

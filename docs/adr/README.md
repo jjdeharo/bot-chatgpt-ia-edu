@@ -27,5 +27,6 @@
 | [0023](0023-preguntar-en-el-grupo-y-preguntas-sin-resolver-por-temas.md) | Preguntar en el grupo lo que el bot no resuelve, y preguntas sin resolver por temas | aceptado |
 | [0024](0024-aviso-cuando-anthropic-corta-por-saldo.md) | Aviso a Juanjo cuando Anthropic corta por saldo o por un límite de gasto | aceptado |
 | [0025](0025-aviso-diario-de-tiza-y-algoritmo.md) | Aviso diario de «Tiza y Algoritmo» en los tres grupos | aceptado |
+| [0026](0026-texto-completo-de-los-pdf-de-la-biblioteca.md) | Texto completo de los PDF nuevos de la Biblioteca digital | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.
