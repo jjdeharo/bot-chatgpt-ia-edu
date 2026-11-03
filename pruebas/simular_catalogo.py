@@ -72,6 +72,9 @@ class HojaFalsa:
         fila = self.buscar(url)
         fila.update(catalogo.a_fila(f))
 
+    def poner_autor(self, url, autor):
+        self.buscar(url)[catalogo.COLUMNAS["autor"]] = autor
+
     def borrar(self, url):
         self.lista = [f for f in self.lista if catalogo.normalizar(f[catalogo.COLUMNAS["url"]]) != catalogo.normalizar(url)]
 

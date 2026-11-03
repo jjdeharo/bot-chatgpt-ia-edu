@@ -601,6 +601,10 @@ class Hoja:
         """Cambia solo la columna «Licencia de uso»: la API deja los demás campos como están."""
         self._llamar("modificar", url=url, ficha={COLUMNAS["licencia"]: licencia})
 
+    def poner_autor(self, url: str, autor: str) -> None:
+        """Cambia solo la columna del autor, como poner_licencia."""
+        self._llamar("modificar", url=url, ficha={COLUMNAS["autor"]: autor})
+
     def borrar(self, url: str) -> None:
         self._llamar("borrar", url=url)
 
@@ -615,6 +619,7 @@ def leer_duenos() -> dict:
         d = {}
     d.setdefault("recursos", {})   # url normalizada -> id de Telegram
     d.setdefault("correos", {})    # id de Telegram -> correos comprobados con código
+    d.setdefault("nombres", {})    # id de Telegram -> nombre con el que firma sus recursos (ADR 0027)
     return d
 
 
@@ -634,6 +639,25 @@ def es_dueno(uid: int, fila: dict, d: dict | None = None) -> bool:
 def de_la_persona(uid: int, hoja: Hoja) -> list[dict]:
     d = leer_duenos()
     return [f for f in hoja.filas() if es_dueno(uid, f, d)]
+
+
+def nombre_corto(nombre: str) -> bool:
+    """Un nombre de Telegram que no sirve para firmar un recurso («D», «jc»): menos de tres letras (ADR 0027)."""
+    return len(re.sub(r"[\W_\d]", "", nombre or "")) < 3
+
+
+def mismo_nombre(a: str, b: str) -> bool:
+    return " ".join((a or "").split()).casefold() == " ".join((b or "").split()).casefold()
+
+
+def nombre_guardado(uid: int) -> str:
+    return leer_duenos()["nombres"].get(str(uid), "")
+
+
+def otros_a_renombrar(uid: int, hoja: Hoja, url: str, autor: str) -> list[dict]:
+    """Sus otros recursos que no llevan ya ese nombre: los que cambian con él (ADR 0027)."""
+    return [f for f in de_la_persona(uid, hoja)
+            if normalizar(f.get(COLUMNAS["url"], "")) != normalizar(url) and not mismo_nombre(f.get(COLUMNAS["autor"], ""), autor)]
 
 
 def leer_avisos() -> dict:

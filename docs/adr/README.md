@@ -28,5 +28,6 @@
 | [0024](0024-aviso-cuando-anthropic-corta-por-saldo.md) | Aviso a Juanjo cuando Anthropic corta por saldo o por un límite de gasto | aceptado |
 | [0025](0025-aviso-diario-de-tiza-y-algoritmo.md) | Aviso diario de «Tiza y Algoritmo» en los tres grupos | aceptado |
 | [0026](0026-texto-completo-de-los-pdf-de-la-biblioteca.md) | Texto completo de los PDF nuevos de la Biblioteca digital | aceptado |
+| [0027](0027-nombre-de-autor-de-los-recursos.md) | Nombre de autor de los recursos del repositorio | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

@@ -76,7 +76,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.4.5"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.5.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1652,6 +1652,11 @@ class Bot:
                 self.en_hilo(self.recurso, chat, uid, msg["from"], e["url"], None, texto[:3000])
         elif e["que"] == "cambio":
             self.en_hilo(self.cambiar_recurso, chat, uid, texto[:1000])
+        elif e["que"] == "nombre" and "?" in texto:
+            return False  # una pregunta se responde; sigue esperando el nombre
+        elif e["que"] == "nombre":
+            self.espera.pop(uid, None)
+            self.en_hilo(self.poner_nombre, chat, uid, texto)
         elif e["que"] == "razones":
             self.espera.pop(uid, None)
             self.en_hilo(self.pedir_revision, uid, texto[:1500])
@@ -1747,12 +1752,65 @@ class Bot:
         sugerida = self.sugerir_licencia_visible(chat, uid, f["licencia"], f.pop("licencia_solo_repositorio", False),
                                                  contenido)
         f["licencia"] = catalogo.componer_licencias(f["licencia"], f.pop("licencia_contenidos", ""))
-        f["autor"] = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
+        # El autor, con el nombre que ya eligió; si no lo hay y el de Telegram no sirve para firmar («D»), se le
+        # pide una vez (Juanjo, 03-11-2026; ADR 0027).
+        de_telegram = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
+        guardado = catalogo.nombre_guardado(uid)
+        f["autor"] = guardado or de_telegram
         # Lo leído, para los cambios: puede venir de un archivo o de un repositorio, no solo del enlace.
         leido = f"{contenido}\n\nLo que contó quien lo aporta:\n<nota>\n{nota}\n</nota>" if nota else contenido
         self.fichas_rec[uid] = {"ficha": f, "modo": "alta", "momento": time.time(), "usuario": de.get("username"),
-                                "contenido": leido, "licencia_sugerida": sugerida}
+                                "contenido": leido, "licencia_sugerida": sugerida, "autor_original": f["autor"]}
+        if not guardado and catalogo.nombre_corto(de_telegram):
+            self.espera[uid] = {"que": "nombre", "momento": time.time()}
+            return self.enviar(chat, self.tx(uid, "pide_nombre", nombre=de_telegram or "—"))
         self.ensenar_ficha(chat, uid)
+
+    def poner_nombre(self, chat: int, uid: int, texto: str) -> None:
+        """La respuesta a «¿con qué nombre quieres firmar?»: va a la ficha; se guarda al publicar (ADR 0027)."""
+        p = self.fichas_rec.get(uid)
+        if not p:
+            return self.enviar(chat, self.tx(uid, "caducado_recurso"))
+        nombre = " ".join(texto.split())[:80]
+        if catalogo.nombre_corto(nombre) or re.search(r"https?://", nombre):
+            self.espera[uid] = {"que": "nombre", "momento": time.time()}
+            return self.enviar(chat, self.tx(uid, "nombre_no_valido"))
+        p["ficha"]["autor"] = nombre
+        self.ensenar_ficha(chat, uid)
+
+    def aviso_de_nombre(self, uid: int, p: dict) -> str:
+        """Si la ficha cambia el nombre de autor, que sepa antes de publicar que cambia en todos sus recursos."""
+        autor = p["ficha"].get("autor", "")
+        if "autor_original" not in p or not autor or catalogo.mismo_nombre(autor, p["autor_original"]):
+            return ""
+        try:
+            n = len(catalogo.otros_a_renombrar(uid, self.hoja, p.get("url_anterior", p["ficha"]["url"]), autor))
+        except Exception as error:  # noqa: BLE001 — sin la hoja, el aviso general
+            registrar(f"no se han podido contar sus recursos: {type(error).__name__}: {error}")
+            n = 0
+        return self.tx(uid, "nombre_en_todos", nombre=autor, n=n) if n else self.tx(uid, "nombre_para_siempre", nombre=autor)
+
+    def cambiar_nombre(self, uid: int, f: dict) -> None:
+        """Guarda el nombre nuevo y lo pone en el resto de sus recursos, para que todos salgan igual (ADR 0027)."""
+        autor = f["autor"].strip()
+        with CERROJO:
+            d = catalogo.leer_duenos()
+            d["nombres"][str(uid)] = autor
+            catalogo.guardar_duenos(d)
+        try:
+            otros = catalogo.otros_a_renombrar(uid, self.hoja, f["url"], autor)
+        except Exception as error:  # noqa: BLE001
+            return registrar(f"no se ha podido cambiar el autor en sus otros recursos: {type(error).__name__}: {error}")
+        hechos = 0
+        for fila in otros:
+            try:
+                self.hoja.poner_autor(fila[catalogo.COLUMNAS["url"]], autor)
+                hechos += 1
+            except Exception as error:  # noqa: BLE001
+                registrar(f"no se ha podido cambiar el autor de un recurso: {type(error).__name__}: {error}")
+        registrar(f"nombre de autor cambiado: {hechos} de {len(otros)} recursos más")
+        if hechos:
+            self.enviar(uid, self.tx(uid, "nombre_cambiado", n=hechos, nombre=autor))
 
     def sugerir_licencia_visible(self, chat: int, uid: int, licencia: str, solo_repositorio: bool,
                                  contenido: str) -> bool:
@@ -1842,6 +1900,9 @@ class Bot:
         self.quitar_botones(p.get("mensaje"))
         p["clave"] = clave = self.clave_borrador()
         self.enviar(chat, self.tx(uid, texto))
+        aviso = self.aviso_de_nombre(uid, p)
+        if aviso:
+            self.enviar(chat, aviso)
         m = self.tg("sendMessage", chat_id=chat, text=catalogo.a_html(p["ficha"]), parse_mode="HTML",
                     link_preview_options={"is_disabled": True},
                     reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_publicar"), "callback_data": f"rp:{clave}"},
@@ -1983,7 +2044,8 @@ class Bot:
             elif orden == "rj":  # dice que ya la tiene y el bot no la ve: que lo mire Juanjo
                 self.pasar_a_juanjo(uid, f, "aviso_dice_que_si")
             elif orden == "rm":
-                self.fichas_rec[uid] = {"ficha": f, "modo": "modificar", "momento": time.time()}
+                self.fichas_rec[uid] = {"ficha": f, "modo": "modificar", "momento": time.time(),
+                                        "autor_original": f.get("autor", "")}
                 self.espera[uid] = {"que": "cambio", "momento": time.time()}
                 self.enviar(uid, self.tx(uid, "que_cambio"))
             elif orden == "rb":
@@ -2130,6 +2192,8 @@ class Bot:
             dueno = d["recursos"].pop(catalogo.normalizar(p.get("url_anterior", f["url"])), uid)
             d["recursos"].setdefault(catalogo.normalizar(f["url"]), dueno)
             catalogo.guardar_duenos(d)
+        if "autor_original" in p and f.get("autor") and not catalogo.mismo_nombre(f["autor"], p["autor_original"]):
+            self.cambiar_nombre(uid, f)
         enlace = catalogo.enlace_catalogo() if p["modo"] == "alta" else catalogo.enlace_catalogo(f["url"])
         if p["modo"] == "alta":
             self.apuntar(0.0, recurso_publicado=uid)
