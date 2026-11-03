@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.5.1 — 2026-11-03
+
+- Si se cambia el autor de una ficha y la persona tiene más recursos con otro nombre, al publicar el bot pregunta si lo cambia en todos o solo en ese, para los recursos firmados a varias manos (ADR 0027).
+
 ## 1.5.0 — 2026-11-03
 
 - Al dar de alta un recurso del repositorio de Vibe Coding Educativo, si el nombre de Telegram tiene menos de tres letras («D»), el bot pide una vez el nombre con el que se quiere firmar y lo recuerda para los siguientes.

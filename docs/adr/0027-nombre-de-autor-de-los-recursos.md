@@ -19,16 +19,22 @@ recursos, que entraron por el formulario antiguo.
 - En un alta, si hay nombre guardado, la ficha lo lleva. Si no lo hay y el nombre de Telegram tiene
   menos de tres letras, el bot lo pide antes de enseñar la ficha, una sola vez.
 - Si el autor de una ficha cambia (al pedirlo la primera vez o con «Cambiar algo», en un alta o en un
-  recurso ya publicado), ese nombre pasa a ser el guardado y **se cambia en todos sus recursos**,
-  también los del formulario antiguo que ha recuperado con su correo, para que salgan todos igual
-  (Juanjo, 03-11-2026: «si se cambia el nombre se cambia para todas sus fichas»). Antes de publicar,
-  la ficha avisa de cuántos recursos más cambiarán; después, el bot dice cuántos ha cambiado.
+  recurso ya publicado) y la persona tiene más recursos con otro nombre, al pulsar «Publicar» el bot
+  le pregunta si lo cambia **en todos** o **solo en este**, con un botón para cada cosa (Juanjo,
+  03-11-2026: «si se cambia el nombre se cambia para todas sus fichas», y después, «que pregunte en
+  todos o solo en este»). Los recursos que cuentan son también los del formulario antiguo que ha
+  recuperado con su correo.
+  - «En todos»: el nombre pasa a ser el guardado y se pone en el resto de sus recursos; el bot dice
+    cuántos ha cambiado.
+  - «Solo en este»: es para un recurso firmado a varias manos («Ana Pérez y Luis Gil»). Los demás
+    recursos y el nombre guardado no cambian; si aún no había ninguno guardado, se guarda este, para
+    no volver a pedirlo.
+  - Si no tiene más recursos, no hay pregunta: la ficha avisa de que usará ese nombre en los próximos.
 - La hoja cambia solo la columna del autor (`Hoja.poner_autor`), como ya hacía con la licencia.
 
 ## Consecuencias
 
 - Quien firma con un nombre de Telegram corto responde una pregunta más en su primer alta, y nada más.
-- Un recurso firmado a varias manos («Ana Pérez y Luis Gil») haría que ese nombre pasara a todos sus
-  recursos: el aviso previo lo deja ver antes de publicar, y se arregla volviendo a cambiar el autor.
+- Publicar con otro nombre de autor lleva un toque más cuando hay más recursos: la pregunta.
 - El nombre guardado viaja en la copia diaria de `catalogo.json` (README, «Copias»).
 - Pruebas: `pruebas/test_nombre_autor.py`, en GitHub con cada cambio.

@@ -76,7 +76,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.5.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.5.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1778,21 +1778,42 @@ class Bot:
         p["ficha"]["autor"] = nombre
         self.ensenar_ficha(chat, uid)
 
-    def aviso_de_nombre(self, uid: int, p: dict) -> str:
-        """Si la ficha cambia el nombre de autor, que sepa antes de publicar que cambia en todos sus recursos."""
+    def otros_con_otro_nombre(self, uid: int, p: dict) -> int:
+        """Cuántos recursos suyos más cambiarían si la ficha cambia el nombre de autor; -1 si no lo cambia."""
         autor = p["ficha"].get("autor", "")
         if "autor_original" not in p or not autor or catalogo.mismo_nombre(autor, p["autor_original"]):
-            return ""
+            return -1
         try:
-            n = len(catalogo.otros_a_renombrar(uid, self.hoja, p.get("url_anterior", p["ficha"]["url"]), autor))
-        except Exception as error:  # noqa: BLE001 — sin la hoja, el aviso general
+            return len(catalogo.otros_a_renombrar(uid, self.hoja, p.get("url_anterior", p["ficha"]["url"]), autor))
+        except Exception as error:  # noqa: BLE001 — sin la hoja, como si no hubiera más
             registrar(f"no se han podido contar sus recursos: {type(error).__name__}: {error}")
-            n = 0
-        return self.tx(uid, "nombre_en_todos", nombre=autor, n=n) if n else self.tx(uid, "nombre_para_siempre", nombre=autor)
+            return 0
 
-    def cambiar_nombre(self, uid: int, f: dict) -> None:
-        """Guarda el nombre nuevo y lo pone en el resto de sus recursos, para que todos salgan igual (ADR 0027)."""
+    def aviso_de_nombre(self, uid: int, p: dict) -> str:
+        """Si la ficha cambia el nombre de autor y no tiene más recursos, que sepa que lo usará en los próximos.
+        Si tiene más, se le pregunta al publicar si lo cambia en todos o solo en ese (ADR 0027)."""
+        n = self.otros_con_otro_nombre(uid, p)
+        return self.tx(uid, "nombre_para_siempre", nombre=p["ficha"]["autor"]) if n == 0 else ""
+
+    def preguntar_nombre(self, uid: int, p: dict) -> bool:
+        """Al publicar con otro nombre de autor, si tiene más recursos: ¿en todos o solo en este? (ADR 0027)."""
+        n = self.otros_con_otro_nombre(uid, p)
+        if n <= 0:
+            return False
+        clave = p.get("clave", "")
+        self.tg("sendMessage", chat_id=uid, text=self.tx(uid, "nombre_en_todos", nombre=p["ficha"]["autor"], n=n),
+                reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_nombre_todos"), "callback_data": f"rnt:{clave}"},
+                                                   {"text": self.tx(uid, "b_nombre_este"), "callback_data": f"rns:{clave}"}]]})
+        return True
+
+    def cambiar_nombre(self, uid: int, f: dict, todos: bool = True) -> None:
+        """Guarda el nombre nuevo y lo pone en el resto de sus recursos, para que todos salgan igual (ADR 0027).
+        «Solo en este» no toca los demás ni el nombre guardado, salvo que aún no hubiera ninguno."""
         autor = f["autor"].strip()
+        if not todos:
+            if not catalogo.nombre_guardado(uid):
+                self.guardar_solo_nombre(uid, autor)
+            return
         with CERROJO:
             d = catalogo.leer_duenos()
             d["nombres"][str(uid)] = autor
@@ -1811,6 +1832,12 @@ class Bot:
         registrar(f"nombre de autor cambiado: {hechos} de {len(otros)} recursos más")
         if hechos:
             self.enviar(uid, self.tx(uid, "nombre_cambiado", n=hechos, nombre=autor))
+
+    def guardar_solo_nombre(self, uid: int, autor: str) -> None:
+        with CERROJO:
+            d = catalogo.leer_duenos()
+            d["nombres"][str(uid)] = autor
+            catalogo.guardar_duenos(d)
 
     def sugerir_licencia_visible(self, chat: int, uid: int, licencia: str, solo_repositorio: bool,
                                  contenido: str) -> bool:
@@ -1985,12 +2012,16 @@ class Bot:
     def boton_recurso(self, uid: int, accion: str) -> None:
         orden, _, n = accion.partition(":")
         try:
-            if orden in ("rp", "rc", "rx"):
+            if orden in ("rp", "rc", "rx", "rnt", "rns"):
                 p = self.fichas_rec.get(uid)
                 if p and n != p.get("clave"):  # el botón de una vista anterior, o sin clave: la vigente se queda
                     return self.enviar(uid, self.tx(uid, "sustituido"))
             if orden == "rp":
                 return self.publicar_recurso(uid)
+            if orden in ("rnt", "rns"):  # el nombre de autor, en todos sus recursos o solo en este (ADR 0027)
+                if uid not in self.fichas_rec:
+                    return self.enviar(uid, self.tx(uid, "caducado_recurso"))
+                return self.publicar_recurso(uid, orden == "rnt")
             if orden == "rc":
                 if uid not in self.fichas_rec:
                     return self.enviar(uid, self.tx(uid, "caducado_recurso"))
@@ -2170,7 +2201,11 @@ class Bot:
         registrar("aviso del repositorio revisado por Juanjo: cumple")
         self.enviar(JUANJO, self.tx(JUANJO, "revision_hecha", titulo=a["titulo"]))
 
-    def publicar_recurso(self, uid: int) -> None:
+    def publicar_recurso(self, uid: int, todos: bool | None = None) -> None:
+        previa = self.fichas_rec.get(uid)
+        if previa and todos is None and time.time() - previa["momento"] <= CADUCA_FICHA_H * 3600 \
+                and self.preguntar_nombre(uid, previa):
+            return  # publica al elegir «En todos» o «Solo en este»
         p = self.fichas_rec.pop(uid, None)
         self.espera.pop(uid, None)
         if not p or time.time() - p["momento"] > CADUCA_FICHA_H * 3600:
@@ -2193,7 +2228,7 @@ class Bot:
             d["recursos"].setdefault(catalogo.normalizar(f["url"]), dueno)
             catalogo.guardar_duenos(d)
         if "autor_original" in p and f.get("autor") and not catalogo.mismo_nombre(f["autor"], p["autor_original"]):
-            self.cambiar_nombre(uid, f)
+            self.cambiar_nombre(uid, f, todos is not False)
         enlace = catalogo.enlace_catalogo() if p["modo"] == "alta" else catalogo.enlace_catalogo(f["url"])
         if p["modo"] == "alta":
             self.apuntar(0.0, recurso_publicado=uid)

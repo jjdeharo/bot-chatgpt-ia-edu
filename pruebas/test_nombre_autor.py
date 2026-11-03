@@ -76,6 +76,22 @@ class NombreDeAutor(unittest.TestCase):
     def alta(self, nombre):
         self.b.seguir_alta(UID, UID, {"first_name": nombre}, ficha(), "contenido", "")
 
+    def pregunta(self):
+        """La última pregunta «¿en todos o solo en este?»: su texto y sus dos botones."""
+        m = [k for metodo, k in self.b.llamadas if metodo == "sendMessage" and "rnt:" in str(k.get("reply_markup"))]
+        if not m:
+            return "", []
+        return m[-1]["text"], [x["callback_data"] for x in m[-1]["reply_markup"]["inline_keyboard"][0]]
+
+    def dar_nombre(self):
+        self.alta("D")
+        self.b.poner_nombre(UID, UID, "Dolores Pérez")
+        self.b.publicar_recurso(UID)
+        texto, botones = self.pregunta()
+        self.assertIn("(1)", texto)
+        self.assertIsNone(self.b.hoja.buscar("https://ejemplo.org/nuevo"), "no publica hasta que elige")
+        return botones
+
     def test_nombre_corto_lo_pide_y_lo_cambia_en_todos(self):
         self.alta("D")
         self.assertEqual(self.b.espera[UID]["que"], "nombre")
@@ -85,12 +101,39 @@ class NombreDeAutor(unittest.TestCase):
         self.assertEqual(self.b.enviados[-1], textos.texto("es", "nombre_no_valido"))
         self.b.poner_nombre(UID, UID, "  Dolores   Pérez ")
         self.assertEqual(self.b.fichas_rec[UID]["ficha"]["autor"], "Dolores Pérez")
-        self.assertIn("resto de tus recursos del repositorio (1)", self.b.enviados[-1])
         self.b.publicar_recurso(UID)
+        texto, botones = self.pregunta()
+        self.assertIn("(1)", texto)
+        self.b.boton_recurso(UID, botones[0])   # «En todos»
         self.assertEqual(catalogo.nombre_guardado(UID), "Dolores Pérez")
         self.assertEqual(self.b.hoja.buscar("https://ejemplo.org/viejo")[A], "Dolores Pérez")
         self.assertEqual(self.b.hoja.buscar("https://ejemplo.org/ajeno")[A], "Otra", "lo de otra persona no se toca")
         self.assertTrue(any("ahora todos salen a nombre de «Dolores Pérez»" in t for t in self.b.enviados))
+
+    def test_solo_en_este(self):
+        botones = self.dar_nombre()
+        self.b.boton_recurso(UID, botones[1])   # «Solo en este»
+        self.assertIsNotNone(self.b.hoja.buscar("https://ejemplo.org/nuevo"))
+        self.assertEqual(self.b.hoja.buscar("https://ejemplo.org/viejo")[A], "D", "los demás no cambian")
+        self.assertEqual(catalogo.nombre_guardado(UID), "Dolores Pérez", "sin nombre guardado, se guarda para no volver a pedirlo")
+
+    def test_solo_en_este_no_cambia_el_nombre_guardado(self):
+        d = catalogo.leer_duenos()
+        d["nombres"][str(UID)] = "D. Pérez"
+        catalogo.guardar_duenos(d)
+        self.b.hoja.buscar("https://ejemplo.org/viejo")[A] = "D. Pérez"
+        self.alta("D")
+        self.b.fichas_rec[UID]["ficha"]["autor"] = "Dolores Pérez y Luis Gil"   # como tras «Cambiar algo»
+        self.b.publicar_recurso(UID)
+        self.b.boton_recurso(UID, self.pregunta()[1][1])
+        self.assertEqual(catalogo.nombre_guardado(UID), "D. Pérez")
+        self.assertEqual(self.b.hoja.buscar("https://ejemplo.org/viejo")[A], "D. Pérez")
+        self.assertEqual(self.b.hoja.buscar("https://ejemplo.org/nuevo")[A], "Dolores Pérez y Luis Gil")
+
+    def test_boton_de_una_vista_anterior(self):
+        self.dar_nombre()
+        self.b.boton_recurso(UID, "rnt:otra")
+        self.assertIsNone(self.b.hoja.buscar("https://ejemplo.org/nuevo"))
 
     def test_el_nombre_guardado_no_se_vuelve_a_pedir(self):
         d = catalogo.leer_duenos()
@@ -116,8 +159,10 @@ class NombreDeAutor(unittest.TestCase):
         f = catalogo.de_fila(self.b.hoja.buscar("https://ejemplo.org/otro"))
         self.b.fichas_rec[UID] = {"ficha": {**f, "autor": "Dolores Pérez"}, "modo": "modificar",
                                   "momento": time.time(), "autor_original": "D"}
-        self.assertIn("(1)", self.b.aviso_de_nombre(UID, self.b.fichas_rec[UID]))
+        self.b.fichas_rec[UID]["clave"] = "k"
         self.b.publicar_recurso(UID)
+        self.assertEqual(self.pregunta()[1], ["rnt:k", "rns:k"])
+        self.b.boton_recurso(UID, "rnt:k")
         self.assertEqual(self.b.hoja.buscar("https://ejemplo.org/viejo")[A], "Dolores Pérez")
         self.assertEqual(catalogo.nombre_guardado(UID), "Dolores Pérez")
 
