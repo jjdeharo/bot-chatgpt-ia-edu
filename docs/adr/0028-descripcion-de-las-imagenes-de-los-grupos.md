@@ -76,3 +76,12 @@ audios, unos 26 al mes en los tres grupos.
 Pruebas sin red en `pruebas/test_imagenes.py` (qué se describe, tipo por los primeros bytes, la
 descripción llega al texto que se busca, lo borrado se borra, la cuenta del gasto). Primera pasada de
 verdad en el NAS el 03-11-2026, con las imágenes desde el 01-11.
+
+## Corrección del 04-11-2026
+
+La descripción de una captura compartida con un enlace a geografiaagustinos.blogspot.com/2013/10/…
+añadió que el enlace «apunta a una entrada antigua de otro sitio». La entrada se había vuelto a
+publicar el 3-11-2026 con una aplicación hecha con Gemini, que Juanjo probó; el redactor del diario
+la descartó apoyándose en esa frase. Desde la 1.7.1 las instrucciones piden describir solo la imagen,
+sin juzgar el mensaje ni valorar sus enlaces, que el modelo no puede abrir.
+
