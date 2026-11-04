@@ -40,6 +40,31 @@ class Diario(unittest.TestCase):
         _, lista = d.pendientes(datetime(2026, 11, 2, 6, 30, tzinfo=timezone.utc), activos={"vce": 1}, carpeta=self.tmp)
         self.assertEqual(set(lista), {"vce"})
 
+    def test_formato_nuevo_con_puntos(self):
+        (self.tmp / "2026-11-05.json").write_text(json.dumps({
+            "fecha": "2026-11-05", "titulo": "Diario de IA Educativa · Núm. 4", "fecha_texto": "Jueves, 5 de noviembre",
+            "url": "https://diarioiaeducativa.github.io/?n=4",
+            "avisos": {"chatgpt": {"saludo": "Buenos días. Hoy, en el número:", "puntos": ["Uno <con> & signos", " ", "Dos"]},
+                       "vce": {"saludo": "Buenos días.", "puntos": []}}}))
+        _, lista = d.pendientes(datetime(2026, 11, 5, 6, 0, tzinfo=timezone.utc), carpeta=self.tmp)
+        self.assertEqual(set(lista), {"chatgpt"})   # sin puntos no hay aviso
+        m = lista["chatgpt"]
+        self.assertEqual(m["parse_mode"], "HTML")
+        self.assertTrue(m["text"].startswith("<b>Diario de IA Educativa · Núm. 4</b>\nJueves, 5 de noviembre\n\nBuenos días."))
+        self.assertIn("• Uno &lt;con&gt; &amp; signos\n• Dos\n\n👉 https://diarioiaeducativa.github.io/?n=4", m["text"])
+        self.assertEqual(m["link_preview_options"], {"url": "https://diarioiaeducativa.github.io/?n=4",
+                                                     "prefer_large_media": True, "show_above_text": True})
+
+    def test_sin_cabecera_sale_igual(self):
+        (self.tmp / "2026-11-05.json").write_text(json.dumps(
+            {"fecha": "2026-11-05", "avisos": {"vce": {"saludo": "Buenos días.", "puntos": ["Uno", "Dos"]}}}))
+        _, lista = d.pendientes(datetime(2026, 11, 5, 6, 0, tzinfo=timezone.utc), carpeta=self.tmp)
+        self.assertEqual(lista["vce"]["text"], "Buenos días.\n\n• Uno\n• Dos\n\n👉 https://diarioiaeducativa.github.io/")
+
+    def test_formato_anterior_tal_cual(self):
+        _, lista = d.pendientes(datetime(2026, 11, 2, 6, 0, tzinfo=timezone.utc), carpeta=self.tmp)
+        self.assertEqual(lista["chatgpt"], {"text": "Hola A"})
+
     def test_archivo_de_otro_dia_no_vale(self):
         (self.tmp / "2026-11-03.json").write_text(json.dumps({"fecha": "2026-11-02", "avisos": {"vce": "x"}}))
         _, lista = d.pendientes(datetime(2026, 11, 3, 6, 30, tzinfo=timezone.utc), carpeta=self.tmp)

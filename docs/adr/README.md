@@ -30,5 +30,6 @@
 | [0026](0026-texto-completo-de-los-pdf-de-la-biblioteca.md) | Texto completo de los PDF nuevos de la Biblioteca digital | aceptado |
 | [0027](0027-nombre-de-autor-de-los-recursos.md) | Nombre de autor de los recursos del repositorio | aceptado |
 | [0028](0028-descripcion-de-las-imagenes-de-los-grupos.md) | Descripción de las imágenes de los grupos | aceptado |
+| [0029](0029-avisos-del-diario-con-formato.md) | Avisos del diario con formato | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.
