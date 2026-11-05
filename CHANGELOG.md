@@ -2,6 +2,11 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.8.0 — 2026-11-05
+
+- El bot busca en lo publicado por el Diario de IA Educativa, al día cada mañana en cuanto sale el número: dice qué trae un número o el de un día y si el diario ha contado algo, citando primero el mensaje original del grupo y debajo la pieza del diario (ADR 0030).
+- Quien no encuentra los números anteriores del diario recibe el enlace de la hemeroteca, en castellano y en catalán.
+
 ## 1.7.1 — 2026-11-04
 
 - La descripción de las imágenes de los grupos se limita a la imagen: ya no juzga el mensaje ni sus enlaces. Había dado por «una entrada antigua de otro sitio» un blog con fecha de 2013 en la dirección que se había vuelto a publicar ese día con una aplicación nueva, y el Diario de IA Educativa la descartó por eso (ADR 0028).

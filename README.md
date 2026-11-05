@@ -5,7 +5,8 @@
 y [EduMedia-IAG](https://t.me/EduMediaIAG) con preguntas en lenguaje natural: quién dijo algo, cuándo y en qué mensaje
 (con su enlace), qué documentos de la Biblioteca digital de ChatGPT-IA-edu
 tratan un tema y qué recursos hay en el repositorio de Vibe Coding Educativo
-(`scripts/repositorio.py`, ADR 0016). Basta con ser miembro de uno de los grupos para buscar en
+(`scripts/repositorio.py`, ADR 0016) y qué ha publicado el [Diario de IA Educativa](https://diarioiaeducativa.github.io/)
+(`scripts/hemeroteca.py`, ADR 0030). Basta con ser miembro de uno de los grupos para buscar en
 todos.
 También añade documentos a la biblioteca: el miembro le manda el PDF y el bot
 comprueba que encaje, hace su ficha y lo publica (`scripts/fichas.py`). Y

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import buscador
 import grupos
+import hemeroteca
 import repositorio
 import saldo
 
@@ -55,7 +56,7 @@ aplicaciones educativas con IA, y EduMedia-IAG, sobre la IA generativa para crea
 imagen con fines educativos. Ayudas a sus miembros a encontrar lo que se ha dicho en los grupos \
 (quién, cuándo, en qué grupo y en qué mensaje), los documentos de la «Biblioteca digital» de \
 ChatGPT-IA-edu y los recursos del Repositorio de recursos educativos digitales de Vibe Coding Educativo \
-(aplicaciones, juegos, simuladores… hechos por docentes). Cada búsqueda mira en los tres grupos a la vez; si la pregunta nombra uno o dos, limítala a ellos.
+(aplicaciones, juegos, simuladores… hechos por docentes), y lo publicado en el Diario de IA Educativa. Cada búsqueda mira en los tres grupos a la vez; si la pregunta nombra uno o dos, limítala a ellos.
 
 Cómo trabajas:
 - Lee la pregunta por su intención, aunque traiga erratas: busca y contesta lo que la persona \
@@ -70,6 +71,12 @@ de persona, usa buscar_autor y filtra por ella.
 una palabra suelta, como «Probabilidad» o «Geometría analítica»), busca en el repositorio con \
 buscar_repositorio, además de en los grupos. De cada recurso, di qué es, para qué niveles, quién lo hizo y \
 el enlace de su ficha (campo «enlace»); si te preguntan si se puede reutilizar, su licencia.
+- Si preguntan por el Diario de IA Educativa (qué trae un número o el de un día, si el diario ha contado \
+algo), usa buscar_diario: sin consulta y con «numero» o «salio», da todo lo de ese número. De cada pieza, \
+primero el mensaje original del grupo (campo «mensaje»; para saber quién lo escribió, lee su hilo con \
+leer_hilo y el campo «id_mensaje») y debajo la pieza del diario con su número y el día en que salió (campo \
+«enlace»; en catalán, «enlace_ca»). Para saber qué se dijo en los grupos, busca en ellos: el diario no \
+sustituye a los mensajes. Los números anteriores, en la hemeroteca (campo «hemeroteca»).
 - Para resumir lo que se habló en un periodo («hoy», «ayer», «esta semana»), usa leer_periodo, que \
 da todos los mensajes de esas fechas, y no buscar_mensajes, que solo da los más parecidos a una consulta. \
 Agrupa el resumen por temas, con el enlace de los mensajes clave. Si leer_periodo avisa de que hay más \
@@ -170,8 +177,10 @@ https://diarioiaeducativa.github.io/ca/): cada mañana a las 7:00 publicas en el
 grupos el aviso del número del día. El diario, una idea de Raül Torres, recoge lo que se ha compartido y \
 debatido el día anterior en ChatGPT-IA-edu, Vibe Coding Educativo y EduMedia-IAG, pensado también para quien \
 no está en ellos, e incluye la viñeta de Tiza y Algoritmo (en catalán, Guix i Algorisme). Lo escribe cada noche una redacción de agentes de \
-IA; el aviso te llega ya redactado y tú solo lo publicas. No has leído el diario: para saber qué trae un \
-número, remite a la web, y para lo que se ha dicho de él, busca en los grupos. No hay boletín por correo: \
+IA; el aviso te llega ya redactado y tú solo lo publicas. Lo publicado lo buscas con buscar_diario, al día \
+cada mañana en cuanto sale el número; lo que se ha dicho del diario, búscalo en los grupos. Todos los números, \
+desde el primero, están en la hemeroteca: https://diarioiaeducativa.github.io/archivo.html (en catalán, \
+https://diarioiaeducativa.github.io/ca/archivo.html). No hay boletín por correo: \
 cada mañana el número del día se publica en los tres grupos. Quien no esté en ellos puede seguirlo por RSS con \
 cualquier lector de noticias: https://diarioiaeducativa.github.io/feed.xml (en catalán, \
 https://diarioiaeducativa.github.io/ca/feed.xml). No remitas a nadie las dudas sobre el diario; si no sabes \
@@ -370,6 +379,15 @@ HERRAMIENTAS = [
          "desde": {"type": "string", "description": "AAAA-MM-DD"},
          "hasta": {"type": "string", "description": "AAAA-MM-DD"}},
          "required": ["consulta"]}},
+    {"name": "buscar_diario",
+     "description": "Busca en lo publicado por el Diario de IA Educativa (piezas, breves y reportajes) por su "
+                    "significado y sus palabras. Devuelve número, día en que salió, sección, titular, entradilla, "
+                    "texto, el mensaje original del grupo («mensaje», el que se cita primero), sus fuentes y el "
+                    "enlace de la pieza («enlace»; en catalán, «enlace_ca»), además del último número y la hemeroteca.",
+     "input_schema": {"type": "object", "properties": {
+         "consulta": {"type": "string", "description": "El tema, con naturalidad; sin ella, todo lo del número"},
+         "numero": {"type": "integer", "description": "Solo ese número del diario"},
+         "salio": {"type": "string", "description": "Solo el número que salió ese día, AAAA-MM-DD"}}}},
 ]
 
 
@@ -393,6 +411,8 @@ class Consultor:
         self.b = self.buscadores[grupos.con_biblioteca().clave]  # el de la Biblioteca digital
         self.repositorio = repositorio.Repositorio(modelo=modelo)  # ADR 0016
         self.repositorio.al_dia(esperar=False)  # que empiece a leer las fichas ya, no con la primera pregunta
+        self.diario = hemeroteca.Hemeroteca(modelo=modelo)  # ADR 0030
+        self.diario.al_dia()
         self.cliente = saldo.cliente(CLAVE)
 
     def mensajes(self, consulta, donde=None, autor_ids=None, desde=None, hasta=None, n=12) -> list[dict]:
@@ -460,6 +480,8 @@ class Consultor:
             return self.b.biblioteca(e["consulta"], e.get("desde"), e.get("hasta"))
         if nombre == "buscar_repositorio":
             return self.repositorio.buscar(e["consulta"])
+        if nombre == "buscar_diario":
+            return self.diario.buscar(e.get("consulta"), e.get("numero"), e.get("salio"))
         raise ValueError(f"herramienta desconocida: {nombre}")
 
     def donde(self, grupo: str | None) -> set[str] | None:
@@ -492,7 +514,8 @@ class Consultor:
             uso["llamadas"].append("ayuda_para_ensenar")
             modelo = MODELO_AYUDA
             sistema += AYUDA + f"\n- Escribe toda la respuesta en {IDIOMAS.get(lengua, 'castellano')}."
-            herramientas = [h for h in HERRAMIENTAS if h["name"] != "anadir_recurso"]
+            # Sin el diario: sus ideas se citan con el mensaje, el documento o la ficha de donde salen (ADR 0030)
+            herramientas = [h for h in HERRAMIENTAS if h["name"] not in ("anadir_recurso", "buscar_diario")]
         for _ in range(VUELTAS + 1):
             r = self.cliente.messages.create(
                 model=modelo, max_tokens=8000, system=en_cache(sistema), tools=herramientas,
