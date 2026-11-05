@@ -52,7 +52,7 @@ ES = {
         "solo uno o dos, nómbralos. Por ejemplo: "
         "«¿quién habló de evaluar con IA el curso pasado?», «¿hay guías sobre IA en infantil?», "
         "«¿hay alguna aplicación para practicar probabilidad?» o "
-        "«¿qué se ha dicho en Vibe Coding Educativo sobre publicar en GitHub Pages?». También puedes preguntar con una nota de voz o una captura."),
+        "«¿qué se ha dicho en Vibe Coding Educativo sobre publicar en GitHub Pages?». También puedes preguntar con una nota de voz o una captura. También te explico el MIAE y la guía Vibe coding responsable: en qué nivel del MIAE está un uso de la IA, qué licencia poner a una aplicación o cómo evaluarla con la VCER."),
     "ayuda_biblioteca": (
         "📄 Añadir un documento a la Biblioteca digital de ChatGPT-IA-edu. Envíame aquí el archivo en PDF "
         "(hasta 20 MB) y yo me encargo de todo: compruebo que trate de IA en educación y que no esté ya en "
@@ -286,7 +286,7 @@ CA = {
         "un o dos, anomena'ls. Per exemple: "
         "«qui va parlar d'avaluar amb IA el curs passat?», «hi ha guies sobre IA a infantil?», "
         "«hi ha alguna aplicació per practicar probabilitat?» o "
-        "«què s'ha dit a Vibe Coding Educativo sobre publicar a GitHub Pages?». També pots preguntar amb una nota de veu o una captura."),
+        "«què s'ha dit a Vibe Coding Educativo sobre publicar a GitHub Pages?». També pots preguntar amb una nota de veu o una captura. També t'explico el MIAE i la guia Vibe coding responsable: en quin nivell del MIAE és un ús de la IA, quina llicència posar a una aplicació o com avaluar-la amb la VCER."),
     "ayuda_biblioteca": (
         "📄 Afegir un document a la Biblioteca digital de ChatGPT-IA-edu. Envia'm aquí el fitxer en PDF "
         "(fins a 20 MB) i jo m'encarrego de tot: comprovo que tracti d'IA en educació i que no sigui ja a "
@@ -498,7 +498,7 @@ GL = {
         "ou dous, nómeaos. Por exemplo: "
         "«quen falou de avaliar con IA o curso pasado?», «hai guías sobre IA en infantil?», "
         "«hai algunha aplicación para practicar probabilidade?» ou "
-        "«que se dixo en Vibe Coding Educativo sobre publicar en GitHub Pages?». Tamén podes preguntar cunha nota de voz ou unha captura."),
+        "«que se dixo en Vibe Coding Educativo sobre publicar en GitHub Pages?». Tamén podes preguntar cunha nota de voz ou unha captura. Tamén che explico o MIAE e a guía Vibe coding responsable: en que nivel do MIAE está un uso da IA, que licenza poñerlle a unha aplicación ou como avaliala coa VCER."),
     "ayuda_biblioteca": (
         "📄 Engadir un documento á Biblioteca dixital de ChatGPT-IA-edu. Envíame aquí o ficheiro en PDF "
         "(ata 20 MB) e eu encárgome de todo: comprobo que trate de IA en educación e que non estea xa na "
@@ -710,7 +710,7 @@ EU = {
         "berean; bat edo bi bakarrik nahi badituzu, aipatu. "
         "Adibidez: «nork hitz egin zuen iaz IArekin ebaluatzeaz?», «ba al dago haur hezkuntzako IA gidarik?», "
         "«ba al dago probabilitatea lantzeko aplikaziorik?» "
-        "edo «zer esan da Vibe Coding Educativo taldean GitHub Pages-en argitaratzeaz?». Ahots-ohar batekin edo pantaila-argazki batekin ere galdetu dezakezu."),
+        "edo «zer esan da Vibe Coding Educativo taldean GitHub Pages-en argitaratzeaz?». Ahots-ohar batekin edo pantaila-argazki batekin ere galdetu dezakezu. MIAE eta Vibe coding responsable gida ere azaltzen dizkizut: IAren erabilera bat MIAEren zein mailatan dagoen, aplikazio bati zein lizentzia jarri edo nola ebaluatu VCERrekin."),
     "ayuda_biblioteca": (
         "📄 Dokumentu bat gehitu ChatGPT-IA-edu taldeko Liburutegi digitalera. Bidali hona PDF fitxategia "
         "(20 MB arte) eta nik egingo dut dena: egiaztatuko dut hezkuntzako IAri buruzkoa dela eta "
@@ -923,7 +923,7 @@ EN = {
         "topic, and I'll answer with a link to each one. I search all three groups at once; if you only want one "
         "or two, name them. For example: \"who talked about assessing with AI last school year?\", \"are there "
         "guides on AI in early years?\", \"is there an app to practise probability?\" or \"what has "
-        "been said in Vibe Coding Educativo about publishing on GitHub Pages?\" You can also ask with a voice note or a screenshot."),
+        "been said in Vibe Coding Educativo about publishing on GitHub Pages?\" You can also ask with a voice note or a screenshot. I can also explain the MIAE and the Vibe coding responsable guide: which MIAE level a use of AI falls into, which licence to give an app or how to evaluate it with the VCER."),
     "ayuda_biblioteca": (
         "📄 Add a document to the ChatGPT-IA-edu Digital Library. Send me the PDF file here (up to 20 MB) "
         "and I'll take care of everything: I check that it is about AI in education and not already in the "

@@ -6,7 +6,10 @@ y [EduMedia-IAG](https://t.me/EduMediaIAG) con preguntas en lenguaje natural: qu
 (con su enlace), qué documentos de la Biblioteca digital de ChatGPT-IA-edu
 tratan un tema y qué recursos hay en el repositorio de Vibe Coding Educativo
 (`scripts/repositorio.py`, ADR 0016) y qué ha publicado el [Diario de IA Educativa](https://diarioiaeducativa.github.io/)
-(`scripts/hemeroteca.py`, ADR 0030). Basta con ser miembro de uno de los grupos para buscar en
+(`scripts/hemeroteca.py`, ADR 0030). Explica además el [MIAE](https://jjdeharo.github.io/miae/) y la guía
+[Vibe coding responsable](https://vibe-coding-educativo.github.io/vibe-responsable/) con sus textos completos, en los
+cinco idiomas y con el enlace de cada apartado: en qué nivel está un uso de la IA, qué licencia poner, cómo
+evaluar con la VCER (`scripts/marcos.py`, ADR 0031). Basta con ser miembro de uno de los grupos para buscar en
 todos.
 También añade documentos a la biblioteca: el miembro le manda el PDF y el bot
 comprueba que encaje, hace su ficha y lo publica (`scripts/fichas.py`). Y
@@ -61,7 +64,9 @@ El porqué de cada decisión está en [docs/adr](docs/adr/).
 4. `scripts/bot.py` atiende en Telegram; cada pregunta la resuelve
    `scripts/consultar.py`: Claude Haiku 5.5 busca con las herramientas de
    `scripts/buscador.py` y responde con los enlaces.
-5. `scripts/karla.py` atiende a Karla bot; `scripts/documentacion.py` trocea por
+5. `scripts/marcos.py` descarga una vez al día el MIAE y la guía Vibe coding responsable de sus repositorios
+   de GitHub y los indexa por idiomas en `datos/marcos/` (ADR 0031).
+6. `scripts/karla.py` atiende a Karla bot; `scripts/documentacion.py` trocea por
    apartados la documentación de eXeLearning para que pueda buscar en ella.
 
 Cada vez que alguien publica algo con un bot, ese bot se lo cuenta a Juanjo
@@ -82,6 +87,7 @@ en Vibe Coding Educativo.
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 cd scripts
 ../.venv/bin/python exportar.py --todo && ../.venv/bin/python pdfs.py && ../.venv/bin/python indexar.py
+../.venv/bin/python marcos.py actualizar   # el MIAE y la guía Vibe coding responsable (ADR 0031)
 ../.venv/bin/python consultar.py "¿quién habló de evaluar con IA?"
 ../.venv/bin/python ../pruebas/extremo.py      # las 20 preguntas de prueba (unos 0,04 USD)
 cd .. && .venv/bin/python -m unittest pruebas/test_revision.py   # los controles de seguridad (ADR 0019), sin red ni API
@@ -124,6 +130,7 @@ Qué hay que rehacer y de dónde sale:
 | Código | este repositorio |
 | Mensajes, descripciones de las imágenes e índice (`datos/<grupo>/`) | Telegram: `exportar.py --todo`, `pdfs.py`, `imagenes.py` e `indexar.py` (en el portátil, unos 20 minutos VCE, 25 EduMedia-IAG y 45 ChatGPT-IA-edu) |
 | Modelo de significado | se descarga solo la primera vez (1,2 GB) |
+| El MIAE y la guía Vibe coding responsable (`datos/marcos/`) | sus repositorios de GitHub: `marcos.py actualizar --forzar` (en el portátil, unos 6 minutos) |
 | Dueños de los recursos, gasto de los dos bots y preguntas sin resolver (`catalogo.json`, `estado-bot.json`, `estado-karla.json`, `sin-resolver*.jsonl`, avisos, equipo y revisiones) | la copia diaria en IONOS: `respaldo/recuperar.sh` |
 | Credenciales | ver abajo |
 

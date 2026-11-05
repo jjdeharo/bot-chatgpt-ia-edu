@@ -34,6 +34,9 @@ while true; do
     # shellcheck disable=SC2086
     python documentacion.py vigilar $DOCS_FUENTES --dias 3 || true
   fi
+  # El MIAE y la guía Vibe coding responsable, de sus repositorios de GitHub: se descargan una vez al día y se
+  # reindexan solo si han cambiado (ADR 0031). Si falla, el bot sigue con la última copia.
+  python marcos.py actualizar || echo "marcos: con fallos; sigo con la última copia"
   date '+%F %T' > /proyecto/datos/ultimo-intento   # cada pasada, haya ido bien o mal
   if [ "$ok" -eq 1 ]; then
     date '+%F %T' > /proyecto/datos/ultima-pasada   # la última puesta al día completa: la que enseñan los bots

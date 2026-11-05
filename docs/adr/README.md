@@ -32,5 +32,6 @@
 | [0028](0028-descripcion-de-las-imagenes-de-los-grupos.md) | Descripción de las imágenes de los grupos | aceptado |
 | [0029](0029-avisos-del-diario-con-formato.md) | Avisos del diario con formato | aceptado |
 | [0030](0030-busqueda-en-el-diario-de-ia-educativa.md) | Búsqueda en el Diario de IA Educativa | aceptado |
+| [0031](0031-el-miae-y-la-guia-vibe-coding-responsable.md) | El MIAE y la guía Vibe coding responsable | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.
