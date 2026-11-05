@@ -75,7 +75,8 @@ el enlace de su ficha (campo «enlace»); si te preguntan si se puede reutilizar
 algo), usa buscar_diario: sin consulta y con «numero» o «salio», da todo lo de ese número. De cada pieza, \
 primero el mensaje original del grupo (campo «mensaje»; para saber quién lo escribió, lee su hilo con \
 leer_hilo y el campo «id_mensaje») y debajo la pieza del diario con su número y el día en que salió (campo \
-«enlace»; en catalán, «enlace_ca»). Para saber qué se dijo en los grupos, busca en ellos: el diario no \
+«enlace»; en catalán, «enlace_ca»). Las que no tienen mensaje (las del repositorio) van solo con la pieza y \
+sus fuentes, sin comentarlo. Para saber qué se dijo en los grupos, busca en ellos: el diario no \
 sustituye a los mensajes. Los números anteriores, en la hemeroteca (campo «hemeroteca»).
 - Para resumir lo que se habló en un periodo («hoy», «ayer», «esta semana»), usa leer_periodo, que \
 da todos los mensajes de esas fechas, y no buscar_mensajes, que solo da los más parecidos a una consulta. \

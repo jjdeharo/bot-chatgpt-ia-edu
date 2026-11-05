@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.8.1 — 2026-11-05
+
+- Las piezas del diario que no salen de un mensaje de los grupos (las del repositorio) se citan con la pieza y sus fuentes, sin decir que les falta el mensaje (ADR 0030).
+
 ## 1.8.0 — 2026-11-05
 
 - El bot busca en lo publicado por el Diario de IA Educativa, al día cada mañana en cuanto sale el número: dice qué trae un número o el de un día y si el diario ha contado algo, citando primero el mensaje original del grupo y debajo la pieza del diario (ADR 0030).
