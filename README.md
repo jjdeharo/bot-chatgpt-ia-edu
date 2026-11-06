@@ -66,7 +66,9 @@ El porqué de cada decisión está en [docs/adr](docs/adr/).
    `scripts/buscador.py` y responde con los enlaces.
 5. `scripts/marcos.py` descarga una vez al día el MIAE y la guía Vibe coding responsable de sus repositorios
    de GitHub y los indexa por idiomas en `datos/marcos/` (ADR 0031).
-6. `scripts/karla.py` atiende a Karla bot; `scripts/documentacion.py` trocea por
+6. `scripts/comunidades.py` cuenta una vez por semana cuántas personas hay en cada grupo y en varios a la vez,
+   solo las cifras, para el Diario de IA Educativa (`datos/comunidades/`, ADR 0032).
+7. `scripts/karla.py` atiende a Karla bot; `scripts/documentacion.py` trocea por
    apartados la documentación de eXeLearning para que pueda buscar en ella.
 
 Cada vez que alguien publica algo con un bot, ese bot se lo cuenta a Juanjo
@@ -130,6 +132,7 @@ Qué hay que rehacer y de dónde sale:
 | Código | este repositorio |
 | Mensajes, descripciones de las imágenes e índice (`datos/<grupo>/`) | Telegram: `exportar.py --todo`, `pdfs.py`, `imagenes.py` e `indexar.py` (en el portátil, unos 20 minutos VCE, 25 EduMedia-IAG y 45 ChatGPT-IA-edu) |
 | Modelo de significado | se descarga solo la primera vez (1,2 GB) |
+| Cifras de los grupos para el diario (`datos/comunidades/`) | Telegram: `comunidades.py --ya` (un minuto); las publicadas, también en el repositorio del diario |
 | El MIAE y la guía Vibe coding responsable (`datos/marcos/`) | sus repositorios de GitHub: `marcos.py actualizar --forzar` (en el portátil, unos 6 minutos) |
 | Dueños de los recursos, gasto de los dos bots y preguntas sin resolver (`catalogo.json`, `estado-bot.json`, `estado-karla.json`, `sin-resolver*.jsonl`, avisos, equipo y revisiones) | la copia diaria en IONOS: `respaldo/recuperar.sh` |
 | Credenciales | ver abajo |
