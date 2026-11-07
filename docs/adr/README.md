@@ -34,5 +34,6 @@
 | [0030](0030-busqueda-en-el-diario-de-ia-educativa.md) | Búsqueda en el Diario de IA Educativa | aceptado |
 | [0031](0031-el-miae-y-la-guia-vibe-coding-responsable.md) | El MIAE y la guía Vibe coding responsable | aceptado |
 | [0032](0032-cifras-de-los-grupos-para-el-diario.md) | Cifras de los grupos para el diario | aceptado |
+| [0033](0033-antispam-de-los-grupos.md) | Antispam de los grupos, sin IA | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

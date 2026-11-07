@@ -46,6 +46,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import antispam
 import catalogo
 import resumen_semanal
 import diario_grupos
@@ -76,7 +77,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.9.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.10.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -625,6 +626,7 @@ class Bot:
         self.ambitos = {}      # usuario -> (momento, grupos en que busca o None si todos); caduca con la conversación
         self.valorables = {}   # usuario -> su última respuesta, la única con 👍/👎
         self.al_grupo = {}     # usuario -> la pregunta que puede llevar al grupo (ADR 0023)
+        self.antispam = antispam.Antispam(self.tg, self.token, JUANJO, registrar, grupos.ACTIVOS.values())  # ADR 0033
 
     def grupos_de(self, uid: int, al_dia: bool = False) -> set[str]:
         """Los grupos de los que es miembro. Con uno basta para buscar en todos (Juanjo, 27-10-2026);
@@ -1277,6 +1279,8 @@ class Bot:
                 if not grupos.conocido(chat):
                     self.tg("leaveChat", chat_id=chat)
                 return
+            if self.antispam.revisar(msg):  # spam de alguien nuevo: borrado y expulsado (ADR 0033)
+                return
             # En los grupos no busca nunca: a quien le escribe le indica el privado (Juanjo, 24-10-2026).
             if self.respuesta_a_pregunta(msg):  # responde a una pregunta que llevó el bot (ADR 0023)
                 return
@@ -1524,6 +1528,8 @@ class Bot:
         if accion.startswith("val:"):
             return self.valorar(cq)
         self.tg("answerCallbackQuery", callback_query_id=cq["id"])
+        if self.antispam.deshacer(cq):  # «Deshacer» una expulsión por spam (ADR 0033)
+            return
         m = cq.get("message") or {}
         if accion.startswith(("pg:", "pgp:", "pgx:", "pgq:")):  # preguntar en el grupo (ADR 0023)
             return self.pregunta_grupo(uid, accion, m, cq["from"])
@@ -2445,8 +2451,10 @@ class Bot:
                         self.atender(u["message"])
                     elif "callback_query" in u:
                         self.boton(u["callback_query"])
-                    elif "chat_member" in u and self.cambia_cargo(u["chat_member"]):
-                        self.actualizar_administradores()
+                    elif "chat_member" in u:
+                        self.antispam.entrada(u["chat_member"])  # quien entra con nombre de spam (ADR 0033)
+                        if self.cambia_cargo(u["chat_member"]):
+                            self.actualizar_administradores()
                 except Exception as error:  # noqa: BLE001 — un mensaje raro no tumba el bot (como en Karla)
                     registrar(f"error al atender: {type(error).__name__}: {error}")
 

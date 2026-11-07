@@ -33,6 +33,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 os.environ.setdefault("GRUPOS", "exelearning")  # antes de importar grupos: Karla solo mira este grupo
+import antispam  # noqa: E402
 import bot  # noqa: E402
 import buscador  # noqa: E402
 import consultar  # noqa: E402
@@ -518,6 +519,7 @@ class Karla(bot.Bot):
         self.borradores = {}  # usuario -> incidencia a la espera de que la envíe o no
         self.valorables = {}  # usuario -> su última respuesta, la única con 👍/👎
         self.al_grupo = {}  # usuario -> la pregunta que puede llevar al grupo (ADR 0023)
+        self.antispam = antispam.Antispam(self.tg, self.token, bot.JUANJO, bot.registrar, [GRUPO])  # ADR 0033
 
     CONTEXTO_TEMAS = ("El bot es Karla bot, que responde dudas sobre eXeLearning (programa libre para crear recursos "
                       "educativos) a los miembros del grupo de Telegram eXeLearning. Busca en el manual de usuario, en "
@@ -634,6 +636,8 @@ class Karla(bot.Bot):
         if accion.startswith("val:"):
             return self.valorar(cq)
         self.tg("answerCallbackQuery", callback_query_id=cq["id"])
+        if self.antispam.deshacer(cq):  # «Deshacer» una expulsión por spam (ADR 0033)
+            return
         if accion.startswith(("pg:", "pgp:", "pgx:", "pgq:")):  # preguntar en el grupo (ADR 0023)
             return self.pregunta_grupo(uid, accion, m, cq["from"])
         if accion.startswith("eq:") and uid == bot.JUANJO:
@@ -806,6 +810,8 @@ class Karla(bot.Bot):
         if not privado:
             if chat != GRUPO.id:
                 self.tg("leaveChat", chat_id=chat)  # solo está en el grupo eXeLearning
+            elif self.antispam.revisar(msg):  # spam de alguien nuevo: borrado y expulsado (ADR 0033)
+                pass
             elif msg.get("pinned_message"):
                 self.actualizar_entorno()
             elif self.respuesta_a_pregunta(msg):  # responde a una pregunta que llevó Karla (ADR 0023)
@@ -951,8 +957,10 @@ class Karla(bot.Bot):
                         self.atender(u["message"])
                     elif "callback_query" in u:
                         self.boton_karla(u["callback_query"])
-                    elif "chat_member" in u and self.cambia_cargo(u["chat_member"]):
-                        self.actualizar_entorno()
+                    elif "chat_member" in u:
+                        self.antispam.entrada(u["chat_member"])  # quien entra con nombre de spam (ADR 0033)
+                        if self.cambia_cargo(u["chat_member"]):
+                            self.actualizar_entorno()
                     elif (u.get("edited_message") or {}).get("message_id") == getattr(self, "fijado_id", None) \
                             and u["edited_message"]["chat"]["id"] == GRUPO.id:
                         self.actualizar_entorno()  # han cambiado el mensaje fijado

@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.10.0 — 2026-11-07
+
+- Antispam en los grupos, sin IA: el Bot de IA Educativa y Karla bot borran y expulsan a quien, sin haber escrito nunca en el grupo, escribe en chino, japonés, coreano o cirílico, menciona varios bots o manda una ráfaga de mensajes, y a quien entra con el nombre en esas escrituras. Cada expulsión llega a Juanjo por privado con un botón «Deshacer» (ADR 0033).
+
 ## 1.9.1 — 2026-11-07
 
 - Cada grupo recibe el aviso del Diario de IA Educativa con su propia imagen de vista previa: si el aviso trae el enlace de la página de entrada de su grupo, el bot lo usa en lugar del general (ADR 0029).

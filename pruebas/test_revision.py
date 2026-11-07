@@ -21,6 +21,7 @@ from unittest import mock
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI.parent / "scripts"))
+import antispam  # noqa: E402
 import bot  # noqa: E402
 import catalogo  # noqa: E402
 import consultar  # noqa: E402
@@ -40,6 +41,7 @@ def bot_sin_arrancar(clase=bot.Bot):
     b.llamadas, b.enviados = [], []
     b.tg = lambda metodo, **k: (b.llamadas.append((metodo, k)), {"message_id": 99})[1]
     b.enviar = lambda chat, texto, formato=None: b.enviados.append(texto)
+    b.antispam = antispam.Antispam(b.tg, "token", 0, lambda t: None, [])  # sin grupos: no actúa (ADR 0033)
     return b
 
 
