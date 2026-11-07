@@ -77,7 +77,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.10.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.11.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -100,6 +100,15 @@ SOLO_URL = re.compile(r"^\s*(https?://\S+)\s*$")
 # Un enlace a un mensaje de Telegram no es un recurso para el repositorio: es una pregunta sobre ese mensaje (ADR 0020).
 ENLACE_TELEGRAM = re.compile(r"^https?://(t\.me|telegram\.me|telegram\.dog)/", re.I)
 LARGO_PREGUNTA = 6000  # caracteres de la pregunta que lee Claude: un reenvío de varios mensajes cabe (antes, 1.000)
+LARGO_CITADO = 2000  # caracteres del mensaje citado que van delante de la pregunta, en privado (ADR 0034)
+
+
+def citado_trozo(texto: str, entidad: dict) -> str:
+    """El texto de una entidad de Telegram: sus posiciones cuentan en UTF-16, no en caracteres."""
+    b = texto.encode("utf-16-le")
+    return b[2 * entidad["offset"]:2 * (entidad["offset"] + entidad["length"])].decode("utf-16-le", "ignore")
+
+
 VOZ_URL = os.environ.get("VOZ_URL", "").rstrip("/")  # el servicio de voz (scripts/voz.py, ADR 0022); sin él, no hay audios
 VOZ_MAX_S = int(os.environ.get("VOZ_MAX_S", "180"))
 NOTA_AUDIO = "[Transcrito de una nota de voz: puede llevar erratas]"
@@ -1106,6 +1115,22 @@ class Bot:
         sin que Claude ni la persona lo supieran (informe del 01-11-2026)."""
         return texto if len(texto) <= largo else texto[:largo] + NOTA_RECORTE
 
+    def con_citado(self, msg: dict, texto: str) -> str:
+        """En privado, si se responde citando un mensaje, ese mensaje va delante de la pregunta, con los
+        enlaces que lleva escondidos en el texto: así el bot sabe de qué le hablan, también de los avisos que
+        otros programas mandan con su nombre (comentarios del diario, ADR 0034)."""
+        r = msg.get("reply_to_message") or {}
+        citado = (r.get("text") or r.get("caption") or "").strip()
+        if not citado:
+            return texto
+        enlaces = [f"{citado_trozo(citado, x)}: {x['url']}" for x in (r.get("entities") or r.get("caption_entities") or [])
+                   if x.get("type") == "text_link" and x.get("url")]
+        de = r.get("from") or {}
+        quien = "un mensaje tuyo" if de.get("id") == self.id else "un mensaje suyo" if de.get("id") == msg["from"]["id"] else "un mensaje"
+        citado = citado if len(citado) <= LARGO_CITADO else citado[:LARGO_CITADO] + "…"
+        return (f"[Responde citando {quien}: «{citado}»" + (f" Enlaces del mensaje: {'; '.join(enlaces)}" if enlaces else "")
+                + f"]\n\n{texto}")
+
     def pregunta(self, texto: str, fotos: list[str], largo: int = LARGO_PREGUNTA):
         """Lo que se manda a Claude: el texto o, si hay fotos, las imágenes delante y el texto detrás,
         como recomienda Anthropic."""
@@ -1360,7 +1385,8 @@ class Bot:
             historial = []
         hecho = self.escribiendo(chat)
         try:
-            r = self.consultor.responder(self.pregunta(f"{NOTA_AUDIO}\n{texto}" if msg.get("voz") else texto, fotos),
+            r = self.consultor.responder(self.pregunta(self.con_citado(msg, f"{NOTA_AUDIO}\n{texto}" if msg.get("voz") else texto),
+                                                       fotos, LARGO_PREGUNTA + LARGO_CITADO),
                                          historial[-2 * INTERCAMBIOS:], self.ambito(uid), self.lenguas.get(uid, "es"))
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             registrar(f"error: {type(error).__name__}: {error}")

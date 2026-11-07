@@ -2,6 +2,11 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.11.0 — 2026-11-07
+
+- En privado, el bot lee el mensaje al que se responde citándolo, con sus enlaces, y responde sobre él: también sobre los avisos que otros programas mandan en su nombre (ADR 0034).
+- El bot sabe de los comentarios del Diario de IA Educativa: cómo se comenta, se responde o se borra un comentario, y que avisa de cada comentario nuevo a Juanjo de Haro y a Raül Torres (ADR 0034).
+
 ## 1.10.0 — 2026-11-07
 
 - Antispam en los grupos, sin IA: el Bot de IA Educativa y Karla bot borran y expulsan a quien, sin haber escrito nunca en el grupo, escribe en chino, japonés, coreano o cirílico, menciona varios bots o manda una ráfaga de mensajes, y a quien entra con el nombre en esas escrituras. Cada expulsión llega a Juanjo por privado con un botón «Deshacer» (ADR 0033).

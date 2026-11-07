@@ -8,7 +8,6 @@ Sin red y sin Telegram: las llamadas se apuntan en una lista.
 import json
 import sys
 import tempfile
-import time
 import unittest
 from pathlib import Path
 
