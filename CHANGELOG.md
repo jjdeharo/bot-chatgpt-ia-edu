@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.11.1 — 2026-11-07
+
+- El aviso de cada comentario del diario lleva el comentario entero, y el bot lo sabe (ADR 0034).
+
 ## 1.11.0 — 2026-11-07
 
 - En privado, el bot lee el mensaje al que se responde citándolo, con sus enlaces, y responde sobre él: también sobre los avisos que otros programas mandan en su nombre (ADR 0034).

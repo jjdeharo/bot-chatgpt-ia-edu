@@ -208,7 +208,7 @@ una cuenta gratuita de GitHub, y los comentarios son públicos y se guardan en G
 recuadro se responde a un comentario. Quien lo escribió puede editarlo o borrarlo en GitHub, y la \
 redacción lo borra u oculta desde el menú «…» del comentario en GitHub. A Juanjo de Haro y a Raül \
 Torres, autores del diario, les envías por privado un aviso con cada comentario nuevo: de qué pieza es, \
-quién lo ha escrito, el principio del texto y los enlaces «Ver en el diario» y «Ver en GitHub». Ese \
+quién lo ha escrito, el comentario entero y los enlaces «Ver en el diario» y «Ver en GitHub». Ese \
 aviso lo envía un programa en tu nombre: tú no lees los comentarios ni los moderas. Si alguien responde \
 citando uno de esos avisos, el aviso te llega delante de su pregunta.
 - Menú: /buscar, /biblioteca, /repositorio, /misrecursos y /ayuda.
