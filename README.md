@@ -66,7 +66,7 @@ El porqué de cada decisión está en [docs/adr](docs/adr/).
    `scripts/buscador.py` y responde con los enlaces.
 5. `scripts/marcos.py` descarga una vez al día el MIAE y la guía Vibe coding responsable de sus repositorios
    de GitHub y los indexa por idiomas en `datos/marcos/` (ADR 0031).
-6. `scripts/comunidades.py` cuenta una vez por semana cuántas personas hay en cada grupo y en varios a la vez,
+6. `scripts/comunidades.py` cuenta cada día cuántas personas hay en cada grupo y en varios a la vez,
    solo las cifras, para el Diario de IA Educativa (`datos/comunidades/`, ADR 0032).
 7. `scripts/karla.py` atiende a Karla bot; `scripts/documentacion.py` trocea por
    apartados la documentación de eXeLearning para que pueda buscar en ella.

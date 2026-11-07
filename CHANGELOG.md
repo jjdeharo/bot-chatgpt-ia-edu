@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.11.2 — 2026-11-07
+
+- El bot cuenta cada día, y no cada semana, cuántas personas hay en cada grupo para el Diario de IA Educativa; si pasan dos días sin cifras, avisa (ADR 0032).
+
 ## 1.11.1 — 2026-11-07
 
 - El aviso de cada comentario del diario lleva el comentario entero, y el bot lo sabe (ADR 0034).

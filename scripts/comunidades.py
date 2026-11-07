@@ -10,11 +10,11 @@ protocolo completo de Telegram (Telethon), sin recibir sus mensajes, que siguen 
 Cruza los identificadores y guarda solo las cifras, sin bots ni cuentas borradas: ningún nombre ni
 identificador sale de la memoria del programa.
 
-    python comunidades.py            si las últimas cifras tienen una semana, las rehace (lo normal)
+    python comunidades.py            si las últimas cifras no son de hoy, las rehace (lo normal)
     python comunidades.py --ya       las rehace ahora
 
 Deja datos/comunidades/AAAA-MM-DD.json, que el diario copia a su repositorio al publicar. Si falla,
-lo reintenta seis horas después; si pasan nueve días sin cifras nuevas, avisa a Juanjo una vez al día.
+lo reintenta seis horas después; si pasan dos días sin cifras nuevas, avisa a Juanjo una vez al día.
 """
 import asyncio
 import datetime
@@ -32,9 +32,9 @@ import grupos
 
 CARPETA = grupos.DATOS / "comunidades"
 CLAVES = ("chatgpt", "vce", "edumedia")   # los del bot; eXeLearning es de Karla bot y no sale en el diario
-CADA = 7          # días entre recuentos
+CADA = 1          # días entre recuentos (cada día desde el 07-11-2026; antes, cada semana)
 REINTENTO = 6     # horas entre intentos fallidos
-AVISO = 9         # días sin cifras nuevas antes de avisar
+AVISO = 2         # días sin cifras nuevas antes de avisar
 CRED = Path(os.environ.get("TG_CRED", Path.home() / ".config/credenciales/telegram-cuenta.json"))
 BOT_CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-chatgpt-ia-edu.json"))
 
@@ -104,7 +104,7 @@ def main() -> int:
     except Exception as error:  # noqa: BLE001 — se reintenta más tarde; el diario sigue con las últimas
         print(f"comunidades: no he podido contar ({type(error).__name__}: {error})")
         if not u or (hoy - u).days >= AVISO:
-            avisar("Aviso del Bot de IA Educativa: hace más de nueve días que no consigo contar los miembros de los "
+            avisar("Aviso del Bot de IA Educativa: hace más de dos días que no consigo contar los miembros de los "
                    f"grupos para el diario ({type(error).__name__}). El diario sigue con las cifras del {u or 'principio'}.")
         return 1
     tmp = CARPETA / f"{datos['fecha']}.tmp"

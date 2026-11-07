@@ -22,8 +22,10 @@ por grupo; el mayor tiene unos 4.000.
 - Baja las tres listas, quita bots y cuentas borradas, cruza los identificadores y guarda solo las cifras
   en `datos/comunidades/AAAA-MM-DD.json`: miembros por grupo, las siete zonas y el total. Ningún nombre ni
   identificador se escribe en disco.
-- Una vez por semana, desde `nas/bucle.sh` (el reloj del índice). Si falla, lo reintenta a las seis horas;
-  si pasan nueve días sin cifras nuevas, avisa a Juanjo por el bot, una vez al día. Si Telegram da menos
+- Una vez al día, en la primera pasada de `nas/bucle.sh` (el reloj del índice) tras la medianoche, antes de
+  que el diario publique a las 6:50: cada número sale con las cifras de su día (Juanjo lo pidió el 07-11-2026;
+  hasta entonces, una vez por semana). Si falla, lo reintenta a las seis horas; si pasan dos días sin cifras
+  nuevas, avisa a Juanjo por el bot, una vez al día. Si Telegram da menos
   miembros de los que dice tener (el tope de 10.000), no guarda nada: las cifras dejarían de ser exactas.
 - El diario lee la carpeta desde su contenedor (`/bot-datos`, solo lectura), copia las cifras nuevas a su
   repositorio al publicar y las dibuja (su ADR 0029).
@@ -32,9 +34,9 @@ por grupo; el mayor tiene unos 4.000.
 
 Prueba del 06-11-2026 con el token del bot: 4.061 personas en ChatGPT-IA-edu (Telegram anunciaba 4.066
 miembros y dio 4.064), 1.827 en VCE y 787 en EduMedia-IAG; 5.210 distintas. Las zonas suman el total de
-cada grupo. La segunda vuelta, con cifras de menos de una semana, no hace nada.
+cada grupo. La segunda vuelta, con cifras del mismo día, no hace nada.
 
 ## Riesgos
 
 - Si un grupo pasa de 10.000 miembros, el recuento se para y avisa; habría que contar de otra forma.
-- Las cifras son las de un día de la semana: cambian a diario, y el diario dice de qué fecha son.
+- Las cifras son las de la madrugada del día: el diario dice de qué fecha son.
