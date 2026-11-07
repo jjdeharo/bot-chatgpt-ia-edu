@@ -34,6 +34,12 @@ lo vio «muy simplón» (04-11-2026) y aceptó la propuesta de darle formato y u
 - Bot API, `LinkPreviewOptions`: `prefer_large_media` solo vale si se da `url` de forma explícita,
   por eso el bot la pasa siempre. https://core.telegram.org/bots/api#linkpreviewoptions
 
+- **Un enlace por grupo** (07-11-2026, versión 1.9.1): cada aviso puede traer su `url`, la página de
+  entrada de su grupo en el diario (`n/<número>-<grupo>.html`), que solo lleva la imagen de ese grupo
+  y redirige a la portada del número; si no la trae, vale la de la cabecera. Así Telegram enseña en
+  cada grupo la imagen de una pieza suya (Juanjo: «yo pensaba que cada una tenía la suya»; eligió que
+  la página lleve a la portada). La decisión de qué imagen va en cada grupo es del diario (su ADR 0010).
+
 ## Riesgos y limitaciones
 
 - El tamaño de la vista previa lo decide al final el cliente de Telegram.

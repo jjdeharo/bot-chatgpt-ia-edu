@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.9.1 — 2026-11-07
+
+- Cada grupo recibe el aviso del Diario de IA Educativa con su propia imagen de vista previa: si el aviso trae el enlace de la página de entrada de su grupo, el bot lo usa en lugar del general (ADR 0029).
+
 ## 1.9.0 — 2026-11-05
 
 - El Bot de IA Educativa explica el MIAE y la guía Vibe coding responsable con sus textos completos, al día y en los cinco idiomas: en qué nivel del MIAE está un uso de la IA (y qué le falta saber para decirlo), cómo declararlo, qué pide cada recomendación de la guía, qué licencia poner o cómo evaluar con la VCER, con el enlace de la página de cada apartado. En la ayuda para enseñar también los usa, revisados y citados como el resto de fuentes (ADR 0031).

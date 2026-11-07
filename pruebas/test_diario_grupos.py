@@ -55,6 +55,16 @@ class Diario(unittest.TestCase):
         self.assertEqual(m["link_preview_options"], {"url": "https://diarioiaeducativa.github.io/?n=4",
                                                      "prefer_large_media": True, "show_above_text": True})
 
+    def test_enlace_propio_de_cada_grupo(self):
+        (self.tmp / "2026-11-08.json").write_text(json.dumps({
+            "fecha": "2026-11-08", "titulo": "Diario de IA Educativa · Núm. 7", "url": "https://diarioiaeducativa.github.io/?n=7",
+            "avisos": {"chatgpt": {"saludo": "Hola.", "puntos": ["Uno"]},
+                       "vce": {"saludo": "Hola.", "puntos": ["Dos"], "url": "https://diarioiaeducativa.github.io/n/7-vce.html"}}}))
+        _, lista = d.pendientes(datetime(2026, 11, 8, 6, 0, tzinfo=timezone.utc), carpeta=self.tmp)
+        self.assertEqual(lista["chatgpt"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/?n=7")
+        self.assertEqual(lista["vce"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/n/7-vce.html")
+        self.assertTrue(lista["vce"]["text"].endswith("👉 https://diarioiaeducativa.github.io/n/7-vce.html"))
+
     def test_sin_cabecera_sale_igual(self):
         (self.tmp / "2026-11-05.json").write_text(json.dumps(
             {"fecha": "2026-11-05", "avisos": {"vce": {"saludo": "Buenos días.", "puntos": ["Uno", "Dos"]}}}))

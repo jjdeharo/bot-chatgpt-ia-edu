@@ -7,7 +7,8 @@ con la vista previa del enlace (la portada del diario). Sin IA: el texto llega h
 
 Desde el 04-11-2026 (ADR 0029) cada aviso trae su saludo y dos o tres puntos, y el archivo, la
 cabecera del número: {"fecha", "titulo", "fecha_texto", "url", "avisos": {"chatgpt": {"saludo":
-"…", "puntos": ["…"]}, …}}. El bot monta el mensaje: el número en negrita, la fecha, el saludo,
+"…", "puntos": ["…"], "url": "…"}, …}}. Desde el 07-11-2026 cada aviso puede traer su propio
+enlace (la página de entrada de su grupo, con su imagen); si no, vale el de la cabecera. El bot monta el mensaje: el número en negrita, la fecha, el saludo,
 los puntos con su marca y el enlace, con la imagen del número grande y encima del texto. Un aviso
 que sea solo texto (el formato anterior) se publica tal cual.
 
@@ -40,7 +41,7 @@ def mensaje(datos: dict, aviso) -> dict | None:
         return None
     puntos = [p.strip() for p in aviso.get("puntos") or [] if isinstance(p, str) and p.strip()]
     saludo = (aviso.get("saludo") or "").strip()
-    url = (datos.get("url") or "").strip() or PORTADA
+    url = (aviso.get("url") or datos.get("url") or "").strip() or PORTADA   # el de su grupo, si lo trae
     if not puntos:
         return None
     e = lambda t: html.escape(t, quote=False)  # noqa: E731
