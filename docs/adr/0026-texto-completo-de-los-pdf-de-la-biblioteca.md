@@ -16,7 +16,11 @@ cuatro primeras páginas (`pdfs.py`), y lo borraba después.
   `pdfs.py` guarda además el texto entero en `datos/<grupo>/pdf-completo/<id>.txt`, hasta
   400.000 caracteres. El PDF se sigue borrando.
 - No se indexa: el buscador sigue con las cuatro primeras páginas, como hasta ahora.
-- No se recupera lo anterior a octubre, para no volver a descargar toda la biblioteca.
+- Lo anterior a octubre se recupera poco a poco (desde el 08-11-2026): dos PDF por pasada de 15
+  minutos, los más recientes primero (`ATRASADOS_POR_PASADA`), sin descargar toda la biblioteca de
+  golpe. Hace falta para las piezas de reserva «Del fondo de la biblioteca» del diario (su ADR
+  0021): en la primera prueba, el documentalista no pudo leer enteros los tres candidatos de
+  septiembre y no hubo artículo.
 
 ## Consecuencias
 

@@ -25,6 +25,10 @@ PAGINAS = 4
 MAXIMO = 60 * 1024 * 1024  # bytes: lo que pase de aquí no se descarga
 COMPLETO_DESDE = "2026-10-01"   # texto entero solo de lo nuevo: no se descarga otra vez toda la biblioteca
 COMPLETO_MAX = 400_000          # caracteres del texto entero (un libro de unas 250 páginas)
+# Lo anterior a COMPLETO_DESDE se recupera poco a poco, los más recientes primero: el diario escribe
+# con ellos sus piezas de reserva «Del fondo de la biblioteca» (su ADR 0021). Dos por pasada de 15
+# minutos, para no descargar toda la biblioteca de golpe (ADR 0026).
+ATRASADOS_POR_PASADA = 2
 
 
 def limpiar(t: str) -> str:
@@ -50,9 +54,12 @@ async def textos(g: grupos.Grupo):
             return True
         return m.get("fecha", "") >= COMPLETO_DESDE and not (completo / f"{m['id']}.txt").exists()
 
-    pendientes = [m for m in ms.values()
-                  if m["tema"] == g.biblioteca and m.get("mime") == "application/pdf"
-                  and falta(m) and (m.get("tamano") or 0) <= MAXIMO]
+    pdfs = [m for m in ms.values()
+            if m["tema"] == g.biblioteca and m.get("mime") == "application/pdf" and (m.get("tamano") or 0) <= MAXIMO]
+    pendientes = [m for m in pdfs if falta(m)]
+    atrasados = sorted((m for m in pdfs if m not in pendientes and not (completo / f"{m['id']}.txt").exists()),
+                       key=lambda m: m.get("fecha", ""), reverse=True)
+    pendientes += atrasados[:ATRASADOS_POR_PASADA]
     if not pendientes:
         print(f"{g.clave} pdf: nada nuevo")
         return
@@ -70,7 +77,7 @@ async def textos(g: grupos.Grupo):
                 r = subprocess.run(["pdftotext", "-l", str(PAGINAS), "-enc", "UTF-8", str(ruta), "-"],
                                    capture_output=True, text=True)
                 (salida / f"{m['id']}.txt").write_text(limpiar(r.stdout))
-                if m.get("fecha", "") >= COMPLETO_DESDE:
+                if True:   # el texto entero, también de lo anterior a COMPLETO_DESDE (poco a poco)
                     entero = subprocess.run(["pdftotext", "-enc", "UTF-8", str(ruta), "-"], capture_output=True, text=True)
                     (completo / f"{m['id']}.txt").write_text(entero.stdout[:COMPLETO_MAX])
                 ruta.unlink(missing_ok=True)
