@@ -190,5 +190,5 @@ Cada versión lleva su etiqueta en git (`v1.0.0`, …) y su entrada en [CHANGELO
 
 ## Licencia
 
-Código: AGPL-3.0-or-later. Imágenes de los bots (`imagen/avatar.jpg` y, de Karla bot, `docs/imagenes/karla-avatar.jpg`): CC BY-SA 4.0. Hecho por Juan José de Haro con IA
+Código: AGPL-3.0-or-later. Imágenes de los bots (`imagen/avatar.jpg`, con su original editable `imagen/avatar.svg`, y, de Karla bot, `docs/imagenes/karla-avatar.jpg`): CC BY-SA 4.0. Hecho por Juan José de Haro con IA
 ([nivel 4 del MIAE](https://jjdeharo.github.io/miae/?nivel=4)).
