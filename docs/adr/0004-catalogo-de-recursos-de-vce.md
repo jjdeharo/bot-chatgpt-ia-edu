@@ -31,6 +31,14 @@ de su grupo.
    hace el recurso (un GPT, un Gem, una página que solo carga otra), pide el
    archivo HTML, un ZIP, el repositorio de GitHub o una explicación. Con un
    repositorio de GitHub lee el README y los archivos principales.
+   Con una página de Google Sites lee su texto visible, el código de cada
+   bloque «Insertar código» (va entero en la propia página, en el atributo
+   `data-code`) y la web de cada bloque «Insertar URL», sin seguir una
+   segunda página de Sites. Antes recibía la página en bruto, cortada a los
+   80 000 caracteres que lee Claude, y el código de carga de Google ocupa los
+   primeros 95 000: una app de un miembro no entró ni con la licencia
+   puesta (10-11-2026). Si un código insertado pasa de ese límite, se queda
+   con el principio y el final, donde van la línea SPDX y el pie.
 2. **Claude Sonnet 5.5 prepara la ficha** con las listas cerradas del
    formulario (tipo, niveles, áreas e idiomas), en castellano, la lengua del
    catálogo, aunque el bot hable con cada persona en su idioma (ADR 0005).
@@ -224,6 +232,14 @@ de su grupo.
   publicado con su enlace anterior y su autor puede comentarlo en el grupo.
 
 ## Validación
+
+10-11-2026 (Google Sites):
+- «Pentagrama Maestro», una app publicada en Google Sites:
+  antes, «solo se ha recibido el código de carga de Google Sites»; ahora le
+  llegan los 51 000 caracteres de su código y la ficha sale completa, con la
+  licencia, por 0,06 USD. `pruebas/test_google_sites.py` comprueba el código
+  insertado tras el de carga, el dominio propio, la web insertada (una sola
+  vez, sin YouTube ni Drive), el código muy largo y la página vacía.
 
 30-10-2026 (punto 5c):
 - 29 recursos del repositorio tomados al azar, con la primera versión del

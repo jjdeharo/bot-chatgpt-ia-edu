@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.11.3 — 2026-11-10
+
+- El bot lee las aplicaciones publicadas en Google Sites: saca el código de cada bloque «Insertar código» de la página, con su licencia, y lee la web de cada bloque «Insertar URL». Antes solo le llegaba el código de carga de Google, que ocupa los primeros 95 000 caracteres de la página, y pedía el código aparte (ADR 0004).
+
 ## 1.11.2 — 2026-11-07
 
 - El bot cuenta cada día, y no cada semana, cuántas personas hay en cada grupo para el Diario de IA Educativa; si pasan dos días sin cifras, avisa (ADR 0032).

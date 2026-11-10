@@ -401,7 +401,57 @@ def repositorio_de_pagina(url: str) -> str | None:
     return f"https://github.com/{usuario}/{repo}"
 
 
-def leer_url(url: str) -> tuple[str, str | None]:
+def es_google_sites(url: str, texto: str) -> bool:
+    """Una página de Google Sites, también con dominio propio: sus bloques insertados se sirven desde atari-embeds."""
+    return bool(re.match(r"https?://sites\.google\.com/", url)) or "atari-embeds.googleusercontent.com" in texto
+
+
+def _sin_etiquetas(trozo: str) -> str:
+    trozo = re.sub(r"(?is)<(script|style|noscript)\b.*?</\1>", " ", trozo)
+    trozo = re.sub(r"(?s)<[^>]+>", " ", trozo)
+    return re.sub(r"\s+", " ", html.unescape(trozo)).strip()
+
+
+def de_google_sites(final: str, texto: str, profundidad: int = 0) -> str:
+    """Lo que hay de verdad en una página de Google Sites (10-11-2026). La página trae ~100 KB de
+    código de carga de Google antes del contenido, así que cortarla en bruto dejaba fuera la app. El código de un
+    bloque «Insertar código» va entero en su atributo data-code; un bloque «Insertar URL» lleva a otra web, que se
+    lee aparte (una sola vez: no se sigue una cadena de Sites)."""
+    partes = [f"Página de Google Sites {final}"]
+    titulo = re.search(r"(?is)<title>(.*?)</title>", texto)
+    if titulo:
+        partes.append(f"Título: {_sin_etiquetas(titulo.group(1))}")
+    cuerpo = re.search(r"(?is)<body\b.*", texto)
+    visible = _sin_etiquetas(cuerpo.group(0) if cuerpo else texto)
+    partes.append(f"Texto visible de la página:\n{visible[:6000]}")
+    codigos = [html.unescape(c) for c in re.findall(r'data-code="([^"]*)"', texto) if c.strip()]
+    for n, codigo in enumerate(codigos, 1):
+        if len(codigo) > MAX_CODIGO - 15_000:  # el principio y el final, donde van la línea SPDX y el pie con la licencia
+            codigo = codigo[:MAX_CODIGO - 20_000] + "\n[… parte central omitida …]\n" + codigo[-4000:]
+        partes.append(f"--- Código insertado en la página (bloque {n} de {len(codigos)}) ---\n{codigo}")
+    externos = []
+    for u in re.findall(r'(?:data-url|src)="(https?://[^"]+)"', texto):
+        u = html.unescape(u)
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(u).query).get("q") if re.match(r"https?://www\.google\.com/url", u) else None
+        u = q[0] if q else u
+        host = urllib.parse.urlsplit(u).hostname or ""
+        if (host.endswith(("googleusercontent.com", "gstatic.com", "googleapis.com")) or host in ("sites.google.com", "www.google.com")
+                or re.search(r"youtube\.com|youtu\.be|docs\.google\.com|drive\.google\.com|\.(png|jpe?g|gif|svg|webp|js|css)(\?|$)", u)):
+            continue
+        if u not in externos:
+            externos.append(u)
+    for u in externos[:3]:
+        if profundidad or sum(len(p) for p in partes) > MAX_CODIGO:
+            partes.append(f"Web insertada en la página (sin leer): {u}")
+            continue
+        leido, aviso = leer_url(u, profundidad + 1)
+        partes.append(f"--- Web insertada en la página: {u} ---\n{leido or aviso or ''}")
+    if not codigos and not externos:
+        partes.append("La página no tiene ningún bloque de código ni ninguna web insertada.")
+    return "\n\n".join(partes)[:MAX_CODIGO]
+
+
+def leer_url(url: str, profundidad: int = 0) -> tuple[str, str | None]:
     """(texto para Claude, aviso para la persona si el enlace no funciona para cualquiera)."""
     if not direccion_publica(url):
         return "", AVISO_NO_PUBLICA
@@ -417,6 +467,8 @@ def leer_url(url: str) -> tuple[str, str | None]:
     if re.search(r"accounts\.google\.com|login\.microsoftonline|/login|/signin", final):
         return "", "El enlace lleva a una página de inicio de sesión: tiene que poder abrirlo cualquiera."
     texto = contenido.decode("utf-8", "replace") if tipo.startswith("text") or not tipo else ""
+    if es_google_sites(final, texto):
+        return de_google_sites(final, texto, profundidad), None
     pagina = f"Página {final}\n\n{texto}"
     repo = repositorio_de_pagina(final)
     if repo:  # la licencia suele estar en el repositorio y no en la página
