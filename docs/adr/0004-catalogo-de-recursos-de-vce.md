@@ -183,6 +183,12 @@ de su grupo.
   proyecto en Google Cloud; Apps Script ya estaba en el catálogo, con `clasp`.
 - Identificar al dueño por el nombre que aparece en el recurso: cualquiera
   puede escribir cualquier nombre.
+- Avisar de nombres con derechos (descartado el 09-11-2026): avisar al autor
+  cuando el nombre de un recurso coincide con una marca o un programa conocido
+  y proponerle otro, sin impedir que se publique. La comprobación sería
+  costosa y poco fiable (decidir si un nombre infringe una marca exige
+  criterio jurídico) y aportaría poco: un título descriptivo apenas se
+  protege, y en una app educativa gratuita el riesgo es bajo.
 
 ## Consecuencias
 
