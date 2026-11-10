@@ -77,7 +77,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.11.3"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.12.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1579,7 +1579,7 @@ class Bot:
             return self.en_hilo(self.boton_recurso, uid, accion)
         if accion.startswith(("jc:", "jn:")) and uid == JUANJO:
             return self.en_hilo(self.revisar_aviso, accion)
-        if accion.startswith(("jrc:", "jrn:")) and uid == JUANJO:
+        if accion.startswith(("jrc:", "jrn:", "jrl:")) and uid == JUANJO:
             return self.en_hilo(self.revisar_rechazo, accion)
         if accion == "bm":
             return self.enviar(uid, self.tx(uid, "mantenido"))
@@ -1741,8 +1741,10 @@ class Bot:
                 contenido, _ = catalogo.leer_url(repositorio)
             if contenido is None:
                 contenido, aviso = catalogo.leer_url(url)
-                if aviso:
+                if aviso == catalogo.AVISO_NO_PUBLICA:
                     return self.enviar(chat, aviso)
+                if aviso:
+                    return self.no_lo_lee(chat, uid, de, url, aviso, aviso, nota)
             f, usd = self.recursos.analizar(url, contenido, nota)
         except Exception as error:  # noqa: BLE001 — un recurso fallido no tumba el bot
             registrar(f"error con un recurso: {type(error).__name__}: {error}")
@@ -1754,7 +1756,8 @@ class Bot:
                 self.apuntar(usd, recurso=uid)
         if not f["suficiente"]:
             self.espera[uid] = {"que": "detalle", "url": url, "contenido": contenido, "momento": time.time()}
-            return self.enviar(chat, self.tx(uid, "falta_info", motivo=f["motivo"].rstrip(".")))
+            return self.no_lo_lee(chat, uid, de, url, self.tx(uid, "falta_info", motivo=f["motivo"].rstrip(".")),
+                                  f["motivo"], nota)
         f["url"] = url
         aprobada = catalogo.leer_revisiones().get(catalogo.normalizar(url), {}).get("estado") == "aprobado"
         if not (f["es_recurso_educativo"] and f["nivel_minimo"]) and not aprobada:
@@ -1769,6 +1772,18 @@ class Bot:
                                                                "callback_data": "rr"}]]})
         registrar(f"recurso analizado: {usd:.4f} USD")
         self.seguir_alta(chat, uid, de, f, contenido, nota)
+
+    def no_lo_lee(self, chat: int, uid: int, de: dict, url: str, texto: str, motivo: str, nota: str) -> None:
+        """El bot no consigue leer el recurso: se lo dice y le deja pedir que lo mire una persona (Juanjo,
+        10-11-2026). Antes se quedaba ahí, y la app de Google Sites que el bot no sabía leer solo se supo porque su
+        autor se lo contó a Juanjo. Usa el mismo «Pedir una revisión» que un rechazo por su contenido."""
+        self.rechazados[uid] = {"ficha": {"url": url, "titulo": url, "motivo": motivo}, "ilegible": True,
+                                "nota": nota, "momento": time.time(),
+                                "de": {k: de.get(k) for k in ("first_name", "last_name", "username")}}
+        registrar("recurso que el bot no ha podido leer")
+        self.tg("sendMessage", chat_id=chat, link_preview_options={"is_disabled": True},
+                text=f"{texto}\n\n{self.tx(uid, 'si_no_lo_lee')}",
+                reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_pedir_revision"), "callback_data": "rr"}]]})
 
     def seguir_alta(self, chat: int, uid: int, de: dict, f: dict, contenido: str, nota: str) -> None:
         """Lo que queda del alta cuando el recurso entra por su contenido: pago, licencia y la ficha para revisar."""
@@ -1899,10 +1914,14 @@ class Bot:
             catalogo.guardar_revisiones(d)
         autor = " ".join(x for x in (r["de"].get("first_name"), r["de"].get("last_name")) if x)
         ref = self.ref_aviso(clave)
+        # Lo que no ha podido leer no tiene ficha que aprobar: «Volver a leer» lo lee otra vez, por si el fallo era
+        # del bot y ya está arreglado, y sigue el alta con su autor.
+        ilegible = r.get("ilegible")
+        si = ("b_volver_a_leer", "jrl") if ilegible else ("b_cumple", "jrc")
         self.tg("sendMessage", chat_id=JUANJO, link_preview_options={"is_disabled": True},
-                text=self.tx(JUANJO, "rechazo_a_juanjo", titulo=f["titulo"], url=f["url"], autor=autor,
-                             motivo=f["motivo"].rstrip("."), razones=razones),
-                reply_markup={"inline_keyboard": [[{"text": self.tx(JUANJO, "b_cumple"), "callback_data": f"jrc:{ref}"},
+                text=self.tx(JUANJO, "ilegible_a_juanjo" if ilegible else "rechazo_a_juanjo", titulo=f["titulo"],
+                             url=f["url"], autor=autor, motivo=f["motivo"].rstrip("."), razones=razones),
+                reply_markup={"inline_keyboard": [[{"text": self.tx(JUANJO, si[0]), "callback_data": f"{si[1]}:{ref}"},
                                                    {"text": self.tx(JUANJO, "b_no_cumple"), "callback_data": f"jrn:{ref}"}]]})
         registrar("rechazo de un recurso pasado a revisión manual")
         self.enviar(uid, self.tx(uid, "revision_pedida"))
@@ -1918,9 +1937,17 @@ class Bot:
             r = dict(d[clave])
             # Decidido, lo leído ya no hace falta guardarlo: solo ocupa (cada uno, hasta 80.000 caracteres).
             d[clave] = {k: v for k, v in r.items() if k != "contenido"} | {
-                "estado": "aprobado" if orden == "jrc" else "rechazado"}
+                "estado": {"jrc": "aprobado", "jrl": "releido"}.get(orden, "rechazado")}
             catalogo.guardar_revisiones(d)
         uid, f = r["uid"], r["ficha"]
+        if orden == "jrl":
+            self.enviar(uid, self.tx(uid, "ilegible_releyendo"))
+            antes = time.time()
+            self.recurso(uid, uid, r["de"], f["url"], nota=r.get("nota", ""), comprobado=True)
+            otra_vez = self.rechazados.get(uid, {})
+            sigue = otra_vez.get("ilegible") and otra_vez.get("momento", 0) >= antes
+            registrar(f"recurso ilegible vuelto a leer por Juanjo: {'sigue sin leerse' if sigue else 'leído'}")
+            return self.enviar(JUANJO, self.tx(JUANJO, "ilegible_sigue" if sigue else "ilegible_leido", url=f["url"]))
         if orden == "jrn":
             self.enviar(uid, self.tx(uid, "rechazo_revisado_no", titulo=f["titulo"]))
             registrar("rechazo de un recurso revisado por Juanjo: no cumple")
@@ -2063,7 +2090,8 @@ class Bot:
                 if uid not in self.rechazados:
                     return self.enviar(uid, self.tx(uid, "caducado_recurso"))
                 self.espera[uid] = {"que": "razones", "momento": time.time()}
-                return self.enviar(uid, self.tx(uid, "por_que_revision"))
+                pregunta = "por_que_no_lo_lee" if self.rechazados[uid].get("ilegible") else "por_que_revision"
+                return self.enviar(uid, self.tx(uid, pregunta))
             if orden == "rx":
                 self.fichas_rec.pop(uid, None)
                 self.espera.pop(uid, None)

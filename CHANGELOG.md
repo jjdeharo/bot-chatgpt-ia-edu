@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.12.0 — 2026-11-10
+
+- Si el bot no consigue leer un recurso (no ve qué hace o el enlace no se abre), ofrece «Pedir una revisión»: le llega a Juanjo con lo que ha pasado y un botón «Volver a leer», que lo lee otra vez y sigue el alta con su autor (ADR 0004).
+
 ## 1.11.3 — 2026-11-10
 
 - El bot lee las aplicaciones publicadas en Google Sites: saca el código de cada bloque «Insertar código» de la página, con su licencia, y lee la web de cada bloque «Insertar URL». Antes solo le llegaba el código de carga de Google, que ocupa los primeros 95 000 caracteres de la página, y pedía el código aparte (ADR 0004).

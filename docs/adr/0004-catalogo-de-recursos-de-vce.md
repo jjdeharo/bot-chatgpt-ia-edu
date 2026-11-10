@@ -165,6 +165,19 @@ de su grupo.
    publicado cambia de enlace, el bot comprueba también que lo que hay en el
    nuevo sigue entrando (`Fichas.admitir`, Sonnet con el mismo criterio, unos
    0,01 USD por mudanza); si no, no guarda el cambio y lo explica.
+   **Lo que el bot no consigue leer también se puede revisar** (Juanjo,
+   10-11-2026, al ver que una app en Google Sites se quedaba en «no consigo
+   ver qué hace» sin que él se enterase: «¿da la posibilidad de avisarme?»).
+   Cuando no ve qué hace el recurso o el enlace no se abre (un error del
+   servidor, un inicio de sesión), el mensaje ofrece el mismo «Pedir una
+   revisión»; la persona cuenta cómo lo ha publicado y qué hace. A Juanjo le
+   llega con lo que le ha pasado al bot y dos botones: «Volver a leer» lo lee
+   otra vez, por si el fallo era del bot y ya está arreglado, y sigue el alta
+   con su autor (si sigue sin leerlo, se lo dice a Juanjo y el autor recibe
+   el aviso de nuevo); «No cumple» se lo dice al autor. No hay «Cumple»,
+   porque sin leerlo no hay ficha que aprobar. Mientras tanto, la persona
+   puede seguir mandando el HTML, el ZIP o el repositorio. Un enlace a una
+   dirección que no es de internet no ofrece revisión.
 6. **Se llama «repositorio»**, como lo titula su web («Repositorio de
    aplicaciones educativas») y como lo conoce la comunidad (Juanjo,
    27-10-2026). El comando era `/recurso` y los mensajes decían «catálogo»;
@@ -232,6 +245,13 @@ de su grupo.
   publicado con su enlace anterior y su autor puede comentarlo en el grupo.
 
 ## Validación
+
+10-11-2026 (revisión de lo que no lee): `pruebas/test_no_lo_lee.py`, sin red
+ni API: el botón sale cuando no ve qué hace y cuando el enlace da un 403, no
+con una dirección interna; la petición llega a Juanjo con las razones y
+«Volver a leer»; leído, sigue el alta; sin leer, se lo dice a Juanjo y el
+autor recibe otra vez el botón; «No cumple» avisa al autor; el rechazo por
+contenido sigue con «Cumple».
 
 10-11-2026 (Google Sites):
 - «Pentagrama Maestro», una app publicada en Google Sites:
