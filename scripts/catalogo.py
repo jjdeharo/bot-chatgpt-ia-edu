@@ -693,6 +693,17 @@ def de_la_persona(uid: int, hoja: Hoja) -> list[dict]:
     return [f for f in hoja.filas() if es_dueno(uid, f, d)]
 
 
+def coincide(ficha: dict, cual: str) -> bool:
+    """Si «cual» (un título o un enlace, como lo escribe la persona) nombra esa ficha."""
+    cual = " ".join((cual or "").split()).casefold()
+    if not cual:
+        return False
+    if re.match(r"https?://", cual):
+        return normalizar(cual) == normalizar(ficha.get("url", ""))
+    titulo = " ".join((ficha.get("titulo") or "").split()).casefold()
+    return bool(titulo) and (cual in titulo or titulo in cual)
+
+
 def nombre_corto(nombre: str) -> bool:
     """Un nombre de Telegram que no sirve para firmar un recurso («D», «jc»): menos de tres letras (ADR 0027)."""
     return len(re.sub(r"[\W_\d]", "", nombre or "")) < 3

@@ -160,6 +160,8 @@ ES = {
     "archivo_sin_enlace": ("Antes de enviarme el código, envíame el enlace del recurso: la dirección que "
                            "abrirá la gente desde el repositorio."),
     "mis_recursos": "Estos son tus recursos en el repositorio. Pulsa uno para cambiarlo o quitarlo.",
+    "cual_cambiar": "¿En qué recurso hago estos cambios? Elígelo y te enseño cómo queda la ficha antes de guardar nada.",
+    "cual_cambiar_mas": "Aquí están los más recientes; si no lo ves, usa /misrecursos.",
     "sin_recursos": ("No tengo ningún recurso a tu nombre. Si diste de alta alguno con el formulario, "
                      "escríbeme el correo con el que lo hiciste y te mando un código para comprobar que es tuyo."),
     "otro_correo": "Escríbeme el correo con el que diste de alta tus recursos en el formulario.",
@@ -399,6 +401,8 @@ CA = {
     "archivo_sin_enlace": ("Abans d'enviar-me el codi, envia'm l'enllaç del recurs: l'adreça que obrirà la "
                            "gent des del repositori."),
     "mis_recursos": "Aquests són els teus recursos al repositori. Prem-ne un per canviar-lo o treure'l.",
+    "cual_cambiar": "En quin recurs faig aquests canvis? Tria'l i t'ensenyo com queda la fitxa abans de desar res.",
+    "cual_cambiar_mas": "Aquí hi ha els més recents; si no el veus, fes servir /misrecursos.",
     "sin_recursos": ("No tinc cap recurs a nom teu. Si en vas donar d'alta algun amb el formulari, "
                      "escriu-me el correu amb què ho vas fer i t'envio un codi per comprovar que és teu."),
     "otro_correo": "Escriu-me el correu amb què vas donar d'alta els teus recursos al formulari.",
@@ -614,6 +618,8 @@ GL = {
     "archivo_sin_enlace": ("Antes de enviarme o código, envíame a ligazón do recurso: o enderezo que abrirá "
                            "a xente desde o repositorio."),
     "mis_recursos": "Estes son os teus recursos no repositorio. Preme un para cambialo ou quitalo.",
+    "cual_cambiar": "En que recurso fago estes cambios? Escóllelo e amósoche como queda a ficha antes de gardar nada.",
+    "cual_cambiar_mas": "Aquí están os máis recentes; se non o ves, usa /misrecursos.",
     "sin_recursos": ("Non teño ningún recurso ao teu nome. Se deches de alta algún co formulario, "
                      "escríbeme o correo co que o fixeches e mándoche un código para comprobar que é teu."),
     "otro_correo": "Escríbeme o correo co que deches de alta os teus recursos no formulario.",
@@ -831,6 +837,8 @@ EU = {
     "archivo_sin_enlace": ("Kodea bidali aurretik, bidali baliabidearen esteka: jendeak biltegitik irekiko "
                            "duen helbidea."),
     "mis_recursos": "Hauek dira biltegian dituzun baliabideak. Sakatu bat aldatzeko edo kentzeko.",
+    "cual_cambiar": "Zein baliabidetan egingo ditut aldaketa hauek? Aukeratu, eta fitxa nola geratzen den erakutsiko dizut ezer gorde aurretik.",
+    "cual_cambiar_mas": "Hemen daude berrienak; ez baduzu ikusten, erabili /misrecursos.",
     "sin_recursos": ("Ez daukat baliabiderik zure izenean. Formularioarekin bakarren bati alta eman bazenion, "
                      "idatzi erabili zenuen helbide elektronikoa eta kode bat bidaliko dizut zurea dela egiaztatzeko."),
     "otro_correo": "Idatzi formularioan baliabideei alta emateko erabili zenuen helbide elektronikoa.",
@@ -1045,6 +1053,8 @@ EN = {
     "archivo_sin_enlace": ("Before sending me the code, send me the link to the resource: the address people "
                            "will open from the repository."),
     "mis_recursos": "These are your resources in the repository. Press one to change or remove it.",
+    "cual_cambiar": "Which resource should I make these changes to? Choose it and I'll show you how the entry looks before saving anything.",
+    "cual_cambiar_mas": "These are the most recent ones; if you can't see it, use /misrecursos.",
     "sin_recursos": ("I don't have any resources under your name. If you added any with the form, write me "
                      "the email address you used and I'll send you a code to check that they're yours."),
     "otro_correo": "Write me the email address you used to add your resources with the form.",

@@ -2,6 +2,12 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.13.0 — 2026-11-11
+
+- Quien escribe los cambios de la ficha de su recurso como un mensaje más, sin pulsar «Cambiar», ya no recibe una búsqueda sin resultado: el bot los aplica a la ficha que tiene a la vista o al recurso publicado que nombra; si tiene varios, pregunta cuál con un botón por recurso, el último primero, y enseña la ficha cambiada antes de guardar nada (ADR 0004).
+- Una pregunta que es solo un nombre o un título («Selfie for teachers») se responde en el idioma de la conversación y no cambia el idioma del bot (ADR 0005).
+- Si no encuentra nada, el bot ya no propone buscar con otras palabras lo que ya ha buscado él; como mucho, ofrece buscar en un solo grupo o en unas fechas.
+
 ## 1.12.0 — 2026-11-10
 
 - Si el bot no consigue leer un recurso (no ve qué hace o el enlace no se abre), ofrece «Pedir una revisión»: le llega a Juanjo con lo que ha pasado y un botón «Volver a leer», que lo lee otra vez y sigue el alta con su autor (ADR 0004).

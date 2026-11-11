@@ -80,6 +80,30 @@ de su grupo.
 2c. **/misrecursos también añade uno nuevo** (Juanjo, 28-10-2026): debajo de la
    lista, y en el aviso de quien aún no tiene ninguno, el botón «Añadir un
    recurso nuevo» pide el enlace como /repositorio.
+2d. **Los cambios escritos sin pulsar «Cambiar» también se aplican**
+   (revisión de las preguntas sin resolver, 11-11-2026). El 07-11-2026
+   alguien publicó un recurso, lo compartió en «¡Comparte tu App!» y, nueve
+   minutos después, escribió los cambios de su ficha («Tres cambios: 1) Añade
+   al principio de la descripción…») como un mensaje más. El bot solo acepta
+   cambios después de pulsar «Cambiar» en /misrecursos o «Cambiar algo» en la
+   vista previa, así que lo tomó por una búsqueda, no encontró nada y la
+   persona se quedó sin el cambio y sin saber cómo hacerlo. Lo mismo pasaba
+   con un segundo cambio en la vista previa sin volver a pulsar el botón.
+   Ahora Claude, en la misma llamada de la pregunta, reconoce que se pide
+   cambiar la ficha de un recurso propio y llama a la herramienta
+   `cambiar_ficha` (con el título o el enlace si los nombra), sin coste
+   añadido. El bot lleva el mensaje entero, tal como lo escribió la persona,
+   al mismo recorrido de los cambios (2b): a la ficha que tiene a la vista sin
+   publicar, si la hay y no nombra otro recurso; si no, al recurso publicado
+   que nombra o al único que tiene; con varios, le pregunta cuál, con un botón
+   por recurso, el último dado de alta primero (`Marca temporal` de la hoja),
+   y aplica los cambios que ya escribió sin pedírselos otra vez. En todos los
+   casos enseña la ficha cambiada antes de guardar nada. Para que «quita
+   Bachillerato» se entienda como un cambio mientras hay una ficha a la vista,
+   la pregunta lleva delante una nota del programa con su título. Sin
+   recursos, contesta lo mismo que /misrecursos (cómo recuperar los del
+   antiguo formulario). Lo que es retocar un texto ajeno («corrígeme este
+   texto») sigue fuera de alcance.
 3. **El bot escribe en la hoja** a través de una aplicación web de Apps
    Script del propio catálogo (`api.gs` en Vibe-Coding-Educativo/app_edu),
    protegida con una clave que comparte con el bot. La web del catálogo no
@@ -245,6 +269,17 @@ de su grupo.
   publicado con su enlace anterior y su autor puede comentarlo en el grupo.
 
 ## Validación
+
+11-11-2026 (punto 2d): `pruebas/test_cambio_pedido.py`, sin red ni API: los
+cambios van a la ficha a la vista; a un único recurso publicado; con varios,
+botones con el último dado de alta primero, y al pulsar uno se aplican los
+cambios ya escritos; el nombre de un recurso lo elige, también frente a la
+ficha a la vista; sin recursos, el aviso de /misrecursos; el botón caduca a
+las 24 horas. Con Claude en el NAS, sobre una copia del código: la petición
+real del 07-11 llama a `cambiar_ficha` (0,0015 USD), y también «quita
+Bachillerato» con una ficha a la vista y «cambia la licencia de mi app de
+fracciones a CC BY 4.0»; «corrígeme este texto» sigue fuera de alcance y una
+pregunta normal sigue buscando.
 
 10-11-2026 (revisión de lo que no lee): `pruebas/test_no_lo_lee.py`, sin red
 ni API: el botón sale cuando no ve qué hace y cuando el enlace da un 403, no

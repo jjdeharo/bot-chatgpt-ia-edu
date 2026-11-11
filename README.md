@@ -17,7 +17,7 @@ añade recursos educativos al [catálogo de Vibe Coding Educativo](https://vibe-
 el miembro le manda el enlace, el bot lee el recurso, comprueba que sea
 educativo, que ya se pueda usar en clase, gratuito y con licencia abierta, hace
 su ficha y la escribe en la hoja del catálogo; con `/misrecursos` los cambia o
-los quita (`scripts/catalogo.py`). Si lo rechaza por su contenido, quien lo
+los quita, y los cambios también se pueden pedir con sus palabras (`scripts/catalogo.py`). Si lo rechaza por su contenido, quien lo
 aporta puede pedir una revisión manual (ADR 0004). Cada aportación es solo para los miembros de su grupo.
 Si le piden ayuda para enseñar (ideas, consejo, una clase, una rúbrica), la
 prepara con lo que se ha compartido en los grupos: cada idea con quién la

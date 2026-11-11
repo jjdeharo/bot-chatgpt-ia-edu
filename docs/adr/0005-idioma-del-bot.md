@@ -35,6 +35,16 @@ menú todavía no ha escrito nada.
    que la ficha está en castellano.
 7. **Traducción automática con IA, sin revisión profesional**: lo dice la
    ayuda en los otros cuatro idiomas.
+8. **Un nombre suelto no es una frase** (revisión de las preguntas sin
+   resolver, 11-11-2026). «Selfie for teachers», el nombre de una herramienta
+   escrito como única pregunta, recibió la respuesta en inglés, y Haiku lo
+   habría tomado como una frase en inglés para los textos siguientes. Ahora
+   la búsqueda responde en el idioma de la conversación cuando la pregunta
+   es solo un nombre o un título, y Haiku responde «dudoso» ante un nombre o
+   un título solos. Comprobado con Claude: «Selfie for teachers» se responde en
+   castellano y una pregunta escrita en inglés, en inglés; Haiku da «dudoso»
+   a «Selfie for teachers» y a «Google Classroom», «en» a «Is there any app
+   for fractions?» y «ca» a «Hi ha alguna app de fraccions?».
 
 ## Alternativas descartadas
 
