@@ -193,5 +193,44 @@ class Bot(unittest.TestCase):
         self.assertIn("60 MB", self.llamar(nuevo_bot(), {"estado": "grande", "mb": 60.2})[-1])
 
 
+class TrasBiblioteca(unittest.TestCase):
+    """/biblioteca y luego el enlace de una página: va a la biblioteca, no al catálogo (12-11-2026)."""
+    def atender(self, b, texto):
+        b.atender({"chat": {"id": AUTOR, "type": "private"}, "from": DE, "text": texto, "message_id": 1})
+
+    def nuevo(self):
+        b = nuevo_bot()
+        b.fijar_lengua = b.lengua_de_la_frase = lambda *a: None
+        b.voz_a_texto = lambda *a: None
+        b.grupos_de = lambda uid: {bot.BIBLIOTECA.clave, bot.CATALOGO.clave}  # de los dos grupos
+        b.en_hilo = lambda f, *a: b.llamadas.append(("hilo", {"f": f.__name__, "a": a}))
+        return b
+
+    def hilos(self, b):
+        return [(k["f"], k["a"][-1]) for m, k in b.llamadas if m == "hilo"]
+
+    def test_enlace_de_pagina_va_a_la_biblioteca(self):
+        b = self.nuevo()
+        with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
+            self.atender(b, "/biblioteca")
+            self.atender(b, ANUNCIO)
+        self.assertEqual(self.hilos(b), [("documento_web", ANUNCIO)])
+        self.assertNotIn(AUTOR, b.espera)
+
+    def test_sin_biblioteca_un_enlace_sigue_yendo_al_catalogo(self):
+        b = self.nuevo()
+        with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
+            self.atender(b, ANUNCIO)
+        self.assertEqual(self.hilos(b), [("recurso", ANUNCIO)])
+
+    def test_otro_comando_deja_la_espera(self):
+        b = self.nuevo()
+        with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
+            self.atender(b, "/biblioteca")
+            self.atender(b, "/repositorio")
+            self.atender(b, ANUNCIO)
+        self.assertEqual(self.hilos(b), [("recurso", ANUNCIO)])
+
+
 if __name__ == "__main__":
     unittest.main()

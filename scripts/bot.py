@@ -78,7 +78,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.14.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.14.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1360,7 +1360,11 @@ class Bot:
             return self.tg("sendMessage", chat_id=chat, text=self.tx(uid, "buscar"),
                            reply_markup=self.casillas_grupos(uid))
         if comando == "/biblioteca":
-            return self.enviar(chat, self.tx(uid, "biblioteca" if BIBLIOTECA.clave in suyos else "solo_chatgpt"))
+            if BIBLIOTECA.clave not in suyos:
+                return self.enviar(chat, self.tx(uid, "solo_chatgpt"))
+            # Lo que mande después es el documento: un enlace va a la biblioteca, no al catálogo (ADR 0035)
+            self.espera[uid] = {"que": "documento", "momento": time.time()}
+            return self.enviar(chat, self.tx(uid, "biblioteca"))
         if comando == "/recurso":  # su primer nombre: sigue valiendo para quien lo use
             comando = "/repositorio"
         if comando in ("/repositorio", "/misrecursos") and CATALOGO.clave not in suyos:
@@ -1386,6 +1390,8 @@ class Bot:
                 return self.en_hilo(self.recurso_de_archivo, chat, uid, msg, espera)
             if BIBLIOTECA.clave not in suyos:
                 return self.enviar(chat, self.tx(uid, "solo_chatgpt"))
+            if espera and espera["que"] == "documento":
+                self.espera.pop(uid, None)  # ya ha llegado el documento que pedía /biblioteca
             return self.en_hilo(self.documento, chat, uid, msg)
         if not texto and not fotos:
             return self.enviar(chat, self.tx(uid, "solo_texto"))
@@ -1435,6 +1441,7 @@ class Bot:
                 return self.enviar(chat, self.tx(uid, "solo_chatgpt"))
             enlace = re.search(r"https?://\S+", r["accion"]["recurso"])
             if not enlace:
+                self.espera[uid] = {"que": "documento", "momento": time.time()}
                 return self.enviar(chat, self.tx(uid, "biblioteca"))
             return self.en_hilo(self.documento_web, chat, uid, msg["from"], enlace.group(0).rstrip(".,;)»\""))
         if r.get("accion"):  # pide añadir un recurso al catálogo, con sus palabras
@@ -1769,7 +1776,14 @@ class Bot:
         if e["que"] == "enlace_ficha":
             return self.enlace_documento(chat, uid, texto, e)
         enlace = re.search(r"https?://\S+", texto)
-        if e["que"] == "recurso":
+        if e["que"] == "documento":  # tras /biblioteca: el enlace del documento o de su página (ADR 0035)
+            if not enlace:
+                if "?" not in texto:  # una pregunta se responde y sigue esperando el documento
+                    self.espera.pop(uid, None)
+                return False
+            self.espera.pop(uid, None)
+            self.en_hilo(self.documento_web, chat, uid, msg["from"], enlace.group(0).rstrip(".,;)»\""))
+        elif e["que"] == "recurso":
             if not enlace:
                 self.espera.pop(uid, None)
                 return False

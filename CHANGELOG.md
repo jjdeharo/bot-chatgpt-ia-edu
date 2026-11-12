@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.14.1 — 2026-11-12
+
+- El enlace que se manda después de `/biblioteca` va a la Biblioteca digital aunque no acabe en `.pdf`. Antes, el de una página que presenta el documento se tomaba como un recurso para el repositorio de Vibe Coding Educativo y se pedía su licencia de código (ADR 0035).
+
 ## 1.14.0 — 2026-11-12
 
 - Para añadir un documento a la Biblioteca digital basta con mandar su enlace: el del PDF o el de la página que lo presenta. El bot busca el documento en la página, lo descarga y sigue como con un PDF enviado; si su web no deja descargarlo a un programa, como el repositorio de la UNESCO, da el enlace directo del documento para descargarlo y mandárselo. Una página sin documento no se añade (ADR 0035).

@@ -14,7 +14,10 @@ ultimo punto no. los dos primeros sí»): la biblioteca recoge documentos, no p�
 ## Decisión
 
 - El miembro puede mandar, en vez del PDF, el enlace del PDF o de la página que presenta el documento. Un enlace
-  suelto que acaba en `.pdf` va a la biblioteca, y no al catálogo de recursos. Si lo pide con sus palabras
+  suelto que acaba en `.pdf` va a la biblioteca, y no al catálogo de recursos. Después de `/biblioteca`, el
+  bot espera el documento, y el enlace que llegue va a la biblioteca acabe como acabe: sin esa espera, el de una
+  página de quien es también de Vibe Coding Educativo se tomaba como un recurso del catálogo (12-11-2026, con la
+  noticia de la UNESCO). Una pregunta mientras tanto se responde y la espera sigue; otro comando la deja. Si lo pide con sus palabras
   («publica en la biblioteca este documento: …»), Claude llama a la herramienta `anadir_documento`.
 - `scripts/documento_web.py` descarga el enlace. Si es un PDF, ya está. Si es una página, Claude Haiku 5.5 elige
   entre sus enlaces el del documento que presenta: su PDF o su página propia en el repositorio de quien lo
@@ -78,5 +81,6 @@ biblioteca: <enlace>» llaman a `anadir_documento`, y «añade esta app al repos
 
 `pruebas/test_documento_web.py`, sin red ni API: lectura de enlaces, los caminos de `buscar` (PDF directo,
 redirección, anuncio con PDF, anuncio con la ficha de un repositorio, protección, web sin enlaces, página sin
-documento, número inventado, tamaño, dirección interna) y el recorrido del bot (subida del archivo solo si se
-comparte, enlace de la ficha sin búsqueda, cupo y mensajes de cada caso).
+documento, número inventado, tamaño, dirección interna), el recorrido del bot (subida del archivo solo si se
+comparte, enlace de la ficha sin búsqueda, cupo y mensajes de cada caso) y el reparto de un enlace tras
+`/biblioteca` (a la biblioteca), sin él (al catálogo) y tras otro comando (al catálogo).
