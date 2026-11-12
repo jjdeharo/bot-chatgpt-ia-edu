@@ -133,8 +133,9 @@ responsable, para ayudar a preparar clases con lo que se ha compartido en ellos 
 documentos y recursos y cambiar sus fichas, sin llamar a ninguna herramienta, y terminas con [[fuera de alcance]].
 - Si la persona pide añadir, subir o publicar un recurso educativo (una aplicación, una web, un \
 juego, un asistente…) en el catálogo o repositorio de Vibe Coding Educativo, llama a anadir_recurso \
-con su enlace y no escribas nada más. Si no da el enlace, pídeselo. Si quiere añadir un documento a la \
-Biblioteca digital, dile que te mande el PDF.
+con su enlace y no escribas nada más. Si no da el enlace, pídeselo. Si quiere añadir, subir, descargar o \
+publicar un documento en la Biblioteca digital y da su enlace (la página que lo presenta o su PDF), llama a \
+anadir_documento con ese enlace y no escribas nada más; si no da enlace, dile que te mande el PDF o su enlace.
 - Si la persona pide cambiar algo de la ficha de un recurso suyo del repositorio (la descripción, los \
 idiomas, la licencia, los niveles, el autor, el enlace…), aunque lo escriba como una lista de cambios o \
 como un texto que retocar, llama a cambiar_ficha y no escribas nada más: el bot le enseña la ficha con \
@@ -153,7 +154,9 @@ tema y qué recursos hay en el Repositorio de recursos educativos digitales de V
 los tres grupos a la vez, o en los que nombre. Puedes equivocarte: conviene abrir \
 el mensaje enlazado.
 - Añadir un documento a la Biblioteca digital de ChatGPT-IA-edu, solo para sus miembros: te mandan el \
-PDF por aquí (hasta 20 MB, con texto, no escaneado). Compruebas que trate de inteligencia artificial \
+PDF por aquí (hasta 20 MB, con texto, no escaneado) o su enlace (la página que lo presenta o el del PDF). \
+Con el enlace, descargas el documento; si su web no deja descargarlo a un programa, das su enlace directo \
+para que lo descarguen y te lo manden. Una página web sin documento no se añade. Compruebas que trate de inteligencia artificial \
 en educación, en sentido amplio, y que no esté ya en la biblioteca; preparas su ficha y la enseñas. \
 Con su visto bueno la publicas en la Biblioteca digital con «Aportado por» su nombre. Si la licencia \
 no permite compartir el archivo, publicas solo la ficha.
@@ -408,6 +411,14 @@ HERRAMIENTAS = [
      "input_schema": {"type": "object", "properties": {
          "url": {"type": "string", "description": "El enlace del recurso, tal como lo ha escrito"}},
          "required": ["url"]}},
+    {"name": "anadir_documento",
+     "description": "Empieza a añadir un documento a la Biblioteca digital de ChatGPT-IA-edu a partir de su enlace "
+                    "(la página que lo presenta o su PDF): el bot lo descarga, prepara su ficha y se la enseña a la "
+                    "persona. Úsala solo si la persona pide añadir, subir, descargar o publicar un documento en la "
+                    "Biblioteca digital.",
+     "input_schema": {"type": "object", "properties": {
+         "url": {"type": "string", "description": "El enlace del documento, tal como lo ha escrito"}},
+         "required": ["url"]}},
     {"name": "cambiar_ficha",
      "description": "Empieza a cambiar la ficha de un recurso que la persona tiene en el repositorio de Vibe "
                     "Coding Educativo: el bot aplica lo que ha pedido y le enseña cómo queda antes de guardarlo. "
@@ -608,7 +619,7 @@ class Consultor:
             modelo = MODELO_AYUDA
             sistema += AYUDA + f"\n- Escribe toda la respuesta en {IDIOMAS.get(lengua, 'castellano')}."
             # Sin el diario: sus ideas se citan con el mensaje, el documento o la ficha de donde salen (ADR 0030)
-            herramientas = [h for h in HERRAMIENTAS if h["name"] not in ("anadir_recurso", "cambiar_ficha", "buscar_diario")]
+            herramientas = [h for h in HERRAMIENTAS if h["name"] not in ("anadir_recurso", "anadir_documento", "cambiar_ficha", "buscar_diario")]
         for _ in range(VUELTAS + 1):
             r = self.cliente.messages.create(
                 model=modelo, max_tokens=8000, system=en_cache(sistema), tools=herramientas,
@@ -617,10 +628,12 @@ class Consultor:
             if r.stop_reason != "tool_use":
                 break
             pedido = next((b for b in r.content if b.type == "tool_use"
-                           and b.name in ("anadir_recurso", "cambiar_ficha")), None)
+                           and b.name in ("anadir_recurso", "anadir_documento", "cambiar_ficha")), None)
             if pedido:  # no es una búsqueda: lo sigue el bot con su propio recorrido
                 if pedido.name == "cambiar_ficha":
                     accion = {"tipo": "cambiar", "recurso": pedido.input.get("recurso", "")}
+                elif pedido.name == "anadir_documento":
+                    accion = {"tipo": "documento", "recurso": pedido.input.get("url", "")}
                 else:
                     accion = {"tipo": "anadir", "recurso": pedido.input.get("url", "")}
                 return {"texto": "", "accion": accion, "uso": uso, "parada": r.stop_reason}

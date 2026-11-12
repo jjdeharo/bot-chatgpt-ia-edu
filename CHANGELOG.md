@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.14.0 — 2026-11-12
+
+- Para añadir un documento a la Biblioteca digital basta con mandar su enlace: el del PDF o el de la página que lo presenta. El bot busca el documento en la página, lo descarga y sigue como con un PDF enviado; si su web no deja descargarlo a un programa, como el repositorio de la UNESCO, da el enlace directo del documento para descargarlo y mandárselo. Una página sin documento no se añade (ADR 0035).
+
 ## 1.13.0 — 2026-11-11
 
 - Quien escribe los cambios de la ficha de su recurso como un mensaje más, sin pulsar «Cambiar», ya no recibe una búsqueda sin resultado: el bot los aplica a la ficha que tiene a la vista o al recurso publicado que nombra; si tiene varios, pregunta cuál con un botón por recurso, el último primero, y enseña la ficha cambiada antes de guardar nada (ADR 0004).

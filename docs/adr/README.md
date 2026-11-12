@@ -36,5 +36,6 @@
 | [0032](0032-cifras-de-los-grupos-para-el-diario.md) | Cifras de los grupos para el diario | aceptado |
 | [0033](0033-antispam-de-los-grupos.md) | Antispam de los grupos, sin IA | aceptado |
 | [0034](0034-mensaje-citado-y-avisos-de-comentarios.md) | El mensaje citado en privado y los avisos de comentarios del diario | aceptado |
+| [0035](0035-documentos-por-enlace.md) | Documentos de la Biblioteca digital a partir de un enlace | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

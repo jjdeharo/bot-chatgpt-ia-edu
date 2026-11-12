@@ -55,7 +55,7 @@ ES = {
         "«¿qué se ha dicho en Vibe Coding Educativo sobre publicar en GitHub Pages?». También puedes preguntar con una nota de voz o una captura. También te explico el MIAE y la guía Vibe coding responsable: en qué nivel del MIAE está un uso de la IA, qué licencia poner a una aplicación o cómo evaluarla con la VCER."),
     "ayuda_biblioteca": (
         "📄 Añadir un documento a la Biblioteca digital de ChatGPT-IA-edu. Envíame aquí el archivo en PDF "
-        "(hasta 20 MB) y yo me encargo de todo: compruebo que trate de IA en educación y que no esté ya en "
+        "(hasta 20 MB) o el enlace de la página donde se publica, y yo me encargo de todo: compruebo que trate de IA en educación y que no esté ya en "
         "la biblioteca, preparo su ficha y te la enseño. Si te parece bien, lo publico con tu nombre. Si su "
         "licencia no permite compartirlo, publico solo la ficha."),
     "ayuda_recurso": (
@@ -71,7 +71,7 @@ ES = {
         "el mensaje enlazado. Te hablo en el idioma en que me escribes."),
     "traduccion": "",
     "buscar": 'Escríbeme lo que buscas, con tus palabras. Busco en los grupos marcados; toca uno para marcarlo o desmarcarlo. Lo mantendré mientras sigamos hablando.',
-    "biblioteca": "Envíame el documento en PDF (hasta 20 MB) y preparo su ficha.",
+    "biblioteca": "Envíame el documento en PDF (hasta 20 MB), o el enlace de la página donde se publica, y preparo su ficha.",
     "solo_chatgpt": "Añadir documentos a la Biblioteca digital es cosa de los miembros de ChatGPT-IA-edu. Entrar es libre: únete al grupo y vuelve a enviármelo. Este es el grupo: https://t.me/ChatGPTedu",
     "solo_vce": ("El repositorio de recursos es de la comunidad Vibe Coding Educativo; para añadir los tuyos, "
                  "únete al grupo: https://t.me/vceduca"),
@@ -92,6 +92,16 @@ ES = {
                "(https://t.me/ChatGPTedu/21753) y preparar su ficha con https://chatgpt-ia-edu.github.io/resumen/"),
     "cupo_docs": "Ya me has enviado {docs} documentos hoy. Mañana podrás enviar más.",
     "leyendo": "Recibido. Lo leo, compruebo si encaja en la biblioteca y preparo la ficha. Tardo un minuto.",
+    "buscando_doc": "Recibido. Busco el documento en esa dirección y, si puedo descargarlo, compruebo si encaja en la biblioteca y preparo la ficha. Tardo un minuto.",
+    "doc_no_descargable": ("He encontrado el documento, «{titulo}», pero su web no deja que lo descargue un programa. "
+                           "Descárgalo tú desde aquí y mándamelo en PDF: {enlace}"),
+    "doc_bloqueado": "Esa web no deja que un programa descargue el documento. Descárgalo tú desde ella y mándamelo en PDF.",
+    "sin_documento_web": ("No he encontrado ningún documento para descargar en esa página. La Biblioteca digital recoge "
+                          "documentos: si tienes el PDF, mándamelo aquí."),
+    "web_no_abre": "No he podido abrir esa dirección. Comprueba el enlace o mándame el documento en PDF.",
+    "web_grande": ("El documento pesa {mb:.0f} MB y solo puedo publicar archivos de hasta 50 MB. Puedes subirlo tú "
+                   "directamente a la Biblioteca digital (https://t.me/ChatGPTedu/21753) y preparar su ficha con "
+                   "https://chatgpt-ia-edu.github.io/resumen/"),
     "sin_texto": ("No puedo leer el texto de este PDF: parece escaneado como imagen. Puedes subirlo tú "
                   "directamente a la Biblioteca digital (https://t.me/ChatGPTedu/21753) y preparar su "
                   "ficha con https://chatgpt-ia-edu.github.io/resumen/"),
@@ -298,7 +308,7 @@ CA = {
         "«què s'ha dit a Vibe Coding Educativo sobre publicar a GitHub Pages?». També pots preguntar amb una nota de veu o una captura. També t'explico el MIAE i la guia Vibe coding responsable: en quin nivell del MIAE és un ús de la IA, quina llicència posar a una aplicació o com avaluar-la amb la VCER."),
     "ayuda_biblioteca": (
         "📄 Afegir un document a la Biblioteca digital de ChatGPT-IA-edu. Envia'm aquí el fitxer en PDF "
-        "(fins a 20 MB) i jo m'encarrego de tot: comprovo que tracti d'IA en educació i que no sigui ja a "
+        "(fins a 20 MB) o l'enllaç de la pàgina on es publica, i jo m'encarrego de tot: comprovo que tracti d'IA en educació i que no sigui ja a "
         "la biblioteca, en preparo la fitxa i te l'ensenyo. Si et sembla bé, el publico amb el teu nom. Si la "
         "seva llicència no permet compartir-lo, publico només la fitxa."),
     "ayuda_recurso": (
@@ -314,7 +324,7 @@ CA = {
         "enllaçat. Et parlo en l'idioma en què m'escrius."),
     "traduccion": "Textos traduïts automàticament amb IA, sense revisió professional.",
     "buscar": "Escriu-me el que cerques, amb les teves paraules. Cerco als grups marcats; toca'n un per marcar-lo o desmarcar-lo. Ho mantindré mentre continuem parlant.",
-    "biblioteca": "Envia'm el document en PDF (fins a 20 MB) i en preparo la fitxa.",
+    "biblioteca": "Envia'm el document en PDF (fins a 20 MB), o l'enllaç de la pàgina on es publica, i en preparo la fitxa.",
     "solo_chatgpt": "Afegir documents a la Biblioteca digital és cosa dels membres de ChatGPT-IA-edu. Entrar-hi és lliure: uneix-te al grup i torna-me'l a enviar. Aquest és el grup: https://t.me/ChatGPTedu",
     "solo_vce": ("El repositori de recursos és de la comunitat Vibe Coding Educativo; per afegir-hi els teus, "
                  "uneix-te al grup: https://t.me/vceduca"),
@@ -332,6 +342,16 @@ CA = {
                "(https://t.me/ChatGPTedu/21753) i preparar-ne la fitxa amb https://chatgpt-ia-edu.github.io/resumen/"),
     "cupo_docs": "Avui ja m'has enviat {docs} documents. Demà en podràs enviar més.",
     "leyendo": "Rebut. El llegeixo, comprovo si encaixa a la biblioteca i en preparo la fitxa. Trigo un minut.",
+    "buscando_doc": "Rebut. Busco el document en aquesta adreça i, si el puc baixar, comprovo si encaixa a la biblioteca i en preparo la fitxa. Trigo un minut.",
+    "doc_no_descargable": ("He trobat el document, «{titulo}», però el seu web no deixa que el baixi un programa. "
+                           "Baixa'l tu des d'aquí i envia-me'l en PDF: {enlace}"),
+    "doc_bloqueado": "Aquest web no deixa que un programa en baixi el document. Baixa'l tu i envia-me'l en PDF.",
+    "sin_documento_web": ("No he trobat cap document per baixar en aquesta pàgina. La Biblioteca digital recull "
+                          "documents: si tens el PDF, envia-me'l aquí."),
+    "web_no_abre": "No he pogut obrir aquesta adreça. Comprova l'enllaç o envia'm el document en PDF.",
+    "web_grande": ("El document pesa {mb:.0f} MB i només puc publicar fitxers de fins a 50 MB. El pots pujar tu "
+                   "directament a la Biblioteca digital (https://t.me/ChatGPTedu/21753) i preparar-ne la fitxa amb "
+                   "https://chatgpt-ia-edu.github.io/resumen/"),
     "sin_texto": ("No puc llegir el text d'aquest PDF: sembla escanejat com a imatge. El pots pujar tu "
                   "directament a la Biblioteca digital (https://t.me/ChatGPTedu/21753) i preparar-ne la "
                   "fitxa amb https://chatgpt-ia-edu.github.io/resumen/"),
@@ -515,7 +535,7 @@ GL = {
         "«que se dixo en Vibe Coding Educativo sobre publicar en GitHub Pages?». Tamén podes preguntar cunha nota de voz ou unha captura. Tamén che explico o MIAE e a guía Vibe coding responsable: en que nivel do MIAE está un uso da IA, que licenza poñerlle a unha aplicación ou como avaliala coa VCER."),
     "ayuda_biblioteca": (
         "📄 Engadir un documento á Biblioteca dixital de ChatGPT-IA-edu. Envíame aquí o ficheiro en PDF "
-        "(ata 20 MB) e eu encárgome de todo: comprobo que trate de IA en educación e que non estea xa na "
+        "(ata 20 MB) ou a ligazón da páxina onde se publica, e eu encárgome de todo: comprobo que trate de IA en educación e que non estea xa na "
         "biblioteca, preparo a súa ficha e ensínocha. Se che parece ben, publícoo co teu nome. Se a súa "
         "licenza non permite compartilo, publico só a ficha."),
     "ayuda_recurso": (
@@ -531,7 +551,7 @@ GL = {
         "ligada. Fálote no idioma no que me escribes."),
     "traduccion": "Textos traducidos automaticamente con IA, sen revisión profesional.",
     "buscar": 'Escríbeme o que buscas, coas túas palabras. Busco nos grupos marcados; toca un para marcalo ou desmarcalo. Mantereino mentres sigamos falando.',
-    "biblioteca": "Envíame o documento en PDF (ata 20 MB) e preparo a súa ficha.",
+    "biblioteca": "Envíame o documento en PDF (ata 20 MB), ou a ligazón da páxina onde se publica, e preparo a súa ficha.",
     "solo_chatgpt": "Engadir documentos á Biblioteca dixital é cousa dos membros de ChatGPT-IA-edu. Entrar é libre: únete ao grupo e volve envialo. Este é o grupo: https://t.me/ChatGPTedu",
     "solo_vce": ("O repositorio de recursos é da comunidade Vibe Coding Educativo; para engadir os teus, "
                  "únete ao grupo: https://t.me/vceduca"),
@@ -549,6 +569,16 @@ GL = {
                "(https://t.me/ChatGPTedu/21753) e preparar a súa ficha con https://chatgpt-ia-edu.github.io/resumen/"),
     "cupo_docs": "Hoxe xa me enviaches {docs} documentos. Mañá poderás enviar máis.",
     "leyendo": "Recibido. Léoo, comprobo se encaixa na biblioteca e preparo a ficha. Tardo un minuto.",
+    "buscando_doc": "Recibido. Busco o documento nese enderezo e, se podo descargalo, comprobo se encaixa na biblioteca e preparo a ficha. Tardo un minuto.",
+    "doc_no_descargable": ("Atopei o documento, «{titulo}», pero a súa web non deixa que o descargue un programa. "
+                           "Descárgao ti desde aquí e mándamo en PDF: {enlace}"),
+    "doc_bloqueado": "Esa web non deixa que un programa descargue o documento. Descárgao ti desde ela e mándamo en PDF.",
+    "sin_documento_web": ("Non atopei ningún documento para descargar nesa páxina. A Biblioteca dixital recolle "
+                          "documentos: se tes o PDF, mándamo aquí."),
+    "web_no_abre": "Non puiden abrir ese enderezo. Comproba a ligazón ou mándame o documento en PDF.",
+    "web_grande": ("O documento pesa {mb:.0f} MB e só podo publicar ficheiros de ata 50 MB. Podes subilo ti "
+                   "directamente á Biblioteca dixital (https://t.me/ChatGPTedu/21753) e preparar a súa ficha con "
+                   "https://chatgpt-ia-edu.github.io/resumen/"),
     "sin_texto": ("Non podo ler o texto deste PDF: parece escaneado como imaxe. Podes subilo ti "
                   "directamente á Biblioteca dixital (https://t.me/ChatGPTedu/21753) e preparar a súa "
                   "ficha con https://chatgpt-ia-edu.github.io/resumen/"),
@@ -732,7 +762,7 @@ EU = {
         "edo «zer esan da Vibe Coding Educativo taldean GitHub Pages-en argitaratzeaz?». Ahots-ohar batekin edo pantaila-argazki batekin ere galdetu dezakezu. MIAE eta Vibe coding responsable gida ere azaltzen dizkizut: IAren erabilera bat MIAEren zein mailatan dagoen, aplikazio bati zein lizentzia jarri edo nola ebaluatu VCERrekin."),
     "ayuda_biblioteca": (
         "📄 Dokumentu bat gehitu ChatGPT-IA-edu taldeko Liburutegi digitalera. Bidali hona PDF fitxategia "
-        "(20 MB arte) eta nik egingo dut dena: egiaztatuko dut hezkuntzako IAri buruzkoa dela eta "
+        "(20 MB arte) edo argitaratzen den orriaren esteka, eta nik egingo dut dena: egiaztatuko dut hezkuntzako IAri buruzkoa dela eta "
         "liburutegian ez dagoela, haren fitxa prestatuko dut eta erakutsiko dizut. Ados bazaude, zure "
         "izenarekin argitaratuko dut. Haren lizentziak partekatzen uzten ez badu, fitxa bakarrik argitaratuko dut."),
     "ayuda_recurso": (
@@ -749,7 +779,7 @@ EU = {
         "egiaztatu beti estekatutako mezua. Idazten didazun hizkuntzan hitz egiten dizut."),
     "traduccion": "Testuak IArekin automatikoki itzuliak, berrikuspen profesionalik gabe.",
     "buscar": 'Idatzi zer bilatzen duzun, zure hitzekin. Markatutako taldeetan bilatzen dut; ukitu bat markatzeko edo desmarkatzeko. Hitz egiten jarraitzen dugun bitartean mantenduko dut.',
-    "biblioteca": "Bidali dokumentua PDFn (20 MB arte) eta haren fitxa prestatuko dut.",
+    "biblioteca": "Bidali dokumentua PDFn (20 MB arte), edo argitaratzen den orriaren esteka, eta haren fitxa prestatuko dut.",
     "solo_chatgpt": "Liburutegi digitalera dokumentuak gehitzea ChatGPT-IA-edu taldeko kideen kontua da. Sartzea librea da: batu zaitez taldera eta bidali berriro. Hau da taldea: https://t.me/ChatGPTedu",
     "solo_vce": ("Baliabideen biltegia Vibe Coding Educativo komunitatearena da; zureak gehitzeko, "
                  "batu taldera: https://t.me/vceduca"),
@@ -768,6 +798,16 @@ EU = {
                "https://chatgpt-ia-edu.github.io/resumen/ orriarekin"),
     "cupo_docs": "Gaur {docs} dokumentu bidali dizkidazu jada. Bihar gehiago bidali ahal izango dituzu.",
     "leyendo": "Jasota. Irakurri, liburutegian sartzen den egiaztatu eta fitxa prestatuko dut. Minutu bat behar dut.",
+    "buscando_doc": "Jasota. Dokumentua helbide horretan bilatuko dut eta, deskargatu ahal badut, liburutegian sartzen den egiaztatu eta fitxa prestatuko dut. Minutu bat behar dut.",
+    "doc_no_descargable": ("Dokumentua aurkitu dut, «{titulo}», baina bere webguneak ez dio programa bati deskargatzen uzten. "
+                           "Deskargatu zuk hemendik eta bidali PDFn: {enlace}"),
+    "doc_bloqueado": "Webgune horrek ez dio programa bati dokumentua deskargatzen uzten. Deskargatu zuk handik eta bidali PDFn.",
+    "sin_documento_web": ("Ez dut deskargatzeko dokumenturik aurkitu orri horretan. Liburutegi digitalak dokumentuak "
+                          "biltzen ditu: PDFa baduzu, bidali hona."),
+    "web_no_abre": "Ezin izan dut helbide hori ireki. Egiaztatu esteka edo bidali dokumentua PDFn.",
+    "web_grande": ("Dokumentuak {mb:.0f} MB ditu eta 50 MB arteko fitxategiak bakarrik argitara ditzaket. Zuk zeuk "
+                   "igo dezakezu Liburutegi digitalera (https://t.me/ChatGPTedu/21753) eta haren fitxa prestatu "
+                   "https://chatgpt-ia-edu.github.io/resumen/ orriarekin"),
     "sin_texto": ("Ezin dut PDF honen testua irakurri: irudi gisa eskaneatuta dagoela dirudi. Zuk zeuk igo "
                   "dezakezu Liburutegi digitalera (https://t.me/ChatGPTedu/21753) eta haren fitxa prestatu "
                   "https://chatgpt-ia-edu.github.io/resumen/ orriarekin"),
@@ -950,7 +990,7 @@ EN = {
         "been said in Vibe Coding Educativo about publishing on GitHub Pages?\" You can also ask with a voice note or a screenshot. I can also explain the MIAE and the Vibe coding responsable guide: which MIAE level a use of AI falls into, which licence to give an app or how to evaluate it with the VCER."),
     "ayuda_biblioteca": (
         "📄 Add a document to the ChatGPT-IA-edu Digital Library. Send me the PDF file here (up to 20 MB) "
-        "and I'll take care of everything: I check that it is about AI in education and not already in the "
+        "or the link to the page where it is published, and I'll take care of everything: I check that it is about AI in education and not already in the "
         "library, prepare its record and show it to you. If you agree, I publish it under your name. If its "
         "licence doesn't allow sharing it, I publish only the record."),
     "ayuda_recurso": (
@@ -966,7 +1006,7 @@ EN = {
         "the language you write to me in."),
     "traduccion": "Texts machine-translated with AI, without professional review.",
     "buscar": "Tell me what you're looking for, in your own words. I search the ticked groups; tap one to tick or untick it. I'll keep it while we keep talking.",
-    "biblioteca": "Send me the document as a PDF (up to 20 MB) and I'll prepare its record.",
+    "biblioteca": "Send me the document as a PDF (up to 20 MB), or the link to the page where it is published, and I'll prepare its record.",
     "solo_chatgpt": "Adding documents to the Digital Library is for members of ChatGPT-IA-edu. Joining is free: join the group and send it to me again. This is the group: https://t.me/ChatGPTedu",
     "solo_vce": ("The resource repository belongs to the Vibe Coding Educativo community; to add yours, "
                  "join the group: https://t.me/vceduca"),
@@ -984,6 +1024,16 @@ EN = {
                "(https://t.me/ChatGPTedu/21753) and prepare its record with https://chatgpt-ia-edu.github.io/resumen/"),
     "cupo_docs": "You've already sent me {docs} documents today. You can send more tomorrow.",
     "leyendo": "Received. I'm reading it, checking whether it fits the library and preparing the record. It takes a minute.",
+    "buscando_doc": "Received. I'm looking for the document at that address and, if I can download it, checking whether it fits the library and preparing the record. It takes a minute.",
+    "doc_no_descargable": ("I found the document, \"{titulo}\", but its website doesn't let a program download it. "
+                           "Download it yourself from here and send it to me as a PDF: {enlace}"),
+    "doc_bloqueado": "That website doesn't let a program download the document. Download it yourself and send it to me as a PDF.",
+    "sin_documento_web": ("I couldn't find any document to download on that page. The Digital Library collects "
+                          "documents: if you have the PDF, send it to me here."),
+    "web_no_abre": "I couldn't open that address. Check the link or send me the document as a PDF.",
+    "web_grande": ("The document is {mb:.0f} MB and I can only publish files of up to 50 MB. You can upload it "
+                   "yourself to the Digital Library (https://t.me/ChatGPTedu/21753) and prepare its record with "
+                   "https://chatgpt-ia-edu.github.io/resumen/"),
     "sin_texto": ("I can't read the text of this PDF: it seems to be scanned as an image. You can upload it "
                   "yourself to the Digital Library (https://t.me/ChatGPTedu/21753) and prepare its record "
                   "with https://chatgpt-ia-edu.github.io/resumen/"),

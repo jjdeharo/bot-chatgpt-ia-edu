@@ -51,6 +51,7 @@ import catalogo
 import resumen_semanal
 import diario_grupos
 import consultar
+import documento_web
 import fichas
 import grupos
 import textos
@@ -77,7 +78,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.13.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.14.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -227,6 +228,29 @@ class Telegram:
                     continue
                 registrar(f"Telegram {metodo}: {e.code} {cuerpo[:200]!r}")
                 return None
+
+
+    def subir(self, metodo: str, campo: str, nombre: str, datos: bytes, **params):
+        """Lo mismo, con un archivo que no está en Telegram (el PDF descargado de un enlace, ADR 0035)."""
+        limite = secrets.token_hex(16)
+        partes = []
+        for k, v in params.items():
+            if v is None:
+                continue
+            v = json.dumps(v) if isinstance(v, (dict, list)) else str(v)
+            partes.append(f'--{limite}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode())
+        seguro = nombre.replace('"', "'").replace("\r", " ").replace("\n", " ")
+        partes.append(f'--{limite}\r\nContent-Disposition: form-data; name="{campo}"; filename="{seguro}"\r\n'
+                      f"Content-Type: application/pdf\r\n\r\n".encode() + datos + b"\r\n")
+        partes.append(f"--{limite}--\r\n".encode())
+        pedido = urllib.request.Request(self.url + metodo, b"".join(partes),
+                                        {"Content-Type": f"multipart/form-data; boundary={limite}"})
+        try:
+            with urllib.request.urlopen(pedido, timeout=120) as r:
+                return json.load(r).get("result")
+        except urllib.error.HTTPError as e:
+            registrar(f"Telegram {metodo}: {e.code} {e.read()[:200]!r}")
+            return None
 
 
 def registrar(texto: str) -> None:
@@ -1368,6 +1392,9 @@ class Bot:
         if espera and not fotos and self.contestar_espera(chat, uid, msg, texto, espera):
             return
         enlace = not fotos and SOLO_URL.match(texto)
+        if enlace and documento_web.parece_pdf(enlace.group(1)) and BIBLIOTECA.clave in suyos:
+            # Un PDF suelto es un documento para la Biblioteca digital, no un recurso del catálogo (ADR 0035)
+            return self.en_hilo(self.documento_web, chat, uid, msg["from"], enlace.group(1))
         if enlace and CATALOGO.clave in suyos and not ENLACE_TELEGRAM.match(enlace.group(1)):
             # Un enlace suelto no es una pregunta: es un recurso para el catálogo. El de un mensaje de
             # Telegram sí es una pregunta («¿de qué va este mensaje?»): sigue como consulta (ADR 0020).
@@ -1402,6 +1429,14 @@ class Bot:
             if CATALOGO.clave not in suyos:
                 return self.enviar(chat, self.tx(uid, "solo_vce"))
             return self.en_hilo(self.cambio_pedido, chat, uid, texto[:1000], r["accion"]["recurso"])
+        if r.get("accion") and r["accion"].get("tipo") == "documento":  # un documento por su enlace (ADR 0035)
+            self.apuntar(r["uso"]["usd"])
+            if BIBLIOTECA.clave not in suyos:
+                return self.enviar(chat, self.tx(uid, "solo_chatgpt"))
+            enlace = re.search(r"https?://\S+", r["accion"]["recurso"])
+            if not enlace:
+                return self.enviar(chat, self.tx(uid, "biblioteca"))
+            return self.en_hilo(self.documento_web, chat, uid, msg["from"], enlace.group(0).rstrip(".,;)»\""))
         if r.get("accion"):  # pide añadir un recurso al catálogo, con sus palabras
             self.apuntar(r["uso"]["usd"])
             enlace = re.search(r"https?://\S+", r["accion"]["recurso"])
@@ -1460,6 +1495,19 @@ class Bot:
             guardar_estado(e)
 
     # --- documentos para la Biblioteca digital ------------------------------
+    def puede_documento(self, chat: int, uid: int) -> bool:
+        """Cupo del día, mensajes seguidos y tope del mes, antes de leer un documento."""
+        e = contabilidad(leer_estado())
+        if frenado(e) and e["documentos_hoy"].get(str(uid), 0) >= DOCS_DIA and uid != JUANJO:
+            self.enviar(chat, self.tx(uid, "cupo_docs", docs=DOCS_DIA))
+            return False
+        if self.seguidas(chat, uid):
+            return False
+        if e["usd_mes"] >= TOPE_MES_USD:
+            self.enviar(chat, self.tx(uid, "tope"))
+            return False
+        return True
+
     def documento(self, chat: int, uid: int, msg: dict) -> None:
         d = msg["document"]
         nombre = d.get("file_name") or "documento.pdf"
@@ -1467,23 +1515,62 @@ class Bot:
             return self.enviar(chat, self.tx(uid, "no_pdf"))
         if (d.get("file_size") or 0) > MAX_BYTES:
             return self.enviar(chat, self.tx(uid, "grande", mb=d["file_size"] / 1024 / 1024))
-        e = contabilidad(leer_estado())
-        if frenado(e) and e["documentos_hoy"].get(str(uid), 0) >= DOCS_DIA and uid != JUANJO:
-            return self.enviar(chat, self.tx(uid, "cupo_docs", docs=DOCS_DIA))
-        if self.seguidas(chat, uid):
+        if not self.puede_documento(chat, uid):
             return
-        if e["usd_mes"] >= TOPE_MES_USD:
-            return self.enviar(chat, self.tx(uid, "tope"))
         self.enviar(chat, self.tx(uid, "leyendo"))
-        hecho = self.escribiendo(chat)
-        usd = 0.0
-        try:
+
+        def leer() -> tuple[str, str]:
             with tempfile.TemporaryDirectory() as tmp:
                 ruta = Path(tmp) / "documento.pdf"
                 info = self.tg("getFile", file_id=d["file_id"])
                 urllib.request.urlretrieve(
                     f"https://api.telegram.org/file/bot{self.token}/{info['file_path']}", ruta)
-                texto, meta = fichas.leer_pdf(ruta)
+                return fichas.leer_pdf(ruta)
+        self.preparar_ficha(chat, uid, msg["from"], nombre, leer, file_id=d["file_id"])
+
+    def documento_web(self, chat: int, uid: int, de: dict, url: str) -> None:
+        """El documento de un enlace (ADR 0035): su PDF, o el que presenta la página. Si su web no deja
+        descargarlo, se da a la persona su enlace directo para que lo descargue ella."""
+        if not self.puede_documento(chat, uid):
+            return
+        self.enviar(chat, self.tx(uid, "buscando_doc"))
+        hecho = self.escribiendo(chat)
+        try:
+            r = documento_web.buscar(self.consultor.cliente, url)
+        except Exception as error:  # noqa: BLE001 — un enlace fallido no tumba el bot
+            registrar(f"error con el enlace de un documento: {type(error).__name__}: {error}")
+            r = {"estado": "error", "usd": 0.0}
+        finally:
+            hecho.set()
+        registrar(f"documento por enlace: {r['estado']}, {r['usd']:.4f} USD")
+        if r["estado"] != "pdf":
+            self.apuntar(r["usd"])
+            if r["estado"] == "no_descargable":
+                return self.enviar(chat, self.tx(uid, "doc_no_descargable", titulo=r["titulo"], enlace=r["enlace"]))
+            if r["estado"] == "grande":
+                return self.enviar(chat, self.tx(uid, "web_grande", mb=r["mb"]))
+            clave = {"bloqueado": "doc_bloqueado", "sin_documento": "sin_documento_web",
+                     "no_abre": "web_no_abre"}.get(r["estado"], "error_doc")
+            return self.enviar(chat, self.tx(uid, clave))
+
+        def leer() -> tuple[str, str]:
+            with tempfile.TemporaryDirectory() as tmp:
+                ruta = Path(tmp) / "documento.pdf"
+                ruta.write_bytes(r["datos"])
+                return fichas.leer_pdf(ruta)
+        self.preparar_ficha(chat, uid, de, r["nombre"] or "documento.pdf", leer, pdf=r["datos"],
+                            enlace=r["enlace"], usd_previo=r["usd"], por_titulo=not r["nombre"])
+
+    def preparar_ficha(self, chat: int, uid: int, de: dict, nombre: str, leer, file_id: str | None = None,
+                       pdf: bytes | None = None, enlace: str = "", usd_previo: float = 0.0,
+                       por_titulo: bool = False) -> None:
+        """Comprueba el documento, hace su ficha y se la enseña a la persona. El que llega por enlace se le manda
+        antes como archivo si se va a publicar con él: ve lo que se publicará, y Telegram da el identificador con
+        que se publica."""
+        hecho = self.escribiendo(chat)
+        usd = usd_previo
+        try:
+            texto, meta = leer()
             if len(texto.strip()) < 300:
                 return self.enviar(chat, self.tx(uid, "sin_texto"))
             revision, candidatos, coste = self.fichero.revisar(texto, nombre)
@@ -1496,25 +1583,33 @@ class Bot:
             usd += coste
             compartir, coste = self.fichero.compartible(ficha)
             usd += coste
+            if not fichas.tiene_enlace(ficha) and enlace:  # el del documento que se ha descargado (ADR 0035)
+                ficha = fichas.con_enlace(ficha, enlace)
             if not fichas.tiene_enlace(ficha):  # sin DOI ni dirección: se busca, y si no, se pide (Juanjo, 03-11-2026)
                 url, coste = self.fichero.buscar_enlace(ficha)
                 usd += coste
                 if url:
                     ficha = fichas.con_enlace(ficha, url)
             ficha = fichas.con_linea_final(ficha)
+            if pdf is not None and compartir:  # si solo se publica la ficha, el archivo no hace falta
+                if por_titulo:
+                    nombre = documento_web.nombre_por_titulo(fichas.titulo(ficha))
+                subido = self.tg.subir("sendDocument", "document", nombre, pdf, chat_id=chat)
+                if not subido or not subido.get("document"):
+                    raise RuntimeError("Telegram no ha aceptado el documento descargado")
+                file_id = subido["document"]["file_id"]
         except Exception as error:  # noqa: BLE001 — un documento fallido no tumba el bot
             registrar(f"error con un documento: {type(error).__name__}: {error}")
             return self.enviar(chat, self.tx(uid, "error_doc"))
         finally:
             hecho.set()
             self.apuntar(usd, documento=uid)
-        de = msg["from"]
         autor = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
         if de.get("username"):
             autor += f" (@{de['username']})"
         self.quitar_botones((self.pendientes.get(uid) or {}).get("mensaje"))  # la vista previa anterior ya no vale
         clave = self.clave_borrador()
-        self.pendientes[uid] = {"ficha": ficha, "file_id": d["file_id"], "autor": autor,
+        self.pendientes[uid] = {"ficha": ficha, "file_id": file_id, "autor": autor,
                                 "compartir": compartir, "momento": time.time(), "clave": clave}
         registrar(f"ficha preparada: {usd:.4f} USD, compartir={compartir}, enlace={fichas.tiene_enlace(ficha)}")
         if fichas.tiene_enlace(ficha):

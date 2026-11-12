@@ -11,8 +11,10 @@ tratan un tema y qué recursos hay en el repositorio de Vibe Coding Educativo
 cinco idiomas y con el enlace de cada apartado: en qué nivel está un uso de la IA, qué licencia poner, cómo
 evaluar con la VCER (`scripts/marcos.py`, ADR 0031). Basta con ser miembro de uno de los grupos para buscar en
 todos.
-También añade documentos a la biblioteca: el miembro le manda el PDF y el bot
-comprueba que encaje, hace su ficha y lo publica (`scripts/fichas.py`). Y
+También añade documentos a la biblioteca: el miembro le manda el PDF, o el enlace de la página que lo
+presenta, y el bot comprueba que encaje, hace su ficha y lo publica (`scripts/fichas.py`). Con el enlace, el bot
+descarga el documento; si su web no deja descargarlo a un programa, da su enlace directo para que lo descargue la
+persona (`scripts/documento_web.py`, ADR 0035). Y
 añade recursos educativos al [catálogo de Vibe Coding Educativo](https://vibe-coding-educativo.github.io/app_edu/):
 el miembro le manda el enlace, el bot lee el recurso, comprueba que sea
 educativo, que ya se pueda usar en clase, gratuito y con licencia abierta, hace

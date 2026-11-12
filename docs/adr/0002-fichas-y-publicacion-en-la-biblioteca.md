@@ -42,6 +42,8 @@ Juanjo («yo estaré atento»), y que descarte lo que no trate de IA educativa.
   a @IAEducativa_bot)» (03-11-2026: «la frase final entre paréntesis no debe
   aparecer»).
 
+- Desde el 12-11-2026 también se puede mandar el enlace del documento, en vez del archivo (ADR 0035).
+
 ## Alternativas descartadas
 
 - **Aprobación de Juanjo antes de publicar**: él prefirió vigilar después.
