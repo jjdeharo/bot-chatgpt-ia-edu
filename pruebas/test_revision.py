@@ -73,7 +73,8 @@ class PermisoDeCompartir(unittest.TestCase):
     def test_abiertas(self):
         for lic in ("Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional (CC BY-NC-SA 4.0)",
                     "CC BY 4.0", "CC0 1.0 Universal", "Dominio público", "GNU General Public License v3 (GPL-3.0)",
-                    "El titular permite expresamente su libre distribución."):
+                    "El titular permite expresamente su libre distribución.", "Open Government Licence v3.0 (OGL)",
+                    "Licence Ouverte / Open Licence 2.0 (Etalab)", "GNU Free Documentation License 1.3"):
             self.assertTrue(fichas.se_puede_compartir(self.ficha(lic)), lic)
 
     def fichero(self, respuesta):

@@ -164,7 +164,10 @@ class Fichero:
 LICENCIA_ABIERTA = re.compile(
     r"creative commons|\bCC[ -]?(BY|0)\b|reconocimiento|reconeixement|recoñecemento|aitortu|attribution|atribuci[oó]n"
     r"|dominio p[uú]blico|public domain|\b(A?GPL|LGPL|MIT|BSD|Apache|MPL|EUPL|ODbL)\b"
-    r"|licencia (libre|abierta)|libre distribuci[oó]n|distribuci[oó]n libre|permite (expresamente )?(su |la )?(libre )?distribu", re.I)
+    r"|licencia (libre|abierta)|libre distribuci[oó]n|distribuci[oó]n libre|permite (expresamente )?(su |la )?(libre )?distribu"
+    # Las de los gobiernos y las de documentación y datos (12-11-2026: la OGL de la Office for Students no pasaba)
+    r"|open government licen[cs]e|\bOGL\b|licen[cs]ia de gobierno abierto|licence ouverte|etalab"
+    r"|\bG?FDL\b|free documentation license|unlicense|open data commons|\bODC-BY\b|\bPDDL\b", re.I)
 # Y lo que lo niega, con la frase que piden las instrucciones o con cualquier otra.
 LICENCIA_CERRADA = re.compile(
     r"no se (puede|podr[aá]|permite)|todos los derechos|all rights reserved|prohib|sin licencia|no (tiene|consta|indica) licencia|©", re.I)

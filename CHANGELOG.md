@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.14.2 — 2026-11-12
+
+- Los documentos con licencias abiertas de gobiernos (Open Government Licence del Reino Unido, Licence Ouverte de Francia) o de documentación y datos (GFDL, The Unlicense, Open Data Commons) se publican en la Biblioteca digital con su archivo. Antes salía solo la ficha, como si la licencia no dejara compartirlo (ADR 0019).
+
 ## 1.14.1 — 2026-11-12
 
 - El enlace que se manda después de `/biblioteca` va a la Biblioteca digital aunque no acabe en `.pdf`. Antes, el de una página que presenta el documento se tomaba como un recurso para el repositorio de Vibe Coding Educativo y se pedía su licencia de código (ADR 0035).

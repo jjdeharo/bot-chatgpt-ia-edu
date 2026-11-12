@@ -127,7 +127,12 @@ Corregir los controles sin cambiar la arquitectura ni los modelos:
   es la de Docker por defecto, sin restricción de salida.
 - `direccion_publica` hace una resolución DNS por enlace y por salto: unos milisegundos más
   por recurso.
-- La lista `LICENCIA_ABIERTA` es cerrada: una licencia libre poco común se trata como dudosa.
+- La lista `LICENCIA_ABIERTA` es cerrada: una licencia libre poco común se trata como dudosa. Le
+  faltaban las licencias de gobierno y las de documentación y datos: el 12-11-2026, un informe de la
+  Office for Students con la Open Government Licence v3.0 se publicó sin el archivo. Desde la 1.14.2
+  reconoce también la OGL, la Licence Ouverte (Etalab), la GFDL, The Unlicense y las de Open Data Commons
+  (ODC-BY, PDDL); con una llamada real, Haiku da por buenas la OGL y la Licence Ouverte, y no una mención
+  de pasada a la OGL.
 
 ## Validación
 
