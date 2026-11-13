@@ -78,7 +78,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.14.2"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.15.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1271,6 +1271,18 @@ class Bot:
         except Exception as error:  # noqa: BLE001 — se reintenta en la vuelta siguiente, dentro de la ventana
             registrar(f"error en el aviso del diario: {type(error).__name__}: {error}")
 
+    def diario_personas_si_toca(self) -> None:
+        """Tras el aviso del número, un privado a quien ha aportado algo que sale en él (ADR 0036)."""
+        dia, lista = diario_grupos.personas_pendientes()
+        if not lista:
+            return
+        try:
+            bien, mal = diario_grupos.avisar_personas(self.tg, dia, lista, lambda uid: self.lenguas.get(uid, "es"),
+                                                      textos.texto)
+            registrar(f"diario {dia}: aviso privado a {bien} persona(s); {mal} sin poder escribirles")
+        except Exception as error:  # noqa: BLE001 — lo que no se apuntó se reintenta en la vuelta siguiente
+            registrar(f"error en los avisos privados del diario: {type(error).__name__}: {error}")
+
     def solo_privado(self, chat: int, uid: int, msg: dict) -> None:
         """Responde en el grupo que se le escriba por privado, con freno (Juanjo, 27-10-2026): si no, quien
         lo mencionara una y otra vez llenaría el grupo de avisos iguales. Pasado el freno, calla."""
@@ -1684,6 +1696,9 @@ class Bot:
         if m and not accion.startswith(("rv:", "rnuevo")):  # la lista de recursos conserva sus botones
             self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
                     reply_markup={"inline_keyboard": []})
+        if accion == diario_grupos.BOTON_NO:  # no más avisos privados del diario (ADR 0036)
+            diario_grupos.no_avisar_mas(uid)
+            return self.enviar(uid, self.tx(uid, "diario_no_hecho"))
         if accion.startswith("r"):
             return self.en_hilo(self.boton_recurso, uid, accion)
         if accion.startswith(("jc:", "jn:")) and uid == JUANJO:
@@ -2656,6 +2671,7 @@ class Bot:
             if "vce" in grupos.ACTIVOS:
                 self.resumen_si_toca("vce")
             self.diario_si_toca()
+            self.diario_personas_si_toca()
             try:
                 tipos = {"allowed_updates": ["message", "callback_query", "chat_member"]}
                 updates = self.tg("getUpdates", espera=50, timeout=50, offset=siguiente, **tipos)

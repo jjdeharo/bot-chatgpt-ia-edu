@@ -37,5 +37,6 @@
 | [0033](0033-antispam-de-los-grupos.md) | Antispam de los grupos, sin IA | aceptado |
 | [0034](0034-mensaje-citado-y-avisos-de-comentarios.md) | El mensaje citado en privado y los avisos de comentarios del diario | aceptado |
 | [0035](0035-documentos-por-enlace.md) | Documentos de la Biblioteca digital a partir de un enlace | aceptado |
+| [0036](0036-aviso-privado-a-quien-sale-en-el-diario.md) | Aviso privado a quien sale en el Diario de IA Educativa | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

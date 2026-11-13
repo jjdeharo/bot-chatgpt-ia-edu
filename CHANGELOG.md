@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.15.0 — 2026-11-13
+
+- Quien ha aportado algo que sale en el Diario de IA Educativa (un documento de la Biblioteca digital, un recurso del repositorio o el recurso que cuenta una pieza) recibe un mensaje privado del bot con el titular y el enlace de cada pieza, y un botón para no recibirlos más (ADR 0036).
+
 ## 1.14.2 — 2026-11-12
 
 - Los documentos con licencias abiertas de gobiernos (Open Government Licence del Reino Unido, Licence Ouverte de Francia) o de documentación y datos (GFDL, The Unlicense, Open Data Commons) se publican en la Biblioteca digital con su archivo. Antes salía solo la ficha, como si la licencia no dejara compartirlo (ADR 0019).

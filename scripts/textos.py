@@ -13,6 +13,9 @@ común y van en castellano.
 LENGUAS = ("es", "ca", "gl", "eu", "en")
 
 ES = {
+    "diario_tuyo": 'Hoy el Diario de IA Educativa cuenta lo que has compartido:',
+    "diario_no_mas": 'No avisarme más',
+    "diario_no_hecho": 'De acuerdo, no volveré a avisarte cuando salga en el diario algo tuyo.',
     "al_menos_uno": 'Tiene que quedar al menos un grupo marcado.',
     "quitado_biblioteca": 'Quitado de la Biblioteca digital.',
     "b_quitar_biblioteca": 'Quitarlo de la Biblioteca',
@@ -268,6 +271,9 @@ ES = {
 }
 
 CA = {
+    "diario_tuyo": "Avui el Diari d'IA Educativa explica el que has compartit:",
+    "diario_no_mas": "No m'avisis més",
+    "diario_no_hecho": "D'acord, no et tornaré a avisar quan surti al diari alguna cosa teva.",
     "al_menos_uno": 'Hi ha de quedar com a mínim un grup marcat.',
     "quitado_biblioteca": 'Tret de la Biblioteca digital.',
     "b_quitar_biblioteca": "Treure'l de la Biblioteca",
@@ -495,6 +501,9 @@ CA = {
 }
 
 GL = {
+    "diario_tuyo": 'Hoxe o Diario de IA Educativa conta o que compartiches:',
+    "diario_no_mas": 'Non me avises máis',
+    "diario_no_hecho": 'De acordo, non volverei avisarte cando saia no diario algo teu.',
     "al_menos_uno": 'Ten que quedar polo menos un grupo marcado.',
     "quitado_biblioteca": 'Quitado da Biblioteca dixital.',
     "b_quitar_biblioteca": 'Quitalo da Biblioteca',
@@ -722,6 +731,9 @@ GL = {
 }
 
 EU = {
+    "diario_tuyo": 'Gaur Hezkuntzako AA Egunkariak partekatu duzuna kontatzen du:',
+    "diario_no_mas": 'Ez abisatu gehiago',
+    "diario_no_hecho": 'Ados, ez dizut berriro abisatuko egunkarian zurea den zerbait ateratzen denean.',
     "al_menos_uno": 'Gutxienez talde bat markatuta geratu behar da.',
     "quitado_biblioteca": 'Liburutegi digitaletik kenduta.',
     "b_quitar_biblioteca": 'Liburutegitik kendu',
@@ -951,6 +963,9 @@ EU = {
 }
 
 EN = {
+    "diario_tuyo": 'Today Educational AI Daily covers what you shared:',
+    "diario_no_mas": 'Stop notifying me',
+    "diario_no_hecho": "OK, I won't let you know again when something of yours appears in the paper.",
     "al_menos_uno": 'At least one group has to stay ticked.',
     "quitado_biblioteca": 'Removed from the Digital Library.',
     "b_quitar_biblioteca": 'Remove it from the Library',
