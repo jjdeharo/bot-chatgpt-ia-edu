@@ -182,7 +182,10 @@ def avisar_personas(tg, dia: date, lista: list[dict], lengua_de, texto, carpeta:
     bien = mal = 0
     for p in lista:
         lengua = lengua_de(p["id"])
-        partes = mensaje_persona(p, lengua, texto(lengua, "diario_tuyo"), texto(lengua, "diario_no_mas"))
+        # Saluda por su nombre de pila, el que tenga ahora en Telegram (Juanjo, 13-11-2026); sin él, sin nombre
+        nombre = ((tg("getChat", chat_id=p["id"]) or {}).get("first_name") or "").strip()
+        saludo = texto(lengua, "diario_saludo", nombre=nombre) if nombre else texto(lengua, "diario_saludo_sin")
+        partes = mensaje_persona(p, lengua, f"{saludo} {texto(lengua, 'diario_tuyo')}", texto(lengua, "diario_no_mas"))
         apuntar_persona(dia, p["id"], carpeta)
         if partes and tg("sendMessage", chat_id=p["id"], **partes) is not None:
             bien += 1

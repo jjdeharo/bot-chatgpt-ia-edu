@@ -25,6 +25,8 @@ class Personas(unittest.TestCase):
         self.enviados = []
 
     def tg(self, metodo, **params):
+        if metodo == "getChat":   # la 1 se llama Aina; de la 2, Telegram no da el nombre
+            return {"first_name": "Aina "} if params["chat_id"] == 1 else None
         self.enviados.append(params)
         return None if params["chat_id"] == 2 else {"message_id": 1}   # a la 2 Telegram no deja escribirle
 
@@ -43,8 +45,9 @@ class Personas(unittest.TestCase):
     def test_en_su_idioma_con_todas_sus_piezas_y_el_boton(self):
         dia, lista = d.personas_pendientes(A_LAS_SIETE, carpeta=self.tmp)
         d.avisar_personas(self.tg, dia, lista, lambda uid: "ca", textos.texto, carpeta=self.tmp)
+        self.assertTrue(self.enviados[0]["text"].startswith("Bon dia, Aina. Avui el Diari d'IA Educativa"))
         m = self.enviados[1]
-        self.assertTrue(m["text"].startswith("Avui el Diari d'IA Educativa"))
+        self.assertTrue(m["text"].startswith("Bon dia. Avui el Diari d'IA Educativa"))
         self.assertEqual(m["text"].count("«Titular ca»"), 2)
         self.assertIn("/ca/2026-11-12/x.html", m["text"])
         self.assertEqual(m["reply_markup"]["inline_keyboard"][0][0]["callback_data"], d.BOTON_NO)

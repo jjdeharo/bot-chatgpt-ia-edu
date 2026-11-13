@@ -12,7 +12,9 @@ cada idioma.
 ## Decisión
 
 - A partir de las 7:00 y dentro de la misma ventana que los avisos de los grupos, el bot escribe a cada
-  persona un solo mensaje: «Hoy el Diario de IA Educativa cuenta lo que has compartido:» y, debajo, el
+  persona un solo mensaje, con un saludo por su nombre de pila, el que tenga en ese momento en Telegram
+  (`getChat`; si no lo da, sin nombre): «Buenos días, Nombre. Hoy el Diario de IA Educativa cuenta lo que
+  has compartido:» y, debajo, el
   titular y el enlace de cada pieza, en su idioma si el bot lo sabe (si no, en castellano), con la vista
   previa de la primera.
 - Debajo, el botón «No avisarme más»: quien lo pulsa queda en `datos/diario-sin-avisos.json` y no vuelve a
@@ -20,6 +22,7 @@ cada idioma.
 - Cada persona se apunta en `datos/diario/<fecha>.privados.json` al intentarlo, haya salido o no: Telegram
   no deja a un bot escribir primero a quien nunca le ha hablado, y no se insiste.
 - Sin IA: el texto lo monta el programa.
+- El saludo lo pidió Juanjo al ver el primer mensaje (13-11-2026).
 
 ## Alternativas descartadas
 

@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.15.1 — 2026-11-13
+
+- El mensaje privado del diario empieza saludando por el nombre: «Buenos días, Nombre. Hoy el Diario de IA Educativa cuenta lo que has compartido:» (ADR 0036).
+
 ## 1.15.0 — 2026-11-13
 
 - Quien ha aportado algo que sale en el Diario de IA Educativa (un documento de la Biblioteca digital, un recurso del repositorio o el recurso que cuenta una pieza) recibe un mensaje privado del bot con el titular y el enlace de cada pieza, y un botón para no recibirlos más (ADR 0036).
