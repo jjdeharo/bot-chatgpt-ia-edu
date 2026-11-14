@@ -489,7 +489,8 @@ class Consultora:
         if r.stop_reason == "tool_use":
             texto = texto or "No he podido terminar la búsqueda. Prueba a concretar más la pregunta."
             sin_resolver = sin_resolver or "sin resultado"
-        return {"texto": texto, "uso": uso, "sin_resolver": sin_resolver, "valorable": valorable}
+        return {"texto": texto, "uso": uso, "parada": r.stop_reason, "sin_resolver": sin_resolver,
+                "valorable": valorable}
 
 
 def con_enlaces(texto: str, entidades: list) -> str:
@@ -887,7 +888,8 @@ class Karla(bot.Bot):
                                               al_grupo={"texto": propio, "fotos": fotos},
                                               ofrecer=r.get("sin_resolver") in bot.MOTIVOS_GRUPO)
         if r.get("sin_resolver") and uid != bot.JUANJO:  # las pruebas de Juanjo no cuentan
-            bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"])
+            bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"], r["texto"],
+                                     r.get("parada") == "tool_use")
         self.memoria[uid] = (time.time(), historial[-2 * bot.INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},
                                                           {"role": "assistant", "content": r["texto"]}])
         self.apuntar(r["uso"]["usd"], pregunta=uid)

@@ -34,7 +34,12 @@ ayuda «No guardo tus preguntas».
    autoconocimiento del bot»).
 2. **Anónimo:** `datos/sin-resolver.jsonl` guarda la fecha, el motivo y el
    texto de la pregunta, sin la cuenta ni el nombre de quien la hace. Se borra a
-   los 60 días. Las preguntas de Juanjo no se guardan.
+   los 60 días. Las preguntas de Juanjo no se guardan. Desde el 14-11-2026 guarda
+   también lo que respondió el bot (`respuesta`, los primeros 1.500 caracteres) y,
+   si se quedó sin terminar la búsqueda, `sin_terminar`: en la revisión de las
+   de Karla de ese día no se podía saber si había contestado a medias (a «¿cómo
+   cuento las palabras de un proyecto?» había propuesto un procesador de textos)
+   o nada. La respuesta es del bot, no de quien pregunta; la ayuda no cambia.
 3. **La ayuda lo dice**, en los cinco idiomas: «Solo guardo, de forma anónima,
    las preguntas que no consigo responder, para mejorar el bot, y las borro a los
    60 días» (texto de Juanjo; «de forma anónima» y no «totalmente», porque si

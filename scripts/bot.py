@@ -66,6 +66,7 @@ DIAS_SIN_RESOLVER = 60
 PREGUNTAS_GRUPO = BASE / "datos" / "preguntas-grupo.json"
 PREGUNTA_GRUPO_DIAS = 7
 PREGUNTAS_GRUPO_DIA = 3  # por persona y día: un error o un abuso no llena el grupo
+RESPUESTA_SIN_RESOLVER = 1500  # caracteres de la respuesta que se guardan con cada pregunta sin resolver
 MOTIVOS_GRUPO = ("sin resultado", "respuesta vacía")  # se ofrece de entrada; con 👎, en cualquier respuesta
 LARGO_GRUPO = 1500       # lo más que se publica de la pregunta (con imágenes, el pie de foto admite 1.024)
 # Dónde se pueden llevar. EduMedia-IAG no, de entrada: es el grupo de Raül Torres y el bot no publica nada allí.
@@ -78,7 +79,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.16.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.16.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -291,11 +292,19 @@ def purgar_sin_resolver(nueva: str | None = None) -> None:
         tmp.replace(SIN_RESOLVER)
 
 
-def guardar_sin_resolver(pregunta: str, motivo: str) -> None:
+def guardar_sin_resolver(pregunta: str, motivo: str, respuesta: str | None = None,
+                         sin_terminar: bool = False) -> None:
     """Lo que el bot no ha sabido responder, para mejorarlo (Juanjo, 27-10-2026). Sin la cuenta ni el nombre de
-    quien pregunta (lo que diga el propio texto no se toca). Se borra a los DIAS_SIN_RESOLVER días."""
-    purgar_sin_resolver(json.dumps({"fecha": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                    "motivo": motivo, "pregunta": pregunta[:500]}, ensure_ascii=False))
+    quien pregunta (lo que diga el propio texto no se toca). Se borra a los DIAS_SIN_RESOLVER días.
+    Desde el 14-11-2026 guarda también lo que respondió el bot, y si se quedó sin terminar la búsqueda: sin eso,
+    al revisarlas no se sabía si había contestado a medias o nada (ADR 0007)."""
+    entrada = {"fecha": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+               "motivo": motivo, "pregunta": pregunta[:500]}
+    if respuesta:
+        entrada["respuesta"] = respuesta[:RESPUESTA_SIN_RESOLVER]
+    if sin_terminar:
+        entrada["sin_terminar"] = True
+    purgar_sin_resolver(json.dumps(entrada, ensure_ascii=False))
 
 
 def sin_resolver_de(e: dict) -> str:
@@ -921,7 +930,7 @@ class Bot:
                 hecho = self.tg("sendMessage", text=html.unescape(re.sub(r"<[^>]+>", "", texto_html[corte:])), **comun)
         if hecho and valorable:
             self.valorables[uid] = {"chat": chat, "id": hecho["message_id"], "pregunta": pregunta, "guardada": guardada,
-                                    "clave": clave}
+                                    "clave": clave, "respuesta": texto_md}
         if hecho is None:  # Telegram no ha aceptado ninguna de las formas: que conste, no como respondida
             registrar("respuesta sin entregar: Telegram ha rechazado el mensaje en todas sus formas")
         return hecho is not None
@@ -955,7 +964,7 @@ class Bot:
         if uid == JUANJO or not v:  # sin v: botones de antes de reiniciar, o un segundo toque; no cuentan
             return
         if not util and not v["guardada"]:
-            guardar_sin_resolver(v["pregunta"], "valoración negativa")
+            guardar_sin_resolver(v["pregunta"], "valoración negativa", v.get("respuesta"))
         with CERROJO:
             e = contabilidad(leer_estado())
             clave = "utiles" if util else "no_utiles"
@@ -1477,7 +1486,8 @@ class Bot:
                                           al_grupo={"texto": texto, "fotos": fotos},
                                           ofrecer=r.get("sin_resolver") in MOTIVOS_GRUPO)
         if r.get("sin_resolver") and uid != JUANJO:  # las pruebas de Juanjo no cuentan
-            guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"])
+            guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"], r["texto"],
+                                 r.get("parada") == "tool_use")
         # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.
         self.memoria[uid] = (time.time(), historial[-2 * INTERCAMBIOS + 2:] + [{"role": "user", "content": con_fotos(texto[:1000], fotos)},
                                                           {"role": "assistant", "content": r["texto"]}])

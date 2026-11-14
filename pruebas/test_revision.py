@@ -333,6 +333,19 @@ class Limpieza(unittest.TestCase):
                 bot.purgar_sin_resolver()
             self.assertEqual([json.loads(l)["pregunta"] for l in f.read_text().splitlines()], ["b"])
 
+    def test_sin_resolver_guarda_la_respuesta_y_si_quedo_sin_terminar(self):
+        """ADR 0007: con la respuesta del bot se sabe al revisar si contestó a medias; sin ella, como antes."""
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / "sin-resolver.jsonl"
+            with mock.patch.object(bot, "SIN_RESOLVER", f):
+                bot.guardar_sin_resolver("¿pregunta?", "sin resultado", "x" * 3000, True)
+                bot.guardar_sin_resolver("¿otra?", "error")
+            a, b = [json.loads(l) for l in f.read_text().splitlines()]
+        self.assertEqual((len(a["respuesta"]), a["sin_terminar"]), (bot.RESPUESTA_SIN_RESOLVER, True))
+        self.assertNotIn("respuesta", b)
+        self.assertNotIn("sin_terminar", b)
+        self.assertEqual(set(a), {"fecha", "motivo", "pregunta", "respuesta", "sin_terminar"})  # nada de quién
+
     def test_memoria_y_borradores_caducados_se_borran(self):
         b = bot_sin_arrancar()
         hace = time.time() - 48 * 3600
