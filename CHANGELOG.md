@@ -2,6 +2,11 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.16.2 — 2026-11-14
+
+- Cuando el Bot de IA Educativa recomienda una herramienta o un servicio (un Gem, un GPT, NotebookLM, una app), busca antes en los grupos y en el diario si se ha dicho que cambia de nombre o desaparece, y lo avisa junto a la recomendación. Y no ofrece hacer nada que no pueda, como preguntar a otra persona (ADR 0038).
+- Las preguntas sin resolver por un error guardan el tipo de error, en los dos bots, para saber al revisarlas por qué fallaron (ADR 0007).
+
 ## 1.16.1 — 2026-11-14
 
 - Las preguntas sin resolver de los dos bots guardan también lo que respondió el bot (los primeros 1.500 caracteres) y si se quedó sin terminar la búsqueda, para saber al revisarlas si contestó a medias o nada. Siguen sin nada de quien pregunta (ADR 0007).

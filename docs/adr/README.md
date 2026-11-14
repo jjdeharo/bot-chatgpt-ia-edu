@@ -39,5 +39,6 @@
 | [0035](0035-documentos-por-enlace.md) | Documentos de la Biblioteca digital a partir de un enlace | aceptado |
 | [0036](0036-aviso-privado-a-quien-sale-en-el-diario.md) | Aviso privado a quien sale en el Diario de IA Educativa | aceptado |
 | [0037](0037-la-portada-como-imagen-del-aviso-del-diario.md) | La portada como imagen del aviso del diario |
+| [0038](0038-recomendaciones-al-dia-y-sin-promesas.md) | Recomendaciones al día y sin promesas | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

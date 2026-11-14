@@ -40,6 +40,11 @@ ayuda «No guardo tus preguntas».
    de Karla de ese día no se podía saber si había contestado a medias (a «¿cómo
    cuento las palabras de un proyecto?» había propuesto un procesador de textos)
    o nada. La respuesta es del bot, no de quien pregunta; la ayuda no cambia.
+   Cuando el motivo es «error», guarda además el tipo de error (`tipo_error`,
+   por ejemplo `TimeoutError`), sin el detalle: el registro del contenedor se
+   pierde al desplegar, y en la revisión del 14-11-2026 no se pudo saber por
+   qué había fallado una pregunta del día anterior que, repetida, se respondía
+   bien.
 3. **La ayuda lo dice**, en los cinco idiomas: «Solo guardo, de forma anónima,
    las preguntas que no consigo responder, para mejorar el bot, y las borro a los
    60 días» (texto de Juanjo; «de forma anónima» y no «totalmente», porque si

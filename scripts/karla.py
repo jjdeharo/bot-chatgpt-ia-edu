@@ -872,7 +872,7 @@ class Karla(bot.Bot):
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             bot.registrar(f"error: {type(error).__name__}: {error}")
             if uid != bot.JUANJO:
-                bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), "error")
+                bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), "error", error=error)
             return self.enviar(chat, self.tx(uid, "error"))
         finally:
             hecho.set()

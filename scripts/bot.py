@@ -79,7 +79,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.16.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.16.2"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -293,7 +293,7 @@ def purgar_sin_resolver(nueva: str | None = None) -> None:
 
 
 def guardar_sin_resolver(pregunta: str, motivo: str, respuesta: str | None = None,
-                         sin_terminar: bool = False) -> None:
+                         sin_terminar: bool = False, error: BaseException | None = None) -> None:
     """Lo que el bot no ha sabido responder, para mejorarlo (Juanjo, 27-10-2026). Sin la cuenta ni el nombre de
     quien pregunta (lo que diga el propio texto no se toca). Se borra a los DIAS_SIN_RESOLVER días.
     Desde el 14-11-2026 guarda también lo que respondió el bot, y si se quedó sin terminar la búsqueda: sin eso,
@@ -304,6 +304,8 @@ def guardar_sin_resolver(pregunta: str, motivo: str, respuesta: str | None = Non
         entrada["respuesta"] = respuesta[:RESPUESTA_SIN_RESOLVER]
     if sin_terminar:
         entrada["sin_terminar"] = True
+    if error is not None:  # solo el tipo: el registro del contenedor se pierde al desplegar (ADR 0007)
+        entrada["tipo_error"] = type(error).__name__
     purgar_sin_resolver(json.dumps(entrada, ensure_ascii=False))
 
 
@@ -1447,7 +1449,7 @@ class Bot:
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             registrar(f"error: {type(error).__name__}: {error}")
             if uid != JUANJO:
-                guardar_sin_resolver(con_fotos(texto, fotos), "error")
+                guardar_sin_resolver(con_fotos(texto, fotos), "error", error=error)
             return self.enviar(chat, self.tx(uid, "error"))
         finally:
             hecho.set()

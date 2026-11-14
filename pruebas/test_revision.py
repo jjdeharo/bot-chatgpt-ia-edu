@@ -346,6 +346,16 @@ class Limpieza(unittest.TestCase):
         self.assertNotIn("sin_terminar", b)
         self.assertEqual(set(a), {"fecha", "motivo", "pregunta", "respuesta", "sin_terminar"})  # nada de quién
 
+    def test_sin_resolver_por_error_guarda_el_tipo(self):
+        """ADR 0007: el registro del contenedor se pierde al desplegar; el tipo de error queda con la pregunta."""
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / "sin-resolver.jsonl"
+            with mock.patch.object(bot, "SIN_RESOLVER", f):
+                bot.guardar_sin_resolver("¿pregunta?", "error", error=TimeoutError("detalle que no se guarda"))
+            a = json.loads(f.read_text())
+        self.assertEqual(a["tipo_error"], "TimeoutError")
+        self.assertEqual(set(a), {"fecha", "motivo", "pregunta", "tipo_error"})
+
     def test_memoria_y_borradores_caducados_se_borran(self):
         b = bot_sin_arrancar()
         hace = time.time() - 48 * 3600
