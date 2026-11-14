@@ -65,6 +65,21 @@ class Diario(unittest.TestCase):
         self.assertEqual(lista["vce"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/n/7-vce.html")
         self.assertTrue(lista["vce"]["text"].endswith("👉 https://diarioiaeducativa.github.io/n/7-vce.html"))
 
+    def test_portada_como_imagen_del_aviso(self):
+        (self.tmp / "2026-11-14.json").write_text(json.dumps({
+            "fecha": "2026-11-14", "titulo": "Núm. 13", "url": "https://diarioiaeducativa.github.io/?n=13",
+            "imagen": "https://diarioiaeducativa.github.io/portadas/2026-11-13-es.jpg",
+            "avisos": {"vce": {"saludo": "Hola.", "puntos": ["Uno"], "url": "https://diarioiaeducativa.github.io/n/13-vce.html"}}}))
+        a_las_7 = datetime(2026, 11, 14, 6, 1, tzinfo=timezone.utc)
+        _, lista = d.pendientes(a_las_7, carpeta=self.tmp, disponible=lambda u: True)
+        self.assertEqual(lista["vce"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/portadas/2026-11-13-es.jpg")
+        self.assertTrue(lista["vce"]["text"].endswith("👉 https://diarioiaeducativa.github.io/n/13-vce.html"))
+        # Si la portada aún no está en la web, se espera; pasada la espera, sale con la imagen de la página del grupo
+        _, lista = d.pendientes(a_las_7, carpeta=self.tmp, disponible=lambda u: False)
+        self.assertEqual(lista, {})
+        _, lista = d.pendientes(datetime(2026, 11, 14, 6, 25, tzinfo=timezone.utc), carpeta=self.tmp, disponible=lambda u: False)
+        self.assertEqual(lista["vce"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/n/13-vce.html")
+
     def test_sin_cabecera_sale_igual(self):
         (self.tmp / "2026-11-05.json").write_text(json.dumps(
             {"fecha": "2026-11-05", "avisos": {"vce": {"saludo": "Buenos días.", "puntos": ["Uno", "Dos"]}}}))

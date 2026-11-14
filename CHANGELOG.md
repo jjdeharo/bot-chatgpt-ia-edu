@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.16.0 — 2026-11-14
+
+- El aviso diario del Diario de IA Educativa lleva como imagen grande la portada del número, de la cabecera a la viñeta, la misma en los tres grupos. Si aún no está en la web a las 7:00, el bot espera hasta 20 minutos y después sale con la imagen de antes (ADR 0037).
+
 ## 1.15.1 — 2026-11-13
 
 - El mensaje privado del diario empieza saludando por el nombre: «Buenos días, Nombre. Hoy el Diario de IA Educativa cuenta lo que has compartido:» (ADR 0036).

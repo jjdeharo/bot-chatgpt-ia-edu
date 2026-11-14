@@ -12,6 +12,11 @@ enlace (la página de entrada de su grupo, con su imagen); si no, vale el de la 
 los puntos con su marca y el enlace, con la imagen del número grande y encima del texto. Un aviso
 que sea solo texto (el formato anterior) se publica tal cual.
 
+Desde el 14-11-2026 (ADR 0037), si el archivo trae «imagen» (la captura de la portada del número, de la cabecera
+a la viñeta), esa es la imagen grande del aviso, la misma en los tres grupos. Como el diario la sube a la web
+pocos minutos antes, el bot comprueba que ya está; si no, espera hasta ESPERA_IMAGEN y después publica con la
+de la página del grupo, como antes.
+
 Lo publicado se apunta grupo a grupo en datos/diario/<fecha>.publicado.json, para no repetir
 un grupo si otro falló. Si el bot estaba parado, publica dentro de la VENTANA; después, ese día
 se queda sin aviso (mejor nada que un «buenos días» a media tarde)."""
@@ -24,6 +29,7 @@ from zoneinfo import ZoneInfo
 MADRID = ZoneInfo("Europe/Madrid")
 HORA = time(7, 0)
 VENTANA = timedelta(hours=5)
+ESPERA_IMAGEN = timedelta(minutes=20)   # lo que se espera a que la portada esté en la web
 CARPETA = Path(__file__).resolve().parent.parent / "datos" / "diario"
 PORTADA = "https://diarioiaeducativa.github.io/"   # si el archivo no trae la cabecera del número
 
@@ -33,8 +39,20 @@ def hoy_local(ahora: datetime | None = None) -> tuple[date, datetime]:
     return local.date(), local
 
 
-def mensaje(datos: dict, aviso) -> dict | None:
-    """Los parámetros de sendMessage para un aviso, o None si no hay nada que publicar."""
+def imagen_disponible(url: str) -> bool:
+    """Si la imagen ya se puede descargar: Telegram hace la vista previa al enviar, y sin ella no hay imagen."""
+    import urllib.request
+    try:
+        pet = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "BotIAEducativa"})
+        with urllib.request.urlopen(pet, timeout=10) as r:
+            return r.status == 200 and r.headers.get("Content-Type", "").startswith("image/")
+    except Exception:  # noqa: BLE001 — cualquier fallo es «todavía no»
+        return False
+
+
+def mensaje(datos: dict, aviso, con_imagen: bool = True) -> dict | None:
+    """Los parámetros de sendMessage para un aviso, o None si no hay nada que publicar. Con `con_imagen`, la vista
+    previa es la portada del número («imagen»), si el archivo la trae; si no, la página del enlace."""
     if isinstance(aviso, str):   # el formato anterior: texto hecho, con su enlace al final
         return {"text": aviso} if aviso.strip() else None
     if not isinstance(aviso, dict):
@@ -53,11 +71,20 @@ def mensaje(datos: dict, aviso) -> dict | None:
     if saludo:
         lineas += ["", e(saludo)]
     lineas += [""] + [f"• {e(p)}" for p in puntos] + ["", f"👉 {e(url)}"]
+    imagen = (datos.get("imagen") or "").strip() if con_imagen else ""
     return {"text": "\n".join(lineas).strip(), "parse_mode": "HTML",
-            "link_preview_options": {"url": url, "prefer_large_media": True, "show_above_text": True}}
+            "link_preview_options": {"url": imagen or url, "prefer_large_media": True, "show_above_text": True}}
 
 
-def avisos(dia: date, carpeta: Path = CARPETA) -> dict[str, dict]:
+def leer(dia: date, carpeta: Path = CARPETA) -> dict:
+    try:
+        datos = json.loads((carpeta / f"{dia.isoformat()}.json").read_text())
+    except (OSError, ValueError):
+        return {}
+    return datos if datos.get("fecha") == dia.isoformat() else {}
+
+
+def avisos(dia: date, carpeta: Path = CARPETA, con_imagen: bool = True) -> dict[str, dict]:
     """Los avisos del día, ya montados: grupo → parámetros de sendMessage."""
     try:
         datos = json.loads((carpeta / f"{dia.isoformat()}.json").read_text())
@@ -65,7 +92,7 @@ def avisos(dia: date, carpeta: Path = CARPETA) -> dict[str, dict]:
         return {}
     if datos.get("fecha") != dia.isoformat():
         return {}
-    montados = {g: mensaje(datos, a) for g, a in (datos.get("avisos") or {}).items()}
+    montados = {g: mensaje(datos, a, con_imagen) for g, a in (datos.get("avisos") or {}).items()}
     return {g: m for g, m in montados.items() if m}
 
 
@@ -76,14 +103,20 @@ def publicados(dia: date, carpeta: Path = CARPETA) -> set[str]:
         return set()
 
 
-def pendientes(ahora: datetime | None = None, activos=None, carpeta: Path = CARPETA) -> tuple[date, dict[str, dict]]:
-    """El día y los avisos que toca publicar ahora (vacío si no toca)."""
+def pendientes(ahora: datetime | None = None, activos=None, carpeta: Path = CARPETA,
+               disponible=imagen_disponible) -> tuple[date, dict[str, dict]]:
+    """El día y los avisos que toca publicar ahora (vacío si no toca, o si aún se espera a la portada)."""
     dia, local = hoy_local(ahora)
     salida = datetime.combine(dia, HORA, tzinfo=MADRID)
     if not (salida <= local < salida + VENTANA):
         return dia, {}
     hechos = publicados(dia, carpeta)
-    lista = {g: t for g, t in avisos(dia, carpeta).items() if g not in hechos and (activos is None or g in activos)}
+    imagen = (leer(dia, carpeta).get("imagen") or "").strip()
+    con_imagen = bool(imagen) and disponible(imagen)
+    if imagen and not con_imagen and local < salida + ESPERA_IMAGEN:
+        return dia, {}   # la portada aún no está en la web: se vuelve a mirar en la vuelta siguiente
+    lista = {g: t for g, t in avisos(dia, carpeta, con_imagen).items()
+             if g not in hechos and (activos is None or g in activos)}
     return dia, lista
 
 
