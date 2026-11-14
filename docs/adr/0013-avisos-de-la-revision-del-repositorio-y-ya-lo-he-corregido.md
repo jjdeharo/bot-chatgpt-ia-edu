@@ -61,8 +61,8 @@ que se cerró el formulario es la única vía para cambiar o quitar un recurso.
 - Los avisos salieron el 29-10-2026: 79 recursos de 26 personas. A las 5 que ya habían ligado su
   correo con `/misrecursos`, un mensaje del bot; a las otras 21, un correo desde la cuenta de Juanjo
   con los pasos para hacerlo con el bot. `avisos.json` guarda por dónde salió cada uno (`via`).
-- La retirada al acabar el plazo y el recordatorio a falta de una semana quedan para
-  la fase siguiente.
+- La retirada al acabar el plazo, con la confirmación de Juanjo, está en el ADR 0039 (14-11-2026); el
+  recordatorio a falta de una semana no se ha hecho.
 - Rectificado el mismo 29-10-2026: lo publicado antes del bot no se retira por no tener
   licencia (Juanjo: «lo que estaba de antes en el tema de licencias lo íbamos a dejar, excepto las
   licencias incompatibles como copyright»). Los 53 avisos de tipo A quedan como recomendación:

@@ -8,6 +8,8 @@ de la revisión (el informe de Juanjo) y los enseña; no avisa a nadie.
   avisos.py preparar CLASIFICACION.json --plazo AAAA-MM-DD   crea los pendientes (no toca los que ya hay)
   avisos.py prueba URL TIPO [MOTIVO]                          uno suelto, para probar el bot
   avisos.py ver                                               cuántos hay en cada estado
+  avisos.py restaurar URL                                     devuelve al repositorio uno retirado al acabar el
+                                                              plazo, con su ficha y su dueño (ADR 0039)
 """
 import argparse
 import collections
@@ -15,6 +17,7 @@ import json
 from datetime import date, timedelta
 
 import catalogo
+import plazos
 
 TIPOS = {"A": "sin licencia", "B": "el enlace no se abre", "C": "un GPT de ChatGPT", "D": "derechos reservados"}
 PLAZO_GPT = "2026-12-11"  # OpenAI retira los GPT ese día
@@ -71,6 +74,8 @@ if __name__ == "__main__":
     b.add_argument("tipo", choices=list(TIPOS))
     b.add_argument("motivo", nargs="?", default="")
     sub.add_parser("ver")
+    c = sub.add_parser("restaurar")
+    c.add_argument("url")
     args = p.parse_args()
     if args.orden == "preparar":
         preparar(args.clasificacion, args.plazo)
@@ -82,5 +87,7 @@ if __name__ == "__main__":
                                             "estado": "pendiente"}
         catalogo.guardar_avisos(d)
         print("aviso de prueba puesto")
+    elif args.orden == "restaurar":
+        print(plazos.restaurar(args.url, catalogo.Hoja()))
     else:
         ver()

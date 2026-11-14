@@ -54,6 +54,7 @@ import consultar
 import documento_web
 import fichas
 import grupos
+import plazos
 import textos
 
 ZONA = ZoneInfo("Europe/Madrid")
@@ -79,7 +80,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.16.2"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.17.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1294,6 +1295,87 @@ class Bot:
         except Exception as error:  # noqa: BLE001 — lo que no se apuntó se reintenta en la vuelta siguiente
             registrar(f"error en los avisos privados del diario: {type(error).__name__}: {error}")
 
+    def plazo_si_toca(self) -> None:
+        """El día que vence un plazo de la revisión del repositorio, a las 9:00, vuelve a comprobar lo pendiente y
+        le manda a Juanjo la lista de lo que sigue sin cumplir para que confirme la retirada (plazos.py, ADR 0039).
+        Se mira en cada vuelta del bucle; lo que tarda va aparte. Si falla, se reintenta a la hora."""
+        if getattr(self, "revisando_plazo", False) or time.time() - getattr(self, "plazo_intento", 0) < 3600:
+            return
+        plazo = plazos.vencido()
+        if not plazo or not self.hoja or not JUANJO:
+            return
+        self.revisando_plazo, self.plazo_intento = True, time.time()
+
+        def hacer():
+            try:
+                abre = lambda url: catalogo.leer_url(url)[1]  # noqa: E731
+                r = plazos.revisar(plazo, self.hoja, lambda url: catalogo.comprobar_licencia(self.recursos, url),
+                                   abre, CERROJO, self.apuntar)
+                m = self.tg("sendMessage", chat_id=JUANJO, text=plazos.texto(plazo, r),
+                            link_preview_options={"is_disabled": True}, reply_markup=plazos.botones(plazo, r))
+                with CERROJO:
+                    e = plazos.leer_estado()
+                    if not m:  # sin el mensaje, Juanjo no podría decidir: se repite a la hora (lo hecho no cambia)
+                        e.pop(plazo, None)
+                    else:
+                        e[plazo]["mensaje"] = m.get("message_id")
+                        if not r["lista"]:
+                            e[plazo]["estado"] = "sin_nada"
+                    plazos.guardar_estado(e)
+                registrar(f"plazo {plazo} de la revisión del repositorio: {len(r['corregidos'])} corregidos, "
+                          f"{len(r['lista'])} sin cumplir, a la espera de Juanjo" + ("" if m else " (sin poder avisarle)"))
+            except Exception as error:  # noqa: BLE001 — se reintenta a la hora
+                registrar(f"error al revisar el plazo {plazo}: {type(error).__name__}: {error}")
+            finally:
+                self.revisando_plazo = False
+
+        self.en_hilo(hacer)
+
+    def boton_plazo(self, accion: str, m: dict) -> None:
+        """Los botones del mensaje del plazo: marcar uno, retirar los marcados o no retirar ninguno (ADR 0039)."""
+        orden, _, resto = accion.partition(":")
+        plazo, _, n = resto.partition(":")
+        if orden == "pz":
+            r = plazos.marcar(plazo, int(n) if n.isdigit() else -1, CERROJO)
+            if r and m:
+                self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
+                        reply_markup=plazos.botones(plazo, r))
+            return None if r else self.enviar(JUANJO, "Esa lista ya está decidida.")
+        if orden == "pzn":
+            if not plazos.no_retirar(plazo, CERROJO):
+                return self.enviar(JUANJO, "Esa lista ya está decidida.")
+            if m:
+                self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
+                        reply_markup={"inline_keyboard": []})
+            registrar(f"plazo {plazo}: Juanjo decide no retirar nada")
+            return self.enviar(JUANJO, "De acuerdo: no se retira nada. Los avisos siguen pendientes y el aviso del grupo, "
+                                       "fijado.")
+        if orden != "pzr":
+            return None
+        e = plazos.leer_estado().get(plazo) or {}
+        if e.get("estado") == "esperando" and not any(i["marcado"] for i in e["lista"]):
+            return self.enviar(JUANJO, "No hay ninguno marcado. Marca los que quieras retirar o pulsa «No retirar ninguno».")
+        r = plazos.retirar(plazo, self.hoja, CERROJO)
+        if r is None:
+            return self.enviar(JUANJO, "Esa lista ya está decidida.")
+        if m:
+            self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
+                    reply_markup={"inline_keyboard": []})
+        partes = [f"Retirados del repositorio: {len(r['retirados'])}. Su ficha está guardada en datos/retirados.json; "
+                  "para devolver uno: docker exec bot-chatgpt-ia-edu python avisos.py restaurar ENLACE"]
+        if r["saltados"]:
+            partes.append("No retirados porque su autor los ha corregido o quitado mientras tanto: "
+                          + "; ".join(f"«{t}»" for t in r["saltados"]) + ".")
+        if r["fallidos"]:
+            partes.append("No se han podido retirar (siguen pendientes): " + "; ".join(r["fallidos"]) + ".")
+        if plazo in plazos.FIJADO and r["retirados"]:
+            grupo, mensaje = plazos.FIJADO[plazo]
+            hecho = self.tg("unpinChatMessage", chat_id=grupos.TODOS[grupo].id, message_id=mensaje)
+            partes.append("Aviso del grupo desfijado." if hecho else
+                          f"No he podido desfijar el aviso del grupo (https://t.me/{grupos.TODOS[grupo].usuario}/{mensaje}).")
+        registrar(f"plazo {plazo}: {len(r['retirados'])} recursos retirados con la confirmación de Juanjo")
+        self.enviar(JUANJO, "\n\n".join(partes))
+
     def solo_privado(self, chat: int, uid: int, msg: dict) -> None:
         """Responde en el grupo que se le escriba por privado, con freno (Juanjo, 27-10-2026): si no, quien
         lo mencionara una y otra vez llenaría el grupo de avisos iguales. Pasado el freno, calla."""
@@ -1703,6 +1785,9 @@ class Bot:
                 self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
                         reply_markup=self.casillas_grupos(uid))
             return
+        if accion.startswith(("pz:", "pzr:", "pzn:")):  # el final del plazo de la revisión (ADR 0039); antes de
+            # quitar los botones: marcar uno los cambia en el mismo mensaje
+            return self.en_hilo(self.boton_plazo, accion, m) if uid == JUANJO else None
         if accion.startswith("rpag:"):  # pasar de página cambia la misma lista: no se amontonan mensajes
             return self.en_hilo(self.pagina_recursos, uid, uid, int(accion[5:]), m.get("message_id"))
         if m and not accion.startswith(("rv:", "rnuevo")):  # la lista de recursos conserva sus botones
@@ -2365,15 +2450,14 @@ class Bot:
         if not self.puede_preparar(uid, uid):
             return
         self.enviar(uid, self.tx(uid, "comprobando"))
-        if catalogo.es_de_plataforma(url):
+        c = catalogo.comprobar_licencia(self.recursos, url)  # la misma que al acabar el plazo (ADR 0039)
+        if c["resultado"] == "plataforma":
             return self.pasar_a_juanjo(uid, f, "aviso_plataforma")
-        texto, problema = catalogo.leer_url(url)
-        if problema:
-            return self.enviar(uid, self.tx(uid, "aviso_no_abre", problema=problema))
-        r, usd = self.recursos.comprobar(url, texto)
-        self.apuntar(usd, recurso=uid)
-        if r["licencia_abierta"] and not r["de_pago"]:
-            licencia = catalogo.componer_licencias(r["licencia"], r["licencia_contenidos"])
+        if c["resultado"] == "no_abre":
+            return self.enviar(uid, self.tx(uid, "aviso_no_abre", problema=c["detalle"]))
+        self.apuntar(c["usd"], recurso=uid)
+        if c["resultado"] == "cumple":
+            licencia = c["licencia"]
             if licencia:
                 self.hoja.poner_licencia(url, licencia)
             with CERROJO:
@@ -2383,8 +2467,8 @@ class Bot:
                 catalogo.guardar_avisos(d)
             registrar("aviso del repositorio resuelto por su autor")
             return self.enviar(uid, self.tx(uid, "aviso_resuelto", licencia=licencia or "—"))
-        if r["de_pago"]:
-            return self.enviar(uid, self.tx(uid, "aviso_de_pago", detalle=r["pago_detalle"]))
+        if c["resultado"] == "de_pago":
+            return self.enviar(uid, self.tx(uid, "aviso_de_pago", detalle=c["detalle"]))
         n = next((i for i, x in enumerate(self.listas.get(uid) or []) if catalogo.normalizar(x[catalogo.COLUMNAS["url"]]) == clave), None)
         botones = [[{"text": self.tx(uid, "b_si_la_tiene"), "callback_data": f"rj:{n}"}]] if n is not None else []
         self.tg("sendMessage", chat_id=uid, text=self.tx(uid, "aviso_sin_licencia"),
@@ -2684,6 +2768,7 @@ class Bot:
                 self.resumen_si_toca("vce")
             self.diario_si_toca()
             self.diario_personas_si_toca()
+            self.plazo_si_toca()
             try:
                 tipos = {"allowed_updates": ["message", "callback_query", "chat_member"]}
                 updates = self.tg("getUpdates", espera=50, timeout=50, offset=siguiente, **tipos)

@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.17.0 — 2026-11-14
+
+- Al acabar el plazo de los avisos de la revisión del repositorio (el 29-11-2026 los enlaces que no se abren y las licencias incompatibles; el 11-12-2026 los GPT), a las 9:00, el bot vuelve a comprobar lo pendiente con la misma comprobación que «Ya lo he corregido», da por corregido lo que ya cumple y manda a Juanjo la lista de lo que sigue sin cumplir, con una casilla por recurso, «Retirar los marcados» y «No retirar ninguno». Solo se retira lo que él confirma, guardando antes la ficha entera para poder devolverla (`avisos.py restaurar`); al retirar lo del 29-11, se desfija el aviso del grupo. Un enlace que vuelve a abrirse sin licencia no se retira: queda como recomendación (ADR 0039).
+
 ## 1.16.2 — 2026-11-14
 
 - Cuando el Bot de IA Educativa recomienda una herramienta o un servicio (un Gem, un GPT, NotebookLM, una app), busca antes en los grupos y en el diario si se ha dicho que cambia de nombre o desaparece, y lo avisa junto a la recomendación. Y no ofrece hacer nada que no pueda, como preguntar a otra persona (ADR 0038).

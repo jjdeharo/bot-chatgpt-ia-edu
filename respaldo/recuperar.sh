@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Trae de IONOS la copia más reciente y la deja en datos/ (catalogo.json,
-# estado-bot.json, estado-karla.json, avisos.json, equipo-exelearning.json, revisiones.json y las
+# estado-bot.json, estado-karla.json, avisos.json, equipo-exelearning.json, revisiones.json, retirados.json,
+# plazos.json y las
 # preguntas sin resolver de los dos bots), donde la leen los bots. Se ejecuta en la máquina que vaya a
 # llevar el bot. Lo que haya ya en datos/ se guarda al lado con «.antes».
 #
@@ -25,7 +26,8 @@ for clave, nombre in (("catalogo", "catalogo.json"), ("estado", "estado-bot.json
                      ("equipo", "equipo-exelearning.json"), ("revisiones", "revisiones.json"),
                      ("estado_karla", "estado-karla.json"), ("sin_resolver", "sin-resolver.jsonl"),
                      ("sin_resolver_karla", "sin-resolver-karla.jsonl"),
-                     ("seguimiento", "seguimiento-incidencias.json")):
+                     ("seguimiento", "seguimiento-incidencias.json"), ("retirados", "retirados.json"),
+                     ("plazos", "plazos.json")):
     if clave not in copia:  # las anteriores al 29-10-2026 no llevan avisos, ni las del 30-10 el equipo ni las revisiones
         continue
     f = destino / nombre

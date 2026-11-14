@@ -80,6 +80,10 @@ Educativo (no los cambios) o una incidencia abierta en GitHub desde Karla.
 Lo que publica él mismo no se avisa, ni las preguntas que alguien lleva al grupo,
 que ya ve en el grupo (ADR 0023).
 
+Al acabar el plazo de los avisos de la revisión del repositorio (29-11-2026 y 11-12-2026), el Bot de IA
+Educativa vuelve a comprobar lo pendiente y le manda a Juanjo la lista de lo que sigue sin cumplir; solo retira
+lo que él confirma, y guarda antes cada ficha para poder devolverla (`scripts/plazos.py`, ADR 0039).
+
 Los viernes a las 18:00, cada bot publica en su grupo un resumen de la semana
 (`scripts/resumen_semanal.py`, ADR 0018): Karla, las novedades y dudas resueltas
 en eXeLearning; el Bot de IA Educativa, las aplicaciones nuevas del repositorio
@@ -136,7 +140,7 @@ Qué hay que rehacer y de dónde sale:
 | Modelo de significado | se descarga solo la primera vez (1,2 GB) |
 | Cifras de los grupos para el diario (`datos/comunidades/`) | Telegram: `comunidades.py --ya` (un minuto); las publicadas, también en el repositorio del diario |
 | El MIAE y la guía Vibe coding responsable (`datos/marcos/`) | sus repositorios de GitHub: `marcos.py actualizar --forzar` (en el portátil, unos 6 minutos) |
-| Dueños de los recursos, gasto de los dos bots y preguntas sin resolver (`catalogo.json`, `estado-bot.json`, `estado-karla.json`, `sin-resolver*.jsonl`, avisos, equipo y revisiones) | la copia diaria en IONOS: `respaldo/recuperar.sh` |
+| Dueños de los recursos, gasto de los dos bots y preguntas sin resolver (`catalogo.json`, `estado-bot.json`, `estado-karla.json`, `sin-resolver*.jsonl`, avisos, recursos retirados al acabar su plazo, equipo y revisiones) | la copia diaria en IONOS: `respaldo/recuperar.sh` |
 | Credenciales | ver abajo |
 
 Credenciales, en `~/.config/credenciales/` del portátil, con los mismos nombres que en el NAS:

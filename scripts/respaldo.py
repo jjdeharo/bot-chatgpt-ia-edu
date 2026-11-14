@@ -8,7 +8,8 @@ resolver de los dos bots (datos/sin-resolver*.jsonl) y los avisos de la
 revisión del repositorio (datos/avisos.json, ADR 0013), los rechazos que su autor
 pide revisar a mano (datos/revisiones.json, sin lo leído del recurso, que se
 vuelve a leer; ADR 0004) y quién es del equipo de
-eXeLearning (datos/equipo-exelearning.json, ADR 0008); va también la cuenta
+eXeLearning (datos/equipo-exelearning.json, ADR 0008), y lo retirado al acabar el plazo de los avisos, con
+su ficha entera para poder devolverlo (datos/retirados.json y datos/plazos.json, ADR 0039); va también la cuenta
 del gasto de los dos bots (datos/estado-bot.json y datos/estado-karla.json). Lo llama nas/bucle.sh cada madrugada.
 El receptor está en respaldo/ y la recuperación, en el README.
 """
@@ -68,6 +69,7 @@ def enviar() -> None:
              "equipo": leer("equipo-exelearning.json"),
              # Lo de Karla y las preguntas sin resolver faltaban hasta el 01-11-2026 (ADR 0020).
              "estado_karla": leer("estado-karla.json"), "seguimiento": leer("seguimiento-incidencias.json"),
+             "retirados": leer("retirados.json"), "plazos": leer("plazos.json"),  # ADR 0039
              "sin_resolver": leer_texto("sin-resolver.jsonl"), "sin_resolver_karla": leer_texto("sin-resolver-karla.jsonl"),
              "revisiones": {k: {c: v for c, v in r.items() if c != "contenido"}
                             for k, r in leer("revisiones.json").items()}}

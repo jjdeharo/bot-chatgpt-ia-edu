@@ -646,6 +646,10 @@ class Hoja:
     def alta(self, f: dict) -> None:
         self._llamar("alta", ficha=a_fila(f))
 
+    def alta_fila(self, fila: dict) -> None:
+        """Una fila tal cual, con los nombres de columna de la hoja: la de un recurso retirado que vuelve (ADR 0039)."""
+        self._llamar("alta", ficha=fila)
+
     def modificar(self, url: str, f: dict) -> None:
         self._llamar("modificar", url=url, ficha=a_fila(f))
 
@@ -759,6 +763,26 @@ def aviso_de(url: str, d: dict | None = None) -> dict | None:
     """El aviso que aún espera respuesta de su autor, si lo hay."""
     a = (leer_avisos() if d is None else d).get(normalizar(url))
     return a if a and a.get("estado") == "pendiente" else None
+
+
+def comprobar_licencia(fichas_: "Fichas", url: str) -> dict:
+    """La comprobación de «Ya lo he corregido» (ADR 0013), que usa también el final del plazo (ADR 0039).
+
+    {"resultado": "plataforma" | "no_abre" | "cumple" | "de_pago" | "sin_licencia", "detalle", "licencia", "usd"}:
+    una app de Gemini, Claude o AI Studio no se puede leer; si se abre, Claude Haiku mira si tiene una licencia
+    abierta y si es gratuito, con los criterios del alta."""
+    if es_de_plataforma(url):
+        return {"resultado": "plataforma", "usd": 0.0}
+    texto, problema = leer_url(url)
+    if problema:
+        return {"resultado": "no_abre", "detalle": problema, "usd": 0.0}
+    r, usd = fichas_.comprobar(url, texto)
+    if r["licencia_abierta"] and not r["de_pago"]:
+        return {"resultado": "cumple", "licencia": componer_licencias(r["licencia"], r["licencia_contenidos"]),
+                "usd": usd}
+    if r["de_pago"]:
+        return {"resultado": "de_pago", "detalle": r["pago_detalle"], "usd": usd}
+    return {"resultado": "sin_licencia", "usd": usd}
 
 
 def nuevo_codigo() -> str:

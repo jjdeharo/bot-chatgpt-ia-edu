@@ -40,5 +40,6 @@
 | [0036](0036-aviso-privado-a-quien-sale-en-el-diario.md) | Aviso privado a quien sale en el Diario de IA Educativa | aceptado |
 | [0037](0037-la-portada-como-imagen-del-aviso-del-diario.md) | La portada como imagen del aviso del diario |
 | [0038](0038-recomendaciones-al-dia-y-sin-promesas.md) | Recomendaciones al día y sin promesas | aceptado |
+| [0039](0039-retirada-al-acabar-el-plazo-de-los-avisos-del-repositorio.md) | Retirada al acabar el plazo de los avisos del repositorio | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.
