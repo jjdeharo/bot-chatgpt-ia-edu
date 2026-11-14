@@ -87,3 +87,10 @@ había 1, porque el contador del bot sumaba la de prueba de `eXeKarlaBot/pruebas
   solo se muestra si GitHub no responde, dicho como tal.
 - Comprobado el 28-10-2026: «¿cuántas incidencias has creado?» → la #2646,
   abierta, con su enlace y el de la lista.
+- **Fuera del flujo de Telegram** (14-11-2026): lo que sale de la revisión de
+  las preguntas sin resolver (ADR 0007) también se abre con esta cuenta, en el
+  repositorio del programa que falla, aunque no sea de la organización
+  `exelearning`, con un pie que dice que se reprodujo antes de abrirla en lugar
+  de que la revisó quien preguntó. Primera: https://github.com/ateeducacion/h5p2elpx/issues/55
+  (los textos de los juegos convertidos salen en inglés). `mis_incidencias` y
+  /estado solo cuentan las de `exelearning`, así que estas no aparecen allí.
