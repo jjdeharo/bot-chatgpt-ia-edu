@@ -98,3 +98,24 @@ class Diario(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InformeDelDia(unittest.TestCase):
+    """El informe del día (ADR 0040): se manda una vez, y otra si el diario lo vuelve a dejar."""
+
+    def test_pendiente_marcado_y_repetido(self):
+        import os
+        import time as tiempo
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = Path(tmp)
+            f = carpeta / "2026-11-15.informe.txt"
+            f.write_text("Informe")
+            (carpeta / "2026-11-15.json").write_text("{}")
+            self.assertEqual(d.informes_pendientes(carpeta), [f])
+            d.marcar_informe(f)
+            self.assertEqual(d.informes_pendientes(carpeta), [])
+            hecho = carpeta / "2026-11-15.informe-enviado"
+            antes = tiempo.time() - 60
+            os.utime(hecho, (antes, antes))
+            f.write_text("Informe corregido")
+            self.assertEqual(d.informes_pendientes(carpeta), [f])

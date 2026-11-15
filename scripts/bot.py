@@ -80,7 +80,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.17.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.18.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1294,6 +1294,20 @@ class Bot:
             registrar(f"diario {dia}: aviso privado a {bien} persona(s); {mal} sin poder escribirles")
         except Exception as error:  # noqa: BLE001 — lo que no se apuntó se reintenta en la vuelta siguiente
             registrar(f"error en los avisos privados del diario: {type(error).__name__}: {error}")
+
+    def informe_si_toca(self) -> None:
+        """El informe del día del Diario de IA Educativa, a Juanjo por privado, en cuanto el diario lo deja (ADR 0040)."""
+        if not JUANJO:
+            return
+        for f in diario_grupos.informes_pendientes():
+            try:
+                texto = f.read_text().strip()
+            except OSError:
+                continue
+            if texto and self.tg("sendMessage", chat_id=JUANJO, text=texto[:4000],
+                                 link_preview_options={"is_disabled": True}) is not None:
+                diario_grupos.marcar_informe(f)
+                registrar(f"diario: informe {f.name} mandado a Juanjo")
 
     def plazo_si_toca(self) -> None:
         """El día que vence un plazo de la revisión del repositorio, a las 9:00, vuelve a comprobar lo pendiente y
@@ -2768,6 +2782,7 @@ class Bot:
                 self.resumen_si_toca("vce")
             self.diario_si_toca()
             self.diario_personas_si_toca()
+            self.informe_si_toca()
             self.plazo_si_toca()
             try:
                 tipos = {"allowed_updates": ["message", "callback_query", "chat_member"]}

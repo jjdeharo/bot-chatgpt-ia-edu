@@ -225,3 +225,24 @@ def avisar_personas(tg, dia: date, lista: list[dict], lengua_de, texto, carpeta:
         else:
             mal += 1
     return bien, mal
+
+
+# --- El informe del día para Juanjo (ADR 0040 del bot; ADR 0069 del diario) -----------------------------------------
+# El diario deja en datos/diario/<fecha>.informe.txt, en cuanto ha salido todo, un informe en texto: qué se ha publicado,
+# si se usó la reserva, a quién se escribió y qué ha fallado. El bot se lo manda a Juanjo por privado, una vez, y deja
+# al lado <fecha>.informe-enviado para no repetirlo. Un informe vuelto a dejar (corregido) se manda otra vez.
+
+def informes_pendientes(carpeta: Path = CARPETA) -> list[Path]:
+    """Los informes que aún no se han mandado, o que se han vuelto a dejar después de mandarlos."""
+    out = []
+    for f in sorted(carpeta.glob("*.informe.txt")):
+        hecho = f.with_name(f.name.replace(".informe.txt", ".informe-enviado"))
+        if not hecho.exists() or hecho.stat().st_mtime < f.stat().st_mtime:
+            out.append(f)
+    return out
+
+
+def marcar_informe(f: Path) -> None:
+    f.with_name(f.name.replace(".informe.txt", ".informe-enviado")).write_text(
+        datetime.now(timezone.utc).isoformat() + "\n")
+
