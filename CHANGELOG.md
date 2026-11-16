@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.20.1 — 2026-11-16
+
+- La ayuda de Karla dice, en los cinco idiomas, que también se le puede mandar el `.zip` de un estilo con la duda (ADR 0042).
+
 ## 1.20.0 — 2026-11-16
 
 - Karla lee el código de los estilos de eXeLearning: si le mandan un estilo en ZIP, o un `.elpx` con un estilo propio, ve su `config.xml`, `style.css` y `style.js` (sin comentarios, hasta 80.000 caracteres) y busca en ellos la causa del fallo. De un estilo oficial solo dice cuál es (ADR 0042).

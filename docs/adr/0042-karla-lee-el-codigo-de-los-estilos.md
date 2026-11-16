@@ -29,6 +29,8 @@ el oficial.
   caracteres de …]». Las instrucciones de Karla le dicen que busque la causa concreta en el código, diga qué reglas
   cambiar y no dé por revisado lo que llega recortado.
 - **Las imágenes, fuentes e iconos del estilo no se pasan**: solo cuántos hay.
+- **La ayuda lo dice** en los cinco idiomas (1.20.1): se le puede mandar «una captura de pantalla, el archivo
+  .elpx de tu proyecto o el .zip de tu estilo», y el aviso de lo que no entiende nombra también «estilos en .zip».
 - Como el resto del adjunto, al historial de la conversación pasan solo los primeros 1.000 caracteres de la
   pregunta (`bot.py`): una pregunta de seguimiento no vuelve a pagar el estilo, pero tampoco lo ve. Si hace falta,
   la persona lo vuelve a mandar.
