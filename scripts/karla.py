@@ -110,7 +110,9 @@ para responder sobre esa conversación (lo que se contestó allí, si se resolvi
 - Si la consulta trae «[Archivo adjunto: …]», es un proyecto de eXeLearning que te ha mandado, resumido por el \
 programa: la versión con que se guardó, sus páginas e iDevices y el principio de su contenido. Úsalo para \
 diagnosticar (una versión antigua, un iDevice que ya no existe, un archivo sin content.xml), sin inventar lo \
-que el resumen no dice.
+que el resumen no dice. Si es un estilo, o un proyecto con un estilo propio, trae también el código del estilo \
+(config.xml, style.css y style.js): léelo para dar con la causa concreta y di qué reglas cambiar y cómo. Si \
+una parte llega recortada, no des por revisado lo que falta.
 - Si lo que cuenta parece un fallo del programa, y no una duda de uso ni de configuración de la \
 plataforma donde publica, mira el registro de cambios y busca en las incidencias de GitHub \
 (buscar_incidencias, con palabras en inglés). Si ya hay una, da su enlace y su estado; si se cerró como \
@@ -280,6 +282,57 @@ ARCHIVO_EXE = re.compile(r"\.(elpx?|zip)$", re.I)
 MAX_XML = 6000  # caracteres del content.xml que ve Claude, sin el HTML de los iDevices
 
 
+# Estilos propios (ADR 0042): Claude ve su código para buscar el fallo. El tope cabe entero en el oficial más
+# grande (unos 62.000 caracteres sin comentarios); si un estilo pasa, se recorta primero style.js.
+MAX_ESTILO = 80_000
+ESTILOS_OFICIALES = {"base", "cedec", "educablue", "etwinning", "flux", "intef", "kids", "neo", "nova", "universal",
+                     "zen"}
+
+
+def carpeta_estilo(nombres: list[str]) -> str | None:
+    """La carpeta del ZIP donde está el estilo (cadena vacía si está en la raíz), o None si no es un estilo: un
+    config.xml con un style.css al lado. Admite el estilo dentro de una carpeta, como queda al comprimirla."""
+    for n in sorted(nombres, key=lambda n: n.count("/")):
+        if n.endswith("config.xml") and n.count("/") <= 1:
+            carpeta = n[: -len("config.xml")]
+            if carpeta + "style.css" in nombres:
+                return carpeta
+    return None
+
+
+def compactar(codigo: str) -> str:
+    """CSS o JS sin comentarios de bloque, sin las líneas que solo son un comentario y sin sangría ni líneas en
+    blanco: no cambia lo que hace el código, y deja el doble de sitio para lo que importa."""
+    codigo = re.sub(r"/\*.*?\*/", "", codigo, flags=re.S)
+    lineas = (l.strip() for l in codigo.splitlines())
+    return "\n".join(l for l in lineas if l and not l.startswith("//"))
+
+
+def archivos_estilo(z: zipfile.ZipFile, carpeta: str) -> str:
+    """config.xml, style.css y style.js del estilo, en ese orden y hasta MAX_ESTILO caracteres entre los tres. Lo
+    que no cabe se corta diciendo cuánto falta, para que Claude no dé por revisado lo que no ha visto."""
+    nombres = set(z.namelist())
+    trozos, sitio = [], MAX_ESTILO
+    for archivo in ("config.xml", "style.css", "style.js"):
+        ruta = carpeta + archivo
+        if ruta not in nombres:
+            continue
+        with z.open(ruta) as f:
+            texto = f.read(1_000_000).decode("utf-8", "replace")
+        if archivo != "config.xml":
+            texto = compactar(texto)
+        if len(texto) > sitio:
+            texto = texto[:max(sitio, 0)] + f"\n[… recortado: faltan {len(texto) - max(sitio, 0)} caracteres de {archivo}]"
+        sitio -= len(texto)
+        trozos.append(f"--- {ruta} ---\n{texto}")
+    otros = sorted(n for n in nombres if n.startswith(carpeta) and not n.endswith("/")
+                   and n[len(carpeta):] not in ("config.xml", "style.css", "style.js"))
+    cabecera = (f"Archivos del estilo (en «{carpeta or 'la raíz'}»; CSS y JS sin comentarios ni sangría). "
+                f"Lleva además {len(otros)} archivo{'' if len(otros) == 1 else 's'} (imágenes, fuentes, iconos) "
+                "que no se incluyen.")
+    return cabecera + "\n" + "\n".join(trozos)
+
+
 def leer_elpx(nombre: str, datos: bytes) -> str:
     """Un resumen del proyecto para Claude: qué lleva el ZIP, con qué versión se guardó, cuántas páginas e
     iDevices tiene y el principio de su content.xml. Un .elp antiguo (eXe 2.x) lleva contentv3.xml o
@@ -293,6 +346,11 @@ def leer_elpx(nombre: str, datos: bytes) -> str:
     partes = [f"[Archivo adjunto: {nombre}] {len(nombres)} entradas; en la raíz: {', '.join(raiz[:20]) or 'nada'}."]
     principal = next((n for n in ("content.xml", "contentv3.xml", "contentv2.xml") if n in nombres), None)
     if not principal:
+        carpeta = carpeta_estilo(nombres)
+        if carpeta is not None:
+            partes.append("Es un estilo de eXeLearning (lleva config.xml y style.css), no un proyecto.")
+            partes.append(archivos_estilo(z, carpeta))
+            return "\n".join(partes)
         partes.append("No lleva content.xml ni contentv3.xml: no es un proyecto de eXeLearning reconocible "
                       "(quizá sea una exportación a sitio web o SCORM, no el proyecto).")
         return "\n".join(partes)
@@ -311,6 +369,13 @@ def leer_elpx(nombre: str, datos: bytes) -> str:
         partes.append("iDevices: " + (", ".join(f"{t} ×{n}" for t, n in idevices.most_common()) or "ninguno"))
     sin_html = re.sub(r"<htmlView>.*?</htmlView>|<!\[CDATA\[.*?\]\]>", "[…]", xml, flags=re.S)
     partes.append(f"Principio de {principal} (sin el HTML de los iDevices):\n{sin_html[:MAX_XML]}")
+    # El .elpx lleva siempre su estilo en theme/. Solo se pasa si es propio: los oficiales los conoce la documentación.
+    tema = (props.get("pp_theme") or props.get("theme") or "").strip()
+    if "theme/style.css" in nombres:
+        if tema.lower() in ESTILOS_OFICIALES:
+            partes.append(f"Usa el estilo oficial «{tema}»: sus archivos no se incluyen.")
+        else:
+            partes.append(archivos_estilo(z, "theme/"))
     return "\n".join(partes)
 
 

@@ -511,6 +511,49 @@ class MejorasDelUnoDeNoviembre(unittest.TestCase):
             z.writestr("index.html", "")
         self.assertIn("No lleva content.xml", karla.leer_elpx("x.zip", buf.getvalue()))
 
+    def test_leer_estilo(self):
+        """Un estilo suelto (también dentro de una carpeta) y un .elpx con estilo propio pasan su código a Claude,
+        sin comentarios; uno oficial no; lo que pasa del tope se corta diciendo cuánto falta (ADR 0042)."""
+        css = "/* comentario\nlargo */\n#siteNav {\n    z-index: 20;\n}\n\n"
+        js = "// solo comentario\nvar a = 'http://x';\n"
+        for carpeta in ("", "mi-estilo/"):
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w") as z:
+                z.writestr(carpeta + "config.xml", "<theme><name>mio</name></theme>")
+                z.writestr(carpeta + "style.css", css)
+                z.writestr(carpeta + "style.js", js)
+                z.writestr(carpeta + "img/fondo.png", b"png")
+            r = karla.leer_elpx("mio.zip", buf.getvalue())
+            self.assertIn("Es un estilo de eXeLearning", r)
+            self.assertIn(f"--- {carpeta}style.css ---\n#siteNav {{\nz-index: 20;\n}}", r)
+            self.assertIn("var a = 'http://x';", r)
+            self.assertNotIn("largo */", r)
+            self.assertNotIn("solo comentario", r)
+            self.assertIn("Lleva además 1 archivo (", r)
+
+        def elpx(tema):
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w") as z:
+                z.writestr("content.xml", f"<ode><key>pp_theme</key><value>{tema}</value></ode>")
+                z.writestr("theme/config.xml", "<theme/>")
+                z.writestr("theme/style.css", css)
+            return karla.leer_elpx("p.elpx", buf.getvalue())
+        self.assertIn("--- theme/style.css ---", elpx("conexiones-docentes"))
+        r = elpx("Neo")
+        self.assertIn("Usa el estilo oficial «Neo»", r)
+        self.assertNotIn("--- theme/style.css ---", r)
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("config.xml", "<theme/>")
+            z.writestr("style.css", "a{b:c}\n" * 10_000)
+            z.writestr("style.js", "x();\n" * 10_000)
+        r = karla.leer_elpx("grande.zip", buf.getvalue())
+        self.assertIn("--- style.css ---", r)
+        self.assertIn("faltan", r)
+        self.assertIn("de style.js]", r)
+        self.assertLess(len(r), karla.MAX_ESTILO + 1_000)
+
     def test_seguimiento_de_incidencias(self):
         k = bot_sin_arrancar(karla.Karla)
         k.lenguas[7] = "ca"

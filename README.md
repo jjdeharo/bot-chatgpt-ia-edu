@@ -43,7 +43,8 @@ profesorado. Si la duda es un fallo o una mejora de eXeLearning, busca si ya
 hay una incidencia en GitHub y, si la persona lo confirma, la abre; si lo pide, le avisa de cada
 respuesta del equipo y del cierre (ADR 0021). Lo que no sabe responder lo puede llevar al grupo, como el
 otro bot (ADR 0023). Entiende capturas de pantalla y archivos `.elpx` del
-proyecto, que resume antes de responder. Sustituye
+proyecto, que resume antes de responder, y lee el código de los estilos que le
+mandan, sueltos o dentro del proyecto (ADR 0042). Sustituye
 al cuaderno de NotebookLM «Karla - Experta en eXeLearning». Usa el mismo
 programa que el Bot de IA Educativa (`scripts/karla.py`, con sus textos en
 `scripts/textos_karla.py` y sus instrucciones en `scripts/karla_persona.md`).

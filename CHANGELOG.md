@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.20.0 — 2026-11-16
+
+- Karla lee el código de los estilos de eXeLearning: si le mandan un estilo en ZIP, o un `.elpx` con un estilo propio, ve su `config.xml`, `style.css` y `style.js` (sin comentarios, hasta 80.000 caracteres) y busca en ellos la causa del fallo. De un estilo oficial solo dice cuál es (ADR 0042).
+
 ## 1.19.0 — 2026-11-16
 
 - El aviso de la semana del boletín semanal lo publica el Bot de IA Educativa, no la cuenta de Juanjo: el lunes a las 8:00, el mensaje y, en ChatGPT-IA-edu y Vibe Coding Educativo, el vídeo y el pódcast en el tema «Resumen semanal». Si algo falla, lo reintenta durante ocho horas y, si no sale, avisa a Juanjo (ADR 0041).

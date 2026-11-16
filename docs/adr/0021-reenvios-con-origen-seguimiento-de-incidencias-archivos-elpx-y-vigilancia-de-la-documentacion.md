@@ -34,7 +34,8 @@ mejoras»). Se hacen cinco; la sexta (mensajes de voz) se deja fuera, ver abajo.
 - **Archivos .elpx, .elp y .zip** (`karla.leer_elpx`): se leen en memoria, nunca a disco, y se resumen
   para Claude: entradas del ZIP, formato (content.xml, o contentv3/contentv2 de eXe 2.x), propiedades
   (`pp_title`, `pp_exelearning_version`…), páginas, iDevices por tipo y el principio del XML sin el
-  HTML de los iDevices (6.000 caracteres). El pie del archivo es la pregunta. Las instrucciones piden
+  HTML de los iDevices (6.000 caracteres); desde el 16-11-2026, también el código de un estilo propio
+  (ADR 0042). El pie del archivo es la pregunta. Las instrucciones piden
   diagnosticar con eso sin inventar lo que el resumen no dice.
 - **Vigilancia de la documentación** (`documentacion.py vigilar`, desde `nas/bucle.sh` tras cada
   pasada): si ningún documento de memoria-telegram ha cambiado en tres días, aviso a Juanjo por el bot,
