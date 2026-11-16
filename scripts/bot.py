@@ -49,6 +49,7 @@ from zoneinfo import ZoneInfo
 import antispam
 import catalogo
 import resumen_semanal
+import boletin_grupos
 import diario_grupos
 import consultar
 import documento_web
@@ -80,7 +81,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.18.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.19.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -232,8 +233,10 @@ class Telegram:
                 return None
 
 
-    def subir(self, metodo: str, campo: str, nombre: str, datos: bytes, **params):
-        """Lo mismo, con un archivo que no está en Telegram (el PDF descargado de un enlace, ADR 0035)."""
+    def subir(self, metodo: str, campo: str, nombre: str, datos: bytes, tipo: str = "application/pdf",
+              extra: dict | None = None, **params):
+        """Lo mismo, con un archivo que no está en Telegram (el PDF descargado de un enlace, ADR 0035; el vídeo y el
+        pódcast de la semana, ADR 0041). `extra`: otros archivos, campo → (nombre, datos, tipo), como la miniatura."""
         limite = secrets.token_hex(16)
         partes = []
         for k, v in params.items():
@@ -241,14 +244,16 @@ class Telegram:
                 continue
             v = json.dumps(v) if isinstance(v, (dict, list)) else str(v)
             partes.append(f'--{limite}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode())
-        seguro = nombre.replace('"', "'").replace("\r", " ").replace("\n", " ")
-        partes.append(f'--{limite}\r\nContent-Disposition: form-data; name="{campo}"; filename="{seguro}"\r\n'
-                      f"Content-Type: application/pdf\r\n\r\n".encode() + datos + b"\r\n")
+        for c, (n, d, t) in [(campo, (nombre, datos, tipo))] + list((extra or {}).items()):
+            seguro = n.replace('"', "'").replace("\r", " ").replace("\n", " ")
+            partes.append(f'--{limite}\r\nContent-Disposition: form-data; name="{c}"; filename="{seguro}"\r\n'
+                          f"Content-Type: {t}\r\n\r\n".encode() + d + b"\r\n")
         partes.append(f"--{limite}--\r\n".encode())
         pedido = urllib.request.Request(self.url + metodo, b"".join(partes),
                                         {"Content-Type": f"multipart/form-data; boundary={limite}"})
         try:
-            with urllib.request.urlopen(pedido, timeout=120) as r:
+            # Un vídeo de 40 MB tarda en subir lo que dé la conexión de casa
+            with urllib.request.urlopen(pedido, timeout=120 if len(datos) < 10_000_000 else 900) as r:
                 return json.load(r).get("result")
         except urllib.error.HTTPError as e:
             registrar(f"Telegram {metodo}: {e.code} {e.read()[:200]!r}")
@@ -1268,6 +1273,38 @@ class Bot:
                 registrar(f"error en el resumen semanal de {grupo}: {type(error).__name__}: {error}")
             finally:
                 self.resumiendo = False
+
+        self.en_hilo(hacer)
+
+    def boletin_si_toca(self) -> None:
+        """El lunes a las 8:00, el aviso de la semana del boletín en cada grupo, con su vídeo y su pódcast
+        (boletin_grupos.py, ADR 0041). Subir los vídeos tarda: va en un hilo, uno a la vez."""
+        if getattr(self, "boletin_en_marcha", False):
+            return
+        toca, pasados = boletin_grupos.pendientes()
+        for f in pasados:
+            boletin_grupos.dar_por_fallido(f)
+            registrar(f"boletín {f.parent.name} {f.stem}: no ha salido en su ventana")
+            if JUANJO:
+                self.enviar(JUANJO, f"El aviso de la semana {f.parent.name} no ha podido salir en {f.stem}. "
+                                    f"Registro del bot, en el NAS.")
+        if not toca:
+            return
+        self.boletin_en_marcha = True
+
+        def hacer():
+            try:
+                for f in toca:
+                    g = grupos.TODOS.get(f.stem)
+                    if not g:
+                        continue
+                    try:
+                        hecho = boletin_grupos.publicar(self.tg, f, g.id, registrar)
+                        registrar(f"boletín {f.parent.name} {f.stem}: " + ("publicado" if hecho else "Telegram lo rechazó; se reintenta"))
+                    except Exception as error:  # noqa: BLE001 — se reintenta en la vuelta siguiente, dentro de la ventana
+                        registrar(f"error en el aviso de la semana de {f.stem}: {type(error).__name__}: {error}")
+            finally:
+                self.boletin_en_marcha = False
 
         self.en_hilo(hacer)
 
@@ -2781,6 +2818,7 @@ class Bot:
             if "vce" in grupos.ACTIVOS:
                 self.resumen_si_toca("vce")
             self.diario_si_toca()
+            self.boletin_si_toca()
             self.diario_personas_si_toca()
             self.informe_si_toca()
             self.plazo_si_toca()

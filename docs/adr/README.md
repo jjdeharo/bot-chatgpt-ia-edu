@@ -42,5 +42,6 @@
 | [0038](0038-recomendaciones-al-dia-y-sin-promesas.md) | Recomendaciones al día y sin promesas | aceptado |
 | [0039](0039-retirada-al-acabar-el-plazo-de-los-avisos-del-repositorio.md) | Retirada al acabar el plazo de los avisos del repositorio | aceptado |
 | [0040](0040-informe-del-dia-del-diario.md) | El informe del día del diario, a Juanjo por el bot |
+| [0041](0041-el-aviso-de-la-semana-del-boletin.md) | El aviso de la semana del boletín, publicado por el bot |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

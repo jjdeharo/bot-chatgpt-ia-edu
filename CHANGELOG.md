@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.19.0 — 2026-11-16
+
+- El aviso de la semana del boletín semanal lo publica el Bot de IA Educativa, no la cuenta de Juanjo: el lunes a las 8:00, el mensaje y, en ChatGPT-IA-edu y Vibe Coding Educativo, el vídeo y el pódcast en el tema «Resumen semanal». Si algo falla, lo reintenta durante ocho horas y, si no sale, avisa a Juanjo (ADR 0041).
+
 ## 1.18.0 — 2026-11-15
 
 - El Bot de IA Educativa manda a Juanjo por privado el informe del día del Diario de IA Educativa en cuanto el diario lo deja: qué se ha publicado, si se usó la reserva, a quién se escribió y qué ha fallado (ADR 0040).
