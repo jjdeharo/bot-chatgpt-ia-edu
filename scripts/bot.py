@@ -81,7 +81,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.20.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.20.2"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1554,7 +1554,8 @@ class Bot:
         if espera and not fotos and self.contestar_espera(chat, uid, msg, texto, espera):
             return
         enlace = not fotos and SOLO_URL.match(texto)
-        if enlace and documento_web.parece_pdf(enlace.group(1)) and BIBLIOTECA.clave in suyos:
+        if (enlace and BIBLIOTECA.clave in suyos
+                and (documento_web.parece_pdf(enlace.group(1)) or documento_web.id_arxiv(enlace.group(1)))):
             # Un PDF suelto es un documento para la Biblioteca digital, no un recurso del catálogo (ADR 0035)
             return self.en_hilo(self.documento_web, chat, uid, msg["from"], enlace.group(1))
         if enlace and CATALOGO.clave in suyos and not ENLACE_TELEGRAM.match(enlace.group(1)):
@@ -1723,11 +1724,12 @@ class Bot:
                 ruta.write_bytes(r["datos"])
                 return fichas.leer_pdf(ruta)
         self.preparar_ficha(chat, uid, de, r["nombre"] or "documento.pdf", leer, pdf=r["datos"],
-                            enlace=r["enlace"], usd_previo=r["usd"], por_titulo=not r["nombre"])
+                            enlace=r["enlace"], usd_previo=r["usd"], por_titulo=not r["nombre"],
+                            licencia_verificada=r.get("licencia", ""))
 
     def preparar_ficha(self, chat: int, uid: int, de: dict, nombre: str, leer, file_id: str | None = None,
                        pdf: bytes | None = None, enlace: str = "", usd_previo: float = 0.0,
-                       por_titulo: bool = False) -> None:
+                       por_titulo: bool = False, licencia_verificada: str = "") -> None:
         """Comprueba el documento, hace su ficha y se la enseña a la persona. El que llega por enlace se le manda
         antes como archivo si se va a publicar con él: ve lo que se publicará, y Telegram da el identificador con
         que se publica."""
@@ -1745,8 +1747,12 @@ class Bot:
                 return self.enviar(chat, self.tx(uid, "repetido", enlace=candidatos[revision["repetido"] - 1]["enlace"]))
             ficha, coste = self.fichero.ficha(texto, meta, nombre)
             usd += coste
-            compartir, coste = self.fichero.compartible(ficha)
-            usd += coste
+            if licencia_verificada:
+                ficha = fichas.con_licencia(ficha, licencia_verificada)
+                compartir = True
+            else:
+                compartir, coste = self.fichero.compartible(ficha)
+                usd += coste
             if not fichas.tiene_enlace(ficha) and enlace:  # el del documento que se ha descargado (ADR 0035)
                 ficha = fichas.con_enlace(ficha, enlace)
             if not fichas.tiene_enlace(ficha):  # sin DOI ni dirección: se busca, y si no, se pide (Juanjo, 03-11-2026)

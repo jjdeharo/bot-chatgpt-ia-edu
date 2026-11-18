@@ -18,6 +18,9 @@ PDF = b"%PDF-1.7\n" + b"x" * 1000
 ANUNCIO = "https://www.ejemplo.org/noticias/nueva-guia"
 DOC = "https://www.ejemplo.org/publicaciones/guia.pdf"
 FICHA_DOC = "https://repositorio.ejemplo.org/ark/123"
+ARXIV = "https://arxiv.org/abs/2611.20061"
+ARXIV_PDF = "https://arxiv.org/pdf/2611.20061v1"
+CC_BY = "http://creativecommons.org/licenses/by/4.0/"
 
 
 def pagina(*enlaces, texto="Presentamos la guía de IA en el aula.") -> bytes:
@@ -36,6 +39,11 @@ def web(respuestas: dict):
 
 def eleccion(*numeros, titulo="Guía de IA en el aula"):
     return mock.patch.object(dw, "elegir", side_effect=[({"enlace": n, "titulo": titulo}, 0.001) for n in numeros])
+
+
+def pagina_arxiv(licencia=CC_BY, version=ARXIV + "v1"):
+    return (f'<html><td class="tablecell arxividv"><a href="{version}">versión</a></td>'
+            f'<a class="has_license" title="Rights to this article" href="{licencia}">view license</a></html>').encode()
 
 
 class Pagina(unittest.TestCase):
@@ -115,6 +123,40 @@ class Buscar(unittest.TestCase):
         with mock.patch.object(dw.catalogo, "descargar", side_effect=dw.catalogo.NoPublica("interna")):
             self.assertEqual(dw.buscar(None, "http://192.168.1.1/")["estado"], "no_abre")
 
+    def test_arxiv_fija_la_version_y_devuelve_la_licencia_de_la_ficha(self):
+        respuestas = {ARXIV: (200, "text/html", pagina_arxiv()),
+                      ARXIV_PDF: (200, "application/pdf", PDF)}
+        with web(respuestas):
+            r = dw.buscar(None, ARXIV)
+        self.assertEqual((r["estado"], r["enlace"], r["datos"], r["usd"]), ("pdf", ARXIV + "v1", PDF, 0))
+        self.assertIn("CC BY 4.0", r["licencia"])
+        self.assertIn("https://creativecommons.org/licenses/by/4.0/", r["licencia"])
+
+    def test_arxiv_pdf_directo_consulta_la_ficha_de_su_version(self):
+        with web({ARXIV + "v1": (200, "text/html", pagina_arxiv()), ARXIV_PDF: (200, "application/pdf", PDF)}):
+            self.assertIn("CC BY 4.0", dw.buscar(None, ARXIV_PDF)["licencia"])
+
+    def test_arxiv_no_hereda_la_licencia_de_otra_version(self):
+        respuestas = {ARXIV + "v1": (200, "text/html", pagina_arxiv(version=ARXIV + "v2")),
+                      ARXIV_PDF: (200, "application/pdf", PDF)}
+        with web(respuestas):
+            self.assertNotIn("licencia", dw.buscar(None, ARXIV_PDF))
+
+    def test_arxiv_no_confunde_su_permiso_de_deposito_con_una_licencia_abierta(self):
+        respuestas = {ARXIV + "v1": (200, "text/html", pagina_arxiv("https://arxiv.org/licenses/nonexclusive-distrib/1.0/")),
+                      ARXIV_PDF: (200, "application/pdf", PDF)}
+        with web(respuestas):
+            r = dw.buscar(None, ARXIV_PDF)
+        self.assertEqual(r["estado"], "pdf")
+        self.assertNotIn("licencia", r)
+
+    def test_arxiv_no_aplica_licencias_de_otro_dominio_ni_a_pdfs_redirigidos(self):
+        falso = "https://arxiv.org.ejemplo.org/pdf/2611.20061v1"
+        with web({falso: (200, "application/pdf", PDF)}):
+            self.assertNotIn("licencia", dw.buscar(None, falso))
+        with web({ARXIV: (200, "text/html", pagina_arxiv()), ARXIV_PDF: (200, falso, "application/pdf", PDF)}):
+            self.assertIsNone(dw.documento_arxiv(ARXIV))
+
 
 AUTOR = 7002
 DE = {"id": AUTOR, "first_name": "Ana", "username": "ana"}
@@ -178,6 +220,18 @@ class Bot(unittest.TestCase):
         self.assertFalse(any(m == "subir" for m, _ in b.llamadas))
         self.assertIsNone(b.pendientes[AUTOR]["file_id"])
 
+    def test_licencia_verificada_corrige_la_ficha_y_adjunta_el_original(self):
+        b = nuevo_bot(compartir=False)
+        ficha = FICHA.replace("CC BY 4.0", "No se podrá compartir el documento.")
+        b.fichero.ficha.return_value = (ficha, 0)
+        licencia = f"CC BY 4.0 según arXiv. {ARXIV}"
+        self.llamar(b, {"estado": "pdf", "datos": PDF, "nombre": "", "enlace": ARXIV, "licencia": licencia})
+        p = b.pendientes[AUTOR]
+        self.assertEqual(bot.fichas.licencia_de(p["ficha"]), licencia)
+        self.assertTrue(p["compartir"])
+        self.assertEqual(p["file_id"], "subido-1")
+        b.fichero.compartible.assert_not_called()
+
     def test_no_descargable_da_el_enlace_directo(self):
         b = nuevo_bot()
         textos = self.llamar(b, {"estado": "no_descargable", "enlace": FICHA_DOC, "titulo": "Guía"})
@@ -222,6 +276,12 @@ class TrasBiblioteca(unittest.TestCase):
         with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
             self.atender(b, ANUNCIO)
         self.assertEqual(self.hilos(b), [("recurso", ANUNCIO)])
+
+    def test_arxiv_va_a_la_biblioteca_sin_comando(self):
+        b = self.nuevo()
+        with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
+            self.atender(b, ARXIV)
+        self.assertEqual(self.hilos(b), [("documento_web", ARXIV)])
 
     def test_otro_comando_deja_la_espera(self):
         b = self.nuevo()

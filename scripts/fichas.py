@@ -173,10 +173,18 @@ LICENCIA_CERRADA = re.compile(
     r"no se (puede|podr[aá]|permite)|todos los derechos|all rights reserved|prohib|sin licencia|no (tiene|consta|indica) licencia|©", re.I)
 
 
+APARTADO_LICENCIA = re.compile(r"(\*\*Licencia\*\*\s*\n)(.*?)(?=\n\s*\n|\Z)", re.S)
+
+
 def licencia_de(ficha: str) -> str:
     """La línea (o líneas) que sigue al rótulo **Licencia** de la ficha."""
-    m = re.search(r"\*\*Licencia\*\*\s*\n(.*?)(?:\n\s*\n|\Z)", ficha, re.S)
-    return m.group(1).strip() if m else ""
+    m = APARTADO_LICENCIA.search(ficha)
+    return m.group(2).strip() if m else ""
+
+
+def con_licencia(ficha: str, licencia: str) -> str:
+    nueva, sustituida = APARTADO_LICENCIA.subn(lambda m: m.group(1) + licencia, ficha, count=1)
+    return nueva if sustituida else f"{ficha.rstrip()}\n\n**Licencia**\n{licencia}"
 
 
 def se_puede_compartir(ficha: str) -> bool:

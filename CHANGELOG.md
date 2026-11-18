@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.20.2 — 2026-11-18
+
+- La Biblioteca digital lee la licencia de la versión del artículo en arXiv. Si permite compartir ese PDF, el bot lo adjunta e incluye la licencia y su fuente en la ficha. También acepta enlaces directos a fichas y PDF de arXiv (ADR 0043).
+
 ## 1.20.1 — 2026-11-16
 
 - La ayuda de Karla dice, en los cinco idiomas, que también se le puede mandar el `.zip` de un estilo con la duda (ADR 0042).

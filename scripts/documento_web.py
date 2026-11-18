@@ -30,6 +30,14 @@ MAX_PAGINA = 3 * 1024 * 1024
 SALTOS = 2                   # la página que se manda, la del documento y su PDF
 MAX_ENLACES = 300
 BLOQUEOS = (401, 403, 429, 503)  # lo que responde una web que no deja entrar a los programas
+ID_ARXIV = r"(?:\d{4}\.\d{4,5}|[a-z][a-z.-]*/\d{7})"
+LICENCIAS_ARXIV = {
+    "/licenses/by/4.0": "CC BY 4.0",
+    "/licenses/by-sa/4.0": "CC BY-SA 4.0",
+    "/licenses/by-nc-sa/4.0": "CC BY-NC-SA 4.0",
+    "/licenses/by-nc-nd/4.0": "CC BY-NC-ND 4.0",
+    "/publicdomain/zero/1.0": "CC0 1.0",
+}
 
 ELECCION = {
     "type": "object",
@@ -48,16 +56,30 @@ class _Pagina(HTMLParser):
         self.enlaces, self.titulo, self.texto = [], "", []
         self._a = None
         self._en = []  # etiquetas abiertas que no son texto visible
+        self._cita_version = False
+        self.version_arxiv = set()
+        self.licencias_arxiv = set()
 
     def handle_starttag(self, tag, attrs):
         if tag in ("script", "style", "noscript", "title"):
             self._en.append(tag)
+        atributos = dict(attrs)
+        clases = (atributos.get("class") or "").split()
+        if tag == "td":
+            self._cita_version = "arxividv" in clases
         if tag == "a":
-            self._a = [dict(attrs).get("href") or "", []]
+            href = atributos.get("href") or ""
+            self._a = [href, []]
+            if self._cita_version and href:
+                self.version_arxiv.add(href)
+            if "has_license" in clases and atributos.get("title") == "Rights to this article":
+                self.licencias_arxiv.add(href)
 
     def handle_endtag(self, tag):
         if self._en and self._en[-1] == tag:
             self._en.pop()
+        if tag == "td":
+            self._cita_version = False
         if tag == "a" and self._a:
             self.enlaces.append((self._a[0], " ".join(self._a[1])))
             self._a = None
@@ -97,6 +119,59 @@ def es_pdf(tipo: str, datos: bytes) -> bool:
 def parece_pdf(url: str) -> bool:
     """Un enlace suelto que acaba en .pdf es un documento, no un recurso para el catálogo."""
     return urllib.parse.urlsplit(url).path.lower().endswith(".pdf")
+
+
+def id_arxiv(url: str, tipo: str = r"abs|pdf") -> str:
+    """Identificador de una ficha o PDF oficial, con versión si la dirección la fija."""
+    try:
+        partes = urllib.parse.urlsplit(url)
+    except ValueError:
+        return ""
+    if partes.scheme not in ("https", "http") or partes.netloc.lower() not in ("arxiv.org", "www.arxiv.org"):
+        return ""
+    ruta = partes.path.rstrip("/")
+    if ruta.startswith("/pdf/"):
+        ruta = ruta.removesuffix(".pdf")
+    m = re.fullmatch(rf"/(?:{tipo})/({ID_ARXIV}(?:v[1-9]\d*)?)", ruta)
+    return m.group(1) if m else ""
+
+
+def documento_arxiv(url: str) -> dict | None:
+    """Descarga la versión a la que arXiv atribuye la licencia. Sin evidencia, sigue la vía normal."""
+    identificador = id_arxiv(url)
+    if not identificador:
+        return None
+    ficha = f"https://arxiv.org/abs/{identificador}"
+    try:
+        estado, final, tipo, datos = catalogo.descargar(ficha, MAX_PAGINA)
+        if estado != 200 or "html" not in tipo or id_arxiv(final, "abs") != identificador:
+            return None
+        pagina = _Pagina()
+        pagina.feed(datos.decode("utf-8", "replace"))
+        if len(pagina.version_arxiv) != 1 or len(pagina.licencias_arxiv) != 1:
+            return None
+        version = id_arxiv(urllib.parse.urljoin(ficha, next(iter(pagina.version_arxiv))), "abs")
+        m = re.fullmatch(rf"({ID_ARXIV})v[1-9]\d*", version)
+        if not m or identificador not in (m.group(1), version):
+            return None
+        derechos = urllib.parse.urlsplit(next(iter(pagina.licencias_arxiv)))
+        if derechos.scheme not in ("https", "http") or derechos.netloc.lower() != "creativecommons.org":
+            return None
+        ruta_licencia = derechos.path.rstrip("/")
+        licencia = LICENCIAS_ARXIV.get(ruta_licencia)
+        if not licencia:
+            return None
+        estado, final, tipo, datos = catalogo.descargar(f"https://arxiv.org/pdf/{version}", MAX_PDF + 1)
+        if estado != 200 or id_arxiv(final, "pdf") != version or datos[:5] != b"%PDF-":
+            return None
+        if len(datos) > MAX_PDF:
+            return {"estado": "grande", "mb": len(datos) / 1024 / 1024}
+    except (catalogo.NoPublica, OSError, ValueError):
+        return None
+    ficha_version = f"https://arxiv.org/abs/{version}"
+    return {"estado": "pdf", "datos": datos, "nombre": "", "enlace": ficha_version,
+            "licencia": f"{licencia}. La ficha de esta versión en arXiv indica esta licencia. "
+                        f"{ficha_version} · https://creativecommons.org{ruta_licencia}/"}
 
 
 def nombre_de(url: str) -> str:
@@ -140,6 +215,9 @@ def buscar(cliente, url: str) -> dict:
     - grande: «mb»; sin_documento (una página corriente que no presenta ningún documento); no_abre."""
     usd, doc, actual, estado, cerrada = 0.0, None, url, 0, False
     for salto in range(SALTOS + 1):
+        arxiv = documento_arxiv(actual)
+        if arxiv:
+            return {**arxiv, "usd": usd}
         try:
             estado, final, tipo, datos = catalogo.descargar(actual, MAX_PDF + 1)
         except (catalogo.NoPublica, OSError, ValueError):
