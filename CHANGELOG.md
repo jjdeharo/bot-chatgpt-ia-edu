@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.21.1 — 2026-11-18
+
+- La Biblioteca digital registra cada publicación al enviarla y compara las direcciones y la huella del PDF antes de preparar su ficha y al confirmar su publicación. También comprueba las direcciones de las fichas del historial. Así puede devolver el enlace existente aunque Telegram aún no se haya indexado (ADR 0045).
+
 ## 1.21.0 — 2026-11-18
 
 - Al recibir un enlace suelto, el bot distingue un documento de una aplicación cuando la página ofrece indicios claros. Si hay duda, pregunta a qué destino se quiere aportar o si solo se quiere consultar el enlace (ADR 0044).

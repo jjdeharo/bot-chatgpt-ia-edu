@@ -3,14 +3,18 @@
 
     .venv/bin/python -m unittest pruebas/test_documento_web.py
 """
+import json
 import sys
+import tempfile
 import threading
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import bot  # noqa: E402
+import biblioteca_duplicados as duplicados  # noqa: E402
 import documento_web as dw  # noqa: E402
 import fichas  # noqa: E402
 
@@ -275,6 +279,89 @@ class Bot(unittest.TestCase):
             with self.subTest(estado=estado):
                 self.assertIn(trozo, self.llamar(nuevo_bot(), {"estado": estado})[-1])
         self.assertIn("60 MB", self.llamar(nuevo_bot(), {"estado": "grande", "mb": 60.2})[-1])
+
+
+class DuplicadosBiblioteca(unittest.TestCase):
+    def setUp(self):
+        carpeta = tempfile.TemporaryDirectory()
+        self.addCleanup(carpeta.cleanup)
+        self.raiz = Path(carpeta.name)
+        self.datos = self.raiz / "chatgpt"
+        self.datos.mkdir()
+        self.grupo = SimpleNamespace(datos=self.datos, biblioteca=21753, id=-1001, enlace="https://t.me/ChatGPTedu")
+        self.enterContext(mock.patch.object(bot, "BIBLIOTECA", self.grupo))
+        self.enterContext(mock.patch.object(bot, "BIBLIOTECA_PRUEBA", None))
+        self.enterContext(mock.patch.object(bot, "ESTADO", self.raiz / "estado.json"))
+
+    def borrador(self):
+        return {"ficha": FICHA, "file_id": "f", "autor": "A", "compartir": True, "clave": "abc",
+                "momento": bot.time.time(), "claves": sorted(duplicados.claves([ARXIV_PDF]))}
+
+    def test_una_version_y_sus_enlaces_no_confunden_versiones_nuevas(self):
+        doi = "https://doi.org/10.48550/arXiv.2611.20061v1"
+        self.assertEqual(duplicados.claves([ARXIV, ARXIV_PDF, doi]), {"arxiv:2611.20061v1"})
+        self.assertEqual(duplicados.claves([ARXIV + "v2"]), {"arxiv:2611.20061v2"})
+        self.assertEqual(duplicados.claves(["http://ejemplo.org/Doc/?utm_source=telegram&id=2#otro"]),
+                         {"https://ejemplo.org/Doc?id=2"})
+
+    def test_encuentra_en_el_historial_la_ficha_y_no_un_comentario(self):
+        encontrado = f"{self.grupo.enlace}/{self.grupo.biblioteca}/22"
+        ficha = f"Título\n\nReferencia. {ARXIV}\n\nResumen\nEjemplo.\n\nLicencia\nCC BY 4.0. {ARXIV}v1"
+        filas = [
+            {"id": 21, "tema": self.grupo.biblioteca, "responde_a": None, "texto": "Un documento", "enlace": "original"},
+            {"id": 22, "tema": self.grupo.biblioteca, "responde_a": 21, "texto": ficha, "enlace": encontrado},
+            {"id": 23, "tema": self.grupo.biblioteca, "responde_a": 21, "texto": f"Otro trabajo: {ARXIV}v2", "enlace": "ajeno"},
+        ]
+        (self.datos / "mensajes.jsonl").write_text("\n".join(map(json.dumps, filas)))
+        b = nuevo_bot()
+        self.assertEqual(b.repetido_biblioteca(duplicados.claves([ARXIV_PDF])), encontrado)
+        self.assertFalse(b.repetido_biblioteca(duplicados.claves([ARXIV + "v2"])))
+
+    def test_rechaza_el_mismo_documento_antes_de_hacer_ficha_y_aunque_el_indice_no_exista(self):
+        b = nuevo_bot()
+        enlace, _, _ = b.publicar(self.borrador())
+        otro = nuevo_bot()
+        r = {"estado": "pdf", "datos": PDF, "nombre": "", "enlace": ARXIV_PDF, "usd": 0.0}
+        with mock.patch.object(dw, "buscar", return_value=r), mock.patch.object(fichas, "leer_pdf") as leer:
+            otro.documento_web(AUTOR, AUTOR, DE, ARXIV)
+        leer.assert_not_called()
+        otro.fichero.revisar.assert_not_called()
+        self.assertIn(enlace, [k["text"] for m, k in otro.llamadas if m == "enviar"][-1])
+
+    def test_dos_vistas_previas_comprueban_de_nuevo_al_publicar(self):
+        primero, segundo = nuevo_bot(), nuevo_bot()
+        primero.pendientes[AUTOR] = self.borrador()
+        segundo.pendientes[AUTOR] = self.borrador()
+        for b in (primero, segundo):
+            b.token = "token-de-prueba"
+            b.fijar_lengua = lambda *a: None
+            b.grupos_de = lambda *a, **k: {bot.grupos.con_biblioteca().clave}
+            b.antispam = mock.Mock()
+            b.antispam.deshacer.return_value = False
+            b.avisar_juanjo = mock.Mock()
+        self.grupo.clave = bot.grupos.con_biblioteca().clave
+        cq = {"id": "boton", "from": DE, "data": "publicar:abc"}
+        primero.boton(cq)
+        segundo.boton(cq)
+        self.assertIn("sendDocument", [m for m, _ in primero.llamadas])
+        self.assertNotIn("sendDocument", [m for m, _ in segundo.llamadas])
+        self.assertIn("ya está en la Biblioteca", segundo.llamadas[-1][1]["text"])
+
+    def test_si_falla_la_ficha_registra_el_documento_y_el_reintento_lo_reutiliza(self):
+        b = nuevo_bot()
+        p = self.borrador()
+        b.tg = mock.Mock(side_effect=[{"message_id": 12}, None, {"message_id": 13}])
+        with self.assertRaises(RuntimeError):
+            b.publicar(p)
+        self.assertTrue(nuevo_bot().repetido_biblioteca(set(p["claves"])))
+        self.assertFalse(b.repetido_biblioteca(set(p["claves"]), omitir=12))
+        b.publicar(p)
+        self.assertEqual([ll.args[0] for ll in b.tg.call_args_list], ["sendDocument", "sendMessage", "sendMessage"])
+
+    def test_reconoce_la_huella_aunque_cambie_el_enlace(self):
+        b = nuevo_bot()
+        b.registrar_publicacion_biblioteca({"claves": ["sha256:abc", "https://ejemplo.org/informe"]}, 23)
+        self.assertTrue(b.repetido_biblioteca(duplicados.claves(["https://ejemplo.net/documento"], "abc")))
 
 
 class TrasBiblioteca(unittest.TestCase):

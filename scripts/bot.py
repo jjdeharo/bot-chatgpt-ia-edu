@@ -47,6 +47,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import antispam
+import biblioteca_duplicados
 import catalogo
 import resumen_semanal
 import boletin_grupos
@@ -81,7 +82,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.21.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.21.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -266,6 +267,7 @@ def registrar(texto: str) -> None:
 
 
 CERROJO = threading.Lock()  # los documentos se tratan en hilos aparte
+CERROJO_BIBLIOTECA = threading.Lock()
 
 
 def leer_estado() -> dict:
@@ -1752,13 +1754,15 @@ class Bot:
             return
         self.enviar(chat, self.tx(uid, "leyendo"))
 
-        def leer() -> tuple[str, str]:
+        def leer() -> tuple[str, str, str]:
             with tempfile.TemporaryDirectory() as tmp:
                 ruta = Path(tmp) / "documento.pdf"
                 info = self.tg("getFile", file_id=d["file_id"])
                 urllib.request.urlretrieve(
                     f"https://api.telegram.org/file/bot{self.token}/{info['file_path']}", ruta)
-                return fichas.leer_pdf(ruta)
+                with ruta.open("rb") as fichero:
+                    huella = hashlib.file_digest(fichero, "sha256").hexdigest()
+                return (*fichas.leer_pdf(ruta), huella)
         self.preparar_ficha(chat, uid, msg["from"], nombre, leer, file_id=d["file_id"])
 
     def documento_web(self, chat: int, uid: int, de: dict, url: str) -> None:
@@ -1786,14 +1790,20 @@ class Bot:
                      "no_abre": "web_no_abre"}.get(r["estado"], "error_doc")
             return self.enviar(chat, self.tx(uid, clave))
 
-        def leer() -> tuple[str, str]:
+        def leer() -> tuple[str, str, str]:
             with tempfile.TemporaryDirectory() as tmp:
                 ruta = Path(tmp) / "documento.pdf"
                 ruta.write_bytes(r["datos"])
-                return fichas.leer_pdf(ruta)
+                return (*fichas.leer_pdf(ruta), hashlib.sha256(r["datos"]).hexdigest())
         self.preparar_ficha(chat, uid, de, r["nombre"] or "documento.pdf", leer, pdf=r["datos"],
                             enlace=r["enlace"], usd_previo=r["usd"], por_titulo=not r["nombre"],
                             licencia_verificada=r.get("licencia", ""))
+
+    def repetido_biblioteca(self, claves: set[str], omitir: int | None = None) -> str:
+        if BIBLIOTECA_PRUEBA:
+            return ""
+        recientes = leer_estado().get("biblioteca_publicaciones", {})
+        return biblioteca_duplicados.ya_publicado(BIBLIOTECA, claves, recientes, omitir)
 
     def preparar_ficha(self, chat: int, uid: int, de: dict, nombre: str, leer, file_id: str | None = None,
                        pdf: bytes | None = None, enlace: str = "", usd_previo: float = 0.0,
@@ -1804,7 +1814,16 @@ class Bot:
         hecho = self.escribiendo(chat)
         usd = usd_previo
         try:
-            texto, meta = leer()
+            urls = [enlace]
+            claves = biblioteca_duplicados.claves(urls)
+            repetido = self.repetido_biblioteca(claves)
+            if repetido:
+                return self.enviar(chat, self.tx(uid, "repetido", enlace=repetido))
+            texto, meta, huella = leer()
+            claves = biblioteca_duplicados.claves(urls, huella)
+            repetido = self.repetido_biblioteca(claves)
+            if repetido:
+                return self.enviar(chat, self.tx(uid, "repetido", enlace=repetido))
             if len(texto.strip()) < 300:
                 return self.enviar(chat, self.tx(uid, "sin_texto"))
             revision, candidatos, coste = self.fichero.revisar(texto, nombre)
@@ -1829,6 +1848,10 @@ class Bot:
                 if url:
                     ficha = fichas.con_enlace(ficha, url)
             ficha = fichas.con_linea_final(ficha)
+            claves = biblioteca_duplicados.claves(urls + biblioteca_duplicados.enlaces_ficha(ficha), huella)
+            repetido = self.repetido_biblioteca(claves)
+            if repetido:
+                return self.enviar(chat, self.tx(uid, "repetido", enlace=repetido))
             if pdf is not None and compartir:  # si solo se publica la ficha, el archivo no hace falta
                 if por_titulo:
                     nombre = documento_web.nombre_por_titulo(fichas.titulo(ficha))
@@ -1848,7 +1871,8 @@ class Bot:
         self.quitar_botones((self.pendientes.get(uid) or {}).get("mensaje"))  # la vista previa anterior ya no vale
         clave = self.clave_borrador()
         self.pendientes[uid] = {"ficha": ficha, "file_id": file_id, "autor": autor,
-                                "compartir": compartir, "momento": time.time(), "clave": clave}
+                                "compartir": compartir, "momento": time.time(), "clave": clave,
+                                "claves": sorted(claves)}
         registrar(f"ficha preparada: {usd:.4f} USD, compartir={compartir}, enlace={fichas.tiene_enlace(ficha)}")
         if fichas.tiene_enlace(ficha):
             return self.ensenar_documento(chat, uid)
@@ -1884,7 +1908,16 @@ class Bot:
             self.enviar(chat, self.tx(uid, "falta_enlace"))
             return True
         self.espera.pop(uid, None)
-        p["ficha"] = fichas.con_enlace(p["ficha"], enlace.group(0).rstrip(".,;)»\""))
+        url = enlace.group(0).rstrip(".,;)»\"")
+        claves = set(p.get("claves", ())) | biblioteca_duplicados.claves([url])
+        repetido = self.repetido_biblioteca(claves)
+        if repetido:
+            self.pendientes.pop(uid, None)
+            self.quitar_botones(p.get("mensaje"))
+            self.enviar(chat, self.tx(uid, "repetido", enlace=repetido))
+            return True
+        p["ficha"] = fichas.con_enlace(p["ficha"], url)
+        p["claves"] = sorted(claves)
         self.ensenar_documento(chat, uid)
         return True
 
@@ -1937,6 +1970,15 @@ class Bot:
                 return self.enviar(uid, self.tx(uid, "no_tuyo"))
             borrados = [self.tg("deleteMessage", chat_id=int(destino), message_id=int(i)) for i in ids.split("-")]
             if all(borrados):
+                if int(destino) == BIBLIOTECA.id:
+                    with CERROJO:
+                        estado = leer_estado()
+                        publicaciones = estado.get("biblioteca_publicaciones", {})
+                        retirados = publicaciones.keys() & set(ids.split("-"))
+                        if retirados:
+                            for i in retirados:
+                                publicaciones.pop(i)
+                            guardar_estado(estado)
                 registrar("documento quitado de la biblioteca a petición de quien lo aportó")
                 return self.enviar(uid, self.tx(uid, "quitado_biblioteca"))
             return self.enviar(uid, self.tx(uid, "no_quitar_ya"))
@@ -1958,7 +2000,11 @@ class Bot:
         if BIBLIOTECA.clave not in self.grupos_de(uid, al_dia=True):  # por si ha dejado el grupo desde que mandó el documento
             return self.enviar(uid, self.tx(uid, "solo_chatgpt"))
         try:
-            enlace, destino, ids = self.publicar(p)
+            with CERROJO_BIBLIOTECA:
+                repetido = self.repetido_biblioteca(set(p.get("claves", ())), (p.get("doc") or {}).get("message_id"))
+                if repetido:
+                    return self.enviar(uid, self.tx(uid, "repetido", enlace=repetido))
+                enlace, destino, ids = self.publicar(p)
         except Exception as error:  # noqa: BLE001
             registrar(f"error al publicar: {type(error).__name__}: {error}")
             self.pendientes[uid] = p
@@ -1974,6 +2020,17 @@ class Bot:
         registrar("documento publicado en la biblioteca")
         self.avisar_juanjo(uid, "nuevo_biblioteca", autor=p["autor"], titulo=fichas.titulo(p["ficha"]), enlace=enlace)
 
+    def registrar_publicacion_biblioteca(self, p: dict, mensaje_id: int) -> None:
+        if BIBLIOTECA_PRUEBA or not p.get("claves"):
+            return
+        with CERROJO:
+            estado = leer_estado()
+            publicaciones = estado.setdefault("biblioteca_publicaciones", {})
+            if str(mensaje_id) not in publicaciones:
+                enlace = f"{BIBLIOTECA.enlace}/{BIBLIOTECA.biblioteca}/{mensaje_id}"
+                publicaciones[str(mensaje_id)] = {"claves": p["claves"], "momento": time.time(), "enlace": enlace}
+                guardar_estado(estado)
+
     def publicar(self, p: dict) -> tuple[str, int, list[int]]:
         """Como lo hace Juanjo: el documento con el título en mayúsculas y, en respuesta, la ficha.
         Devuelve el enlace, el chat y los mensajes publicados (para poder quitarlos si se arrepiente)."""
@@ -1988,15 +2045,20 @@ class Bot:
             if not doc:
                 raise RuntimeError("Telegram no ha aceptado el documento")
             p["doc"] = doc  # si falla la ficha y se reintenta, el documento ya está: no se manda otra vez
-            r = self.tg("sendMessage", chat_id=destino, text=ficha_html, parse_mode="HTML",
-                        reply_parameters={"message_id": doc["message_id"]},
-                        link_preview_options={"is_disabled": True}, **tema)
+            self.registrar_publicacion_biblioteca(p, doc["message_id"])
+            r = p.get("ficha_publicada") or self.tg("sendMessage", chat_id=destino, text=ficha_html, parse_mode="HTML",
+                                                    reply_parameters={"message_id": doc["message_id"]},
+                                                    link_preview_options={"is_disabled": True}, **tema)
             primero = doc
         else:
-            r = primero = self.tg("sendMessage", chat_id=destino, text=f"{ficha_html}\n\n{aportado}",
-                                  parse_mode="HTML", link_preview_options={"is_disabled": True}, **tema)
+            r = primero = p.get("ficha_publicada") or self.tg(
+                "sendMessage", chat_id=destino, text=f"{ficha_html}\n\n{aportado}",
+                parse_mode="HTML", link_preview_options={"is_disabled": True}, **tema)
         if not r:
             raise RuntimeError("Telegram no ha aceptado la ficha")
+        p["ficha_publicada"] = r
+        if not p["compartir"]:
+            self.registrar_publicacion_biblioteca(p, primero["message_id"])
         ids = sorted({primero["message_id"], r["message_id"]})
         if BIBLIOTECA_PRUEBA:
             return "(prueba: publicado en el chat privado)", destino, ids
