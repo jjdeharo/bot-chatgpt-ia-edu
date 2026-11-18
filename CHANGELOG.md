@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.21.0 — 2026-11-18
+
+- Al recibir un enlace suelto, el bot distingue un documento de una aplicación cuando la página ofrece indicios claros. Si hay duda, pregunta a qué destino se quiere aportar o si solo se quiere consultar el enlace (ADR 0044).
+
 ## 1.20.2 — 2026-11-18
 
 - La Biblioteca digital lee la licencia de la versión del artículo en arXiv. Si permite compartir ese PDF, el bot lo adjunta e incluye la licencia y su fuente en la ficha. También acepta enlaces directos a fichas y PDF de arXiv (ADR 0043).

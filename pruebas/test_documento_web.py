@@ -158,6 +158,36 @@ class Buscar(unittest.TestCase):
             self.assertIsNone(dw.documento_arxiv(ARXIV))
 
 
+class TipoDeEnlace(unittest.TestCase):
+    def test_pdf_sin_extension(self):
+        with web({FICHA_DOC: (200, "application/octet-stream", PDF)}):
+            self.assertEqual(dw.tipo_de_enlace(FICHA_DOC), "documento")
+
+    def test_ficha_academica_y_su_pdf_en_metadatos(self):
+        datos = b'<meta name="citation_pdf_url" content="/publicaciones/guia.pdf">'
+        with web({ANUNCIO: (200, "text/html", datos)}):
+            self.assertEqual(dw.tipo_de_enlace(ANUNCIO), "documento")
+        self.assertEqual(dw.leer_pagina(datos, ANUNCIO)[2], [("PDF del documento", DOC)])
+
+    def test_aplicacion_declarada_en_la_pagina(self):
+        datos = b'<meta name="application-name" content="Simulador"><link rel="manifest" href="manifest.webmanifest">'
+        with web({ANUNCIO: (200, "text/html", datos)}):
+            self.assertEqual(dw.tipo_de_enlace(ANUNCIO), "recurso")
+
+    def test_un_pdf_en_una_pagina_no_basta_para_asignarla(self):
+        with web({ANUNCIO: (200, "text/html", pagina(("Descargar PDF", DOC)))}):
+            self.assertEqual(dw.tipo_de_enlace(ANUNCIO), "")
+
+    def test_pagina_con_indicios_de_documento_y_de_aplicacion(self):
+        datos = b'<meta property="og:type" content="softwareapplication"><meta name="citation_pdf_url" content="/guia">'
+        with web({ANUNCIO: (200, "text/html", datos)}):
+            self.assertEqual(dw.tipo_de_enlace(ANUNCIO), "")
+
+    def test_pagina_no_disponible(self):
+        with web({ANUNCIO: (403, "", b"")}):
+            self.assertEqual(dw.tipo_de_enlace(ANUNCIO), "")
+
+
 AUTOR = 7002
 DE = {"id": AUTOR, "first_name": "Ana", "username": "ana"}
 FICHA = ("**Guía de IA en el aula**\n\nEjemplo. (2026). Guía de IA en el aula.\n\n**Resumen**\nTexto.\n\n"
@@ -256,6 +286,7 @@ class TrasBiblioteca(unittest.TestCase):
         b = nuevo_bot()
         b.fijar_lengua = b.lengua_de_la_frase = lambda *a: None
         b.voz_a_texto = lambda *a: None
+        b.agotadas = lambda uid: False
         b.grupos_de = lambda uid: {bot.BIBLIOTECA.clave, bot.CATALOGO.clave}  # de los dos grupos
         b.en_hilo = lambda f, *a: b.llamadas.append(("hilo", {"f": f.__name__, "a": a}))
         return b
@@ -271,9 +302,17 @@ class TrasBiblioteca(unittest.TestCase):
         self.assertEqual(self.hilos(b), [("documento_web", ANUNCIO)])
         self.assertNotIn(AUTOR, b.espera)
 
-    def test_sin_biblioteca_un_enlace_sigue_yendo_al_catalogo(self):
+    def test_enlace_suelto_se_clasifica_antes_de_elegir_destino(self):
         b = self.nuevo()
         with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
+            self.atender(b, ANUNCIO)
+        [(funcion, pendiente)] = self.hilos(b)
+        self.assertEqual((funcion, pendiente["url"]), ("clasificar_enlace", ANUNCIO))
+
+    def test_repositorio_explicito_sigue_yendo_al_catalogo(self):
+        b = self.nuevo()
+        with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
+            self.atender(b, "/repositorio")
             self.atender(b, ANUNCIO)
         self.assertEqual(self.hilos(b), [("recurso", ANUNCIO)])
 
@@ -290,6 +329,74 @@ class TrasBiblioteca(unittest.TestCase):
             self.atender(b, "/repositorio")
             self.atender(b, ANUNCIO)
         self.assertEqual(self.hilos(b), [("recurso", ANUNCIO)])
+
+    def pendiente(self, b):
+        with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
+            self.atender(b, ANUNCIO)
+        return b.espera[AUTOR]
+
+    def test_enlace_claro_abre_su_propio_destino(self):
+        for tipo in ("documento", "recurso"):
+            with self.subTest(tipo=tipo):
+                b = self.nuevo()
+                p = self.pendiente(b)
+                b.documento_web, b.recurso = mock.Mock(), mock.Mock()
+                with mock.patch.object(dw, "tipo_de_enlace", return_value=tipo):
+                    b.clasificar_enlace(AUTOR, AUTOR, p)
+                elegido, otro = (b.documento_web, b.recurso) if tipo == "documento" else (b.recurso, b.documento_web)
+                opciones = {"limpiar_espera": False} if tipo == "recurso" else {}
+                elegido.assert_called_once_with(AUTOR, AUTOR, DE, ANUNCIO, **opciones)
+                otro.assert_not_called()
+                self.assertNotIn(AUTOR, b.espera)
+
+    def test_pide_destino_y_la_eleccion_solo_cuenta_una_vez(self):
+        b = self.nuevo()
+        b.antispam = mock.Mock()
+        b.antispam.deshacer.return_value = False
+        p = self.pendiente(b)
+        with mock.patch.object(dw, "tipo_de_enlace", return_value=""):
+            b.clasificar_enlace(AUTOR, AUTOR, p)
+        envio = [k for m, k in b.llamadas if m == "sendMessage"][-1]
+        botones = [fila[0] for fila in envio["reply_markup"]["inline_keyboard"]]
+        self.assertEqual([b["text"] for b in botones], ["Biblioteca digital", "Repositorio de VCE", "Consultarlo", "Cancelar"])
+        self.assertEqual(envio["reply_parameters"], {"message_id": 1})
+        clic = {"id": "abc", "data": botones[0]["callback_data"], "from": DE}
+        b.boton(clic)
+        b.boton(clic)
+        self.assertEqual(self.hilos(b)[-1], ("abrir_destino_enlace", "documento"))
+        self.assertEqual(len(self.hilos(b)), 2)
+
+    def test_ofrece_solo_destinos_permitidos_y_sustituye_la_eleccion_anterior(self):
+        b = self.nuevo()
+        b.grupos_de = lambda uid: {bot.CATALOGO.clave}
+        anterior = self.pendiente(b)
+        nuevo = self.pendiente(b)
+        with mock.patch.object(dw, "tipo_de_enlace", return_value="recurso"), mock.patch.object(b, "recurso") as recurso:
+            b.clasificar_enlace(AUTOR, AUTOR, anterior)
+            recurso.assert_not_called()
+        b.boton_destino_enlace(AUTOR, f"de:recurso:{anterior['clave']}")
+        b.boton_destino_enlace(AUTOR, f"de:documento:{nuevo['clave']}")
+        with mock.patch.object(dw, "tipo_de_enlace", return_value=""):
+            b.clasificar_enlace(AUTOR, AUTOR, nuevo)
+        envio = [k for m, k in b.llamadas if m == "sendMessage"][-1]
+        opciones = envio["reply_markup"]["inline_keyboard"]
+        self.assertEqual([fila[0]["text"] for fila in opciones], ["Repositorio de VCE", "Consultarlo", "Cancelar"])
+        self.assertEqual(len(self.hilos(b)), 2)
+        self.assertIs(b.espera[AUTOR], nuevo)
+
+    def test_consulta_usa_el_mensaje_original_sin_clasificarlo_otra_vez(self):
+        b = self.nuevo()
+        p = self.pendiente(b)
+        b.atender = mock.Mock()
+        b.abrir_destino_enlace(AUTOR, AUTOR, p, "consulta")
+        b.atender.assert_called_once_with(p["msg"], decidir_destino=False)
+
+    def test_enlace_arxiv_no_acaba_en_el_catalogo_si_se_esperaban_detalles_de_una_app(self):
+        b = self.nuevo()
+        b.espera[AUTOR] = {"que": "detalle", "url": ANUNCIO, "momento": bot.time.time()}
+        with mock.patch.object(bot, "AUTORIZADOS", {AUTOR}):
+            self.atender(b, ARXIV)
+        self.assertEqual(self.hilos(b), [("documento_web", ARXIV)])
 
 
 if __name__ == "__main__":

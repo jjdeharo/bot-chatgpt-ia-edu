@@ -81,7 +81,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.20.2"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.21.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -100,6 +100,7 @@ COMPARTE_TU_APP = 7674  # tema «¡Comparte tu App!» de Vibe Coding Educativo
 ADMIN_HORAS = 6  # de reserva: los cambios llegan al momento con «chat_member»
 POR_PAGINA = 10  # recursos por página en /misrecursos (Juanjo, 27-10-2026: «20 son muchos»)
 ESPERA_MIN = 60  # minutos que el bot espera la respuesta a algo que ha pedido (un cambio, un código)
+LECTURAS_ENLACE = threading.BoundedSemaphore(4)
 SOLO_URL = re.compile(r"^\s*(https?://\S+)\s*$")
 # Un enlace a un mensaje de Telegram no es un recurso para el repositorio: es una pregunta sobre ese mensaje (ADR 0020).
 ENLACE_TELEGRAM = re.compile(r"^https?://(t\.me|telegram\.me|telegram\.dog)/", re.I)
@@ -1476,7 +1477,7 @@ class Bot:
         texto = msg.get("text") or msg.get("caption") or ""
         return f"@{self.usuario}".lower() in texto.lower() or bool(self.comando_en_grupo(msg))
 
-    def atender(self, msg: dict) -> None:
+    def atender(self, msg: dict, decidir_destino: bool = True) -> None:
         chat, uid = msg["chat"]["id"], msg["from"]["id"]
         self.fijar_lengua(uid, msg["from"])
         if msg["chat"]["type"] != "private":
@@ -1505,7 +1506,9 @@ class Bot:
         if comando == "/start" and texto.split()[1:2] and texto.split()[1].lower() in COMANDOS:
             comando = "/" + texto.split()[1].lower()  # enlace t.me/<bot>?start=misrecursos
         if comando:
-            self.espera.pop(uid, None)  # un comando deja lo que estuviera a medias
+            anterior = self.espera.pop(uid, None)  # un comando deja lo que estuviera a medias
+            if anterior and anterior["que"] == "destino_enlace":
+                self.quitar_botones(anterior.get("mensaje"))
         if comando == "/estado" and uid == JUANJO:
             return self.enviar_tablas(chat, bloques_estado(contabilidad(leer_estado())))
         if comando == "/sinresolver" and uid == JUANJO:
@@ -1530,7 +1533,7 @@ class Bot:
             return self.enviar(chat, self.tx(uid, "recurso"))
         if comando == "/misrecursos":
             return self.en_hilo(self.mis_recursos, chat, uid)
-        espera = self.esperando(uid)
+        espera = self.esperando(uid) if decidir_destino else None
         fotos = msg.get("fotos") or []
         voz = self.voz_a_texto(chat, uid, msg)
         if voz is not None:
@@ -1551,17 +1554,30 @@ class Bot:
             return self.en_hilo(self.documento, chat, uid, msg)
         if not texto and not fotos:
             return self.enviar(chat, self.tx(uid, "solo_texto"))
+        enlace = decidir_destino and not fotos and SOLO_URL.match(texto)
+        documento_claro = enlace and (documento_web.parece_pdf(enlace.group(1)) or documento_web.id_arxiv(enlace.group(1)))
+        if documento_claro and espera and espera["que"] == "detalle" and BIBLIOTECA.clave in suyos:
+            # Tras un intento de leer una app, un documento nuevo se puede aportar a la Biblioteca.
+            self.espera.pop(uid, None)
+            espera = None
         if espera and not fotos and self.contestar_espera(chat, uid, msg, texto, espera):
             return
-        enlace = not fotos and SOLO_URL.match(texto)
-        if (enlace and BIBLIOTECA.clave in suyos
-                and (documento_web.parece_pdf(enlace.group(1)) or documento_web.id_arxiv(enlace.group(1)))):
-            # Un PDF suelto es un documento para la Biblioteca digital, no un recurso del catálogo (ADR 0035)
-            return self.en_hilo(self.documento_web, chat, uid, msg["from"], enlace.group(1))
-        if enlace and CATALOGO.clave in suyos and not ENLACE_TELEGRAM.match(enlace.group(1)):
-            # Un enlace suelto no es una pregunta: es un recurso para el catálogo. El de un mensaje de
-            # Telegram sí es una pregunta («¿de qué va este mensaje?»): sigue como consulta (ADR 0020).
-            return self.en_hilo(self.recurso, chat, uid, msg["from"], enlace.group(1))
+        if enlace and not ENLACE_TELEGRAM.match(enlace.group(1)):
+            destinos = [destino for grupo, destino in ((BIBLIOTECA, "documento"), (CATALOGO, "recurso"))
+                        if grupo.clave in suyos]
+            if destinos:
+                url = enlace.group(1)
+                if espera and espera["que"] == "destino_enlace":
+                    self.espera.pop(uid, None)
+                    self.quitar_botones(espera.get("mensaje"))
+                if "documento" in destinos and documento_claro:
+                    return self.en_hilo(self.documento_web, chat, uid, msg["from"], url)
+                if self.agotadas(uid):
+                    return self.enviar(chat, self.tx(uid, "seguidas"))
+                p = {"que": "destino_enlace", "clave": self.clave_borrador(), "momento": time.time(),
+                     "url": url, "msg": msg, "destinos": destinos}
+                self.espera[uid] = p
+                return self.en_hilo(self.clasificar_enlace, chat, uid, p)
 
         e = contabilidad(leer_estado())
         usadas = e["preguntas_hoy"].get(str(uid), 0)
@@ -1577,8 +1593,9 @@ class Bot:
             historial = []
         hecho = self.escribiendo(chat)
         try:
-            r = self.consultor.responder(self.pregunta(self.nota_ficha(uid) + self.con_citado(msg, f"{NOTA_AUDIO}\n{texto}" if msg.get("voz") else texto),
-                                                       fotos, LARGO_PREGUNTA + LARGO_CITADO),
+            nota = self.nota_ficha(uid) if decidir_destino else "La persona pulsó «Consultarlo» y quiere saber de qué trata el enlace.\n\n"
+            pregunta = self.con_citado(msg, f"{NOTA_AUDIO}\n{texto}" if msg.get("voz") else texto)
+            r = self.consultor.responder(self.pregunta(nota + pregunta, fotos, LARGO_PREGUNTA + LARGO_CITADO),
                                          historial[-2 * INTERCAMBIOS:], self.ambito(uid), self.lenguas.get(uid, "es"))
         except Exception as error:  # noqa: BLE001 — una pregunta fallida no tumba el bot
             registrar(f"error: {type(error).__name__}: {error}")
@@ -1672,6 +1689,57 @@ class Bot:
             self.enviar(chat, self.tx(uid, "tope"))
             return False
         return True
+
+    def clasificar_enlace(self, chat: int, uid: int, pendiente: dict) -> None:
+        destino = ""
+        if LECTURAS_ENLACE.acquire(blocking=False):
+            hecho = self.escribiendo(chat)
+            try:
+                destino = documento_web.tipo_de_enlace(pendiente["url"])
+            finally:
+                hecho.set()
+                LECTURAS_ENLACE.release()
+        if self.espera.get(uid) is not pendiente:
+            return
+        if destino in pendiente["destinos"]:
+            self.espera.pop(uid, None)
+            return self.abrir_destino_enlace(chat, uid, pendiente, destino)
+        opciones = [*pendiente["destinos"], "consulta", "cancelar"]
+        botones = [{"text": self.tx(uid, f"b_destino_{opcion}"), "callback_data": f"de:{opcion}:{pendiente['clave']}"}
+                   for opcion in opciones]
+        m = self.tg("sendMessage", chat_id=chat, text=self.tx(uid, "destino_enlace"),
+                    reply_parameters={"message_id": pendiente["msg"]["message_id"]},
+                    reply_markup={"inline_keyboard": [[boton] for boton in botones]})
+        if m:
+            pendiente["mensaje"] = (chat, m["message_id"])
+            if self.espera.get(uid) is not pendiente:
+                self.quitar_botones(pendiente["mensaje"])
+
+    def abrir_destino_enlace(self, chat: int, uid: int, pendiente: dict, destino: str) -> None:
+        if destino == "consulta":
+            return self.atender(pendiente["msg"], decidir_destino=False)
+        suyos = self.grupos_de(uid)
+        de, url = pendiente["msg"]["from"], pendiente["url"]
+        if destino == "documento":
+            if BIBLIOTECA.clave not in suyos:
+                return self.enviar(chat, self.tx(uid, "solo_chatgpt"))
+            return self.documento_web(chat, uid, de, url)
+        if CATALOGO.clave not in suyos:
+            return self.enviar(chat, self.tx(uid, "solo_vce"))
+        return self.recurso(chat, uid, de, url, limpiar_espera=False)
+
+    def boton_destino_enlace(self, uid: int, accion: str) -> None:
+        destino, _, clave = accion[3:].partition(":")
+        p = self.esperando(uid)
+        if not p or p["que"] != "destino_enlace" or p["clave"] != clave:
+            return self.enviar(uid, self.tx(uid, "destino_caducado"))
+        if destino not in (*p["destinos"], "consulta", "cancelar"):
+            return
+        self.espera.pop(uid, None)
+        self.quitar_botones(p.get("mensaje"))
+        if destino != "cancelar":
+            return self.en_hilo(self.abrir_destino_enlace, uid, uid, p, destino)
+        return self.enviar(uid, self.tx(uid, "cancelado_recurso"))
 
     def documento(self, chat: int, uid: int, msg: dict) -> None:
         d = msg["document"]
@@ -1847,6 +1915,8 @@ class Bot:
             return self.en_hilo(self.boton_plazo, accion, m) if uid == JUANJO else None
         if accion.startswith("rpag:"):  # pasar de página cambia la misma lista: no se amontonan mensajes
             return self.en_hilo(self.pagina_recursos, uid, uid, int(accion[5:]), m.get("message_id"))
+        if accion.startswith("de:"):
+            return self.boton_destino_enlace(uid, accion)
         if m and not accion.startswith(("rv:", "rnuevo")):  # la lista de recursos conserva sus botones
             self.tg("editMessageReplyMarkup", chat_id=m["chat"]["id"], message_id=m["message_id"],
                     reply_markup={"inline_keyboard": []})
@@ -2006,9 +2076,11 @@ class Bot:
         return True
 
     def recurso(self, chat: int, uid: int, de: dict, url: str, contenido: str | None = None,
-                nota: str = "", repositorio: str | None = None, comprobado: bool = False) -> None:
+                nota: str = "", repositorio: str | None = None, comprobado: bool = False,
+                limpiar_espera: bool = True) -> None:
         """Del enlace a la ficha: comprueba que no esté ya, lee el recurso y prepara la ficha."""
-        self.espera.pop(uid, None)
+        if limpiar_espera:
+            self.espera.pop(uid, None)
         if not comprobado and not self.puede_preparar(chat, uid):
             return
         usd, hecho = 0.0, None

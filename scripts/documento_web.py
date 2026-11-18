@@ -59,12 +59,29 @@ class _Pagina(HTMLParser):
         self._cita_version = False
         self.version_arxiv = set()
         self.licencias_arxiv = set()
+        self.cita_pdf = ""
+        self.tipo_aplicacion = False
+        self.nombre_aplicacion = False
+        self.manifiesto = False
 
     def handle_starttag(self, tag, attrs):
         if tag in ("script", "style", "noscript", "title"):
             self._en.append(tag)
         atributos = dict(attrs)
         clases = (atributos.get("class") or "").split()
+        if tag == "meta":
+            nombre = (atributos.get("name") or "").lower()
+            contenido = (atributos.get("content") or "").strip()
+            if nombre == "citation_pdf_url" and contenido:
+                self.cita_pdf = contenido
+            if nombre == "application-name" and contenido:
+                self.nombre_aplicacion = True
+            if atributos.get("property") == "og:type" and contenido.lower() in {
+                "app", "softwareapplication", "webapplication"
+            }:
+                self.tipo_aplicacion = True
+        if tag == "link" and "manifest" in (atributos.get("rel") or "").lower().split() and atributos.get("href"):
+            self.manifiesto = True
         if tag == "td":
             self._cita_version = "arxividv" in clases
         if tag == "a":
@@ -101,7 +118,7 @@ def leer_pagina(datos: bytes, base: str) -> tuple[str, str, list[tuple[str, str]
     p = _Pagina()
     p.feed(datos.decode("utf-8", "replace"))
     vistos, enlaces = set(), []
-    for href, texto in p.enlaces:
+    for href, texto in [(p.cita_pdf, "PDF del documento"), *p.enlaces]:
         if not href or href.startswith(("#", "mailto:", "javascript:", "tel:")):
             continue
         url = urllib.parse.urljoin(base, href).split("#")[0]
@@ -118,7 +135,10 @@ def es_pdf(tipo: str, datos: bytes) -> bool:
 
 def parece_pdf(url: str) -> bool:
     """Un enlace suelto que acaba en .pdf es un documento, no un recurso para el catálogo."""
-    return urllib.parse.urlsplit(url).path.lower().endswith(".pdf")
+    try:
+        return urllib.parse.urlsplit(url).path.lower().endswith(".pdf")
+    except ValueError:
+        return False
 
 
 def id_arxiv(url: str, tipo: str = r"abs|pdf") -> str:
@@ -134,6 +154,30 @@ def id_arxiv(url: str, tipo: str = r"abs|pdf") -> str:
         ruta = ruta.removesuffix(".pdf")
     m = re.fullmatch(rf"/(?:{tipo})/({ID_ARXIV}(?:v[1-9]\d*)?)", ruta)
     return m.group(1) if m else ""
+
+
+def tipo_de_enlace(url: str) -> str:
+    """Identifica documentos y aplicaciones cuando su formato o sus metadatos lo indican."""
+    try:
+        if id_arxiv(url) or parece_pdf(url):
+            return "documento"
+        estado, final, tipo, datos = catalogo.descargar(url, MAX_PAGINA)
+        if estado != 200:
+            return ""
+        if es_pdf(tipo, datos) or id_arxiv(final):
+            return "documento"
+        if "html" not in tipo:
+            return ""
+        pagina = _Pagina()
+        pagina.feed(datos.decode("utf-8", "replace"))
+    except (OSError, ValueError):
+        return ""
+    aplicacion = pagina.tipo_aplicacion or (pagina.nombre_aplicacion and pagina.manifiesto)
+    if pagina.cita_pdf and not aplicacion:
+        return "documento"
+    if aplicacion and not pagina.cita_pdf:
+        return "recurso"
+    return ""
 
 
 def documento_arxiv(url: str) -> dict | None:

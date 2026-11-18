@@ -45,5 +45,6 @@
 | [0041](0041-el-aviso-de-la-semana-del-boletin.md) | El aviso de la semana del boletín, publicado por el bot |
 | [0042](0042-karla-lee-el-codigo-de-los-estilos.md) | Karla lee el código de los estilos | aceptado |
 | [0043](0043-licencia-de-la-version-en-arxiv.md) | Licencia de la versión del artículo en arXiv | aceptado |
+| [0044](0044-destino-de-los-enlaces-sueltos.md) | Destino de los enlaces sueltos | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.
