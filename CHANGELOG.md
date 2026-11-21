@@ -2,6 +2,13 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.26.0 — 2026-11-21
+
+- Los dos bots recuerdan qué hicieron en cada respuesta anterior: cuántas búsquedas hicieron y de qué. Antes, del historial solo veían el texto, y el Bot de IA Educativa llegó a corregirse en falso («no la había comprobado») y a decir que había buscado cuando no (ADR 0052).
+- El Bot de IA Educativa sabe en la conversación lo que el programa ha mandado con botones: la ficha publicada, el anuncio para «¡Comparte tu App!», si se publicó, se quitó o se canceló (ADR 0052).
+- Al quitar del grupo un anuncio de «¡Comparte tu App!», el bot ofrece «Rehacer el anuncio»: se pide el cambio con palabras (por ejemplo, en otro idioma), se enseña el mensaje nuevo y se publica con los botones de siempre. Vale durante 48 horas desde la publicación (ADR 0052).
+- Las respuestas ya no muestran los nombres internos de las herramientas, no dicen que algo no está en un sitio donde no han buscado y no cuentan como no resueltas cuando dan lo que se pedía (ADR 0052).
+
 ## 1.25.1 — 2026-11-21
 
 - Cuando la Biblioteca digital no acepta un documento, el bot deja claro que enviarlo a revisión lo decide quien lo manda: «Si crees que debería publicarse, puedes enviarlo para revisión», con el botón «Enviar para revisión» (ADR 0050).

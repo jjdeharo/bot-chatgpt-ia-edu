@@ -127,6 +127,10 @@ que solo resuelves dudas sobre eXeLearning, y terminas con [[fuera de alcance]].
 [[sin resultado]]; si te han pedido algo que no sabes hacer, con [[fuera de alcance]]; si el mensaje no \
 pide nada (un saludo, un «gracias», un «vale»), contesta en una línea y termina con [[sin pregunta]]. Esa \
 línea la quita el programa antes de enviar la respuesta: no la menciones.
+- Los trozos «[Nota del programa: …]» de tus respuestas anteriores los escribe el programa y dicen cuántas \
+búsquedas hiciste en cada una: fíate de ellos antes que de lo que recuerdes, no los escribas tú y no los \
+menciones. Si una respuesta anterior se dio sin buscar y la persona pregunta por lo que decía, búscalo ahora.
+- No digas nunca los nombres de tus herramientas: la persona no los ve.
 
 ## Sobre ti
 
@@ -551,6 +555,7 @@ class Consultora:
             mensajes.append({"role": "user", "content": resultados})
         texto = "\n".join(x.text for x in r.content if x.type == "text").strip()
         texto, sin_resolver, valorable = consultar.quitar_marcas(texto)
+        texto = consultar.sin_nombres_internos(texto, [h["name"] for h in HERRAMIENTAS + [PREPARAR]])
         if r.stop_reason == "tool_use":
             texto = texto or "No he podido terminar la búsqueda. Prueba a concretar más la pregunta."
             sin_resolver = sin_resolver or "sin resultado"
@@ -956,7 +961,7 @@ class Karla(bot.Bot):
             bot.guardar_sin_resolver(bot.con_fotos(texto, fotos), r["sin_resolver"], r["texto"],
                                      r.get("parada") == "tool_use")
         self.memoria[uid] = (time.time(), historial[-2 * bot.INTERCAMBIOS + 2:] + [{"role": "user", "content": bot.con_fotos(texto[:1500], fotos)},
-                                                          {"role": "assistant", "content": r["texto"]}])
+                                                          {"role": "assistant", "content": f"{r['texto']}\n\n{consultar.nota_busquedas(r['uso']['llamadas'])}"}])
         self.apuntar(r["uso"]["usd"], pregunta=uid)
         bot.registrar(f"pregunta {'respondida' if entregada else 'sin entregar'} con {modelo}: {len(r['uso']['llamadas'])} búsquedas, "
                       f"{r['uso']['usd']:.4f} USD")

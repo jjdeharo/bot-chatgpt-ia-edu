@@ -36,7 +36,8 @@ def bot_sin_arrancar(clase=bot.Bot):
     """Un bot con sus diccionarios vacíos y sin Telegram: tg apunta las llamadas y enviar, los textos."""
     b = clase.__new__(clase)
     for nombre in ("memoria", "pendientes", "miembros", "espera", "fichas_rec", "listas", "lenguas", "recientes",
-                   "compartir", "rechazados", "ambitos", "valorables", "borradores", "al_grupo"):
+                   "compartir", "rechazados", "ambitos", "valorables", "borradores", "al_grupo",
+                   "anunciados", "notas_prog"):
         setattr(b, nombre, {})
     b.llamadas, b.enviados = [], []
     b.tg = lambda metodo, **k: (b.llamadas.append((metodo, k)), {"message_id": 99})[1]

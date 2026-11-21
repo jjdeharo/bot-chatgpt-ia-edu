@@ -529,6 +529,8 @@ DECIR_HERRAMIENTA = {
                        "eu": "baliabidea gehitzea", "en": "adding the resource"},
     "anadir_documento": {"es": "añadir el documento", "ca": "afegir el document", "gl": "engadir o documento",
                          "eu": "dokumentua gehitzea", "en": "adding the document"},
+    "preparar_incidencia": {"es": "preparar la incidencia", "ca": "preparar la incidència", "gl": "preparar a incidencia",
+                            "eu": "intzidentzia prestatzea", "en": "preparing the issue"},
 }
 BUSQUEDA = {"es": "la búsqueda", "ca": "la cerca", "gl": "a busca", "eu": "bilaketa", "en": "the search"}
 

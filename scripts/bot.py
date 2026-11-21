@@ -84,7 +84,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.25.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.26.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -678,6 +678,8 @@ class Bot:
         self.lenguas = {}      # usuario -> idioma en que se le habla; solo en memoria (ADR 0005)
         self.recientes = {}    # usuario -> momentos de sus consultas de la última hora, contra el uso automático
         self.compartir = {}    # usuario -> mensaje para «¡Comparte tu App!» a la espera de su visto bueno
+        self.anunciados = {}   # (usuario, mensaje del grupo) -> anuncio publicado, para rehacerlo si lo quita (ADR 0052)
+        self.notas_prog = {}   # usuario -> lo que le ha mandado el programa con botones, para la conversación (ADR 0052)
         self.cambios_pedidos = {}  # usuario -> cambios de una ficha escritos sin «Cambiar», hasta que elija el recurso
         self.rechazados = {}   # usuario -> último recurso rechazado por su contenido, por si pide revisarlo
         self.rechazos_bib = {}  # usuario -> último documento que la Biblioteca no aceptó, por si pide revisarlo (ADR 0050)
@@ -1599,8 +1601,9 @@ class Bot:
         if time.time() - momento > MEMORIA_MIN * 60:
             historial = []
         hecho = self.escribiendo(chat)
+        programa = self.notas_pendientes(uid)
         try:
-            nota = self.nota_ficha(uid) if decidir_destino else "La persona pulsó «Consultarlo» y quiere saber de qué trata el enlace.\n\n"
+            nota = programa + (self.nota_ficha(uid) if decidir_destino else "La persona pulsó «Consultarlo» y quiere saber de qué trata el enlace.\n\n")
             pregunta = self.con_citado(msg, f"{NOTA_AUDIO}\n{texto}" if msg.get("voz") else texto)
             r = self.consultor.responder(self.pregunta(nota + pregunta, fotos, LARGO_PREGUNTA + LARGO_CITADO),
                                          historial[-2 * INTERCAMBIOS:], self.ambito(uid), self.lenguas.get(uid, "es"))
@@ -1648,9 +1651,12 @@ class Bot:
         if r.get("sin_resolver") and uid != JUANJO:  # las pruebas de Juanjo no cuentan
             guardar_sin_resolver(con_fotos(texto, fotos), r["sin_resolver"], r["texto"],
                                  r.get("parada") == "tool_use")
-        # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento.
-        self.memoria[uid] = (time.time(), historial[-2 * INTERCAMBIOS + 2:] + [{"role": "user", "content": con_fotos(texto[:1000], fotos)},
-                                                          {"role": "assistant", "content": r["texto"]}])
+        # Las imágenes no pasan al historial: se mandarían otra vez en cada pregunta de seguimiento. Lo que mandó
+        # el programa con botones y las búsquedas de la respuesta, sí: sin ellos, el bot no sabía qué había hecho
+        # (revisión del 21-11-2026, ADR 0052).
+        self.memoria[uid] = (time.time(), historial[-2 * INTERCAMBIOS + 2:] + [
+            {"role": "user", "content": con_fotos(programa + texto[:1000], fotos)},
+            {"role": "assistant", "content": f"{r['texto']}\n\n{consultar.nota_busquedas(r['uso']['llamadas'])}"}])
         self.apuntar(r["uso"]["usd"], pregunta=uid)
         registrar(f"pregunta {'respondida' if entregada else 'sin entregar'}: {len(r['uso']['llamadas'])} búsquedas, "
                   f"{r['uso']['usd']:.4f} USD")
@@ -2685,6 +2691,16 @@ class Bot:
         p = self.fichas_rec.get(uid)
         return p if p and time.time() - p["momento"] <= CADUCA_FICHA_H * 3600 else None
 
+    def nota_programa(self, uid: int, texto: str) -> None:
+        """Lo que el programa le ha mandado por su cuenta (con botones, sin pasar por Claude) entra en la
+        conversación con su siguiente mensaje: si no, Claude no sabía de qué le hablaba (ADR 0052)."""
+        notas = [n for n in self.notas_prog.get(uid, []) if time.time() - n[0] <= MEMORIA_MIN * 60]
+        self.notas_prog[uid] = (notas + [(time.time(), texto[:900])])[-4:]
+
+    def notas_pendientes(self, uid: int) -> str:
+        notas = [t for m, t in self.notas_prog.pop(uid, []) if time.time() - m <= MEMORIA_MIN * 60]
+        return "".join(f"[Nota del programa: {t}]\n" for t in notas)
+
     def nota_ficha(self, uid: int) -> str:
         """Si tiene a la vista una ficha sin publicar, Claude lo sabe: «quita Bachillerato» es un cambio para ella."""
         p = self.ficha_vigente(uid)
@@ -2762,8 +2778,22 @@ class Bot:
                     return self.enviar(uid, self.tx(uid, "no_tuyo"))
                 if self.tg("deleteMessage", chat_id=CATALOGO.id, message_id=int(n)):
                     registrar("mensaje de «¡Comparte tu App!» quitado a petición de su autor")
-                    return self.enviar(uid, self.tx(uid, "quitado_grupo"))
+                    a = self.anunciados.get((uid, int(n)))
+                    if not a:  # publicado antes de reiniciarse el bot: no se puede rehacer
+                        return self.enviar(uid, self.tx(uid, "quitado_grupo_sin_rehacer"))
+                    self.nota_programa(uid, f"a petición suya, el bot ha quitado del grupo el anuncio de «{a['ficha'].get('titulo', '')}». "
+                                            "Puede rehacerlo con el botón «" + self.tx(uid, "b_rehacer") + "» que le ha salido.")
+                    return self.tg("sendMessage", chat_id=uid, text=self.tx(uid, "quitado_grupo"),
+                                   reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_rehacer"),
+                                                                       "callback_data": f"rcr:{n}"}]]})
                 return self.enviar(uid, self.tx(uid, "no_quitar_ya"))
+            if orden == "rcr":  # rehacer el anuncio que ha quitado, con los cambios que pida (ADR 0052)
+                a = self.anunciados.pop((uid, int(n)), None) if n.isdigit() else None
+                if not a or time.time() - a["momento"] > 48 * 3600:
+                    return self.enviar(uid, self.tx(uid, "caducado_recurso"))
+                self.compartir[uid] = {**a, "momento": time.time()}
+                self.espera[uid] = {"que": "cambio_compartir", "momento": time.time()}
+                return self.enviar(uid, self.tx(uid, "que_cambio_mensaje"))
             if orden == "rcm":
                 return self.enviar(uid, self.tx(uid, "mantenido"))
             if orden in ("rcs", "rcp", "rcc", "rcy", "rcn"):
@@ -2954,6 +2984,8 @@ class Bot:
         if "autor_original" in p and f.get("autor") and not catalogo.mismo_nombre(f["autor"], p["autor_original"]):
             self.cambiar_nombre(uid, f, todos is not False)
         enlace = catalogo.enlace_catalogo() if p["modo"] == "alta" else catalogo.enlace_catalogo(f["url"])
+        self.nota_programa(uid, f"el bot ha {'publicado en el repositorio' if p['modo'] == 'alta' else 'guardado los cambios de la ficha de'} "
+                                f"el recurso «{f.get('titulo', '')}» ({f['url']}).")
         if p["modo"] == "alta":
             self.apuntar(0.0, recurso_publicado=uid)
             self.enviar(uid, self.tx(uid, "publicado_recurso", enlace=enlace))
@@ -2976,6 +3008,7 @@ class Bot:
             return self.enviar(uid, self.tx(uid, "caducado_recurso"))
         if orden == "rcn":
             self.compartir.pop(uid, None)
+            self.nota_programa(uid, f"la persona ha cancelado el anuncio de «{c['ficha'].get('titulo', '')}» para «¡Comparte tu App!».")
             return self.enviar(uid, self.tx(uid, "no_compartir"))
         if orden == "rcs":
             return self.redactar_compartir(uid)
@@ -2993,11 +3026,18 @@ class Bot:
             except Exception as error:  # noqa: BLE001 — si falla, le sirve el de tercera persona
                 registrar(f"error al redactar en primera persona: {type(error).__name__}: {error}")
             self.tg("sendMessage", chat_id=uid, text=texto, link_preview_options={"is_disabled": True})
+            self.nota_programa(uid, f"el bot le ha dado este texto para que publique ella o él mismo el anuncio en «¡Comparte tu App!»: «{texto}»")
             return self.enviar(uid, self.tx(uid, "publicalo_tu"))
         r = self.tg("sendMessage", chat_id=CATALOGO.id, message_thread_id=COMPARTE_TU_APP, text=texto)
         if not r:
             return self.enviar(uid, self.tx(uid, "error_recurso"))
         self.compartir.pop(uid, None)
+        # Para rehacerlo si lo quita (ADR 0052): mientras Telegram deja borrarlo, 48 horas.
+        ahora = time.time()
+        self.anunciados = {k: a for k, a in self.anunciados.items() if ahora - a["momento"] <= 48 * 3600}
+        self.anunciados[(uid, r["message_id"])] = {**c, "momento": ahora}
+        self.nota_programa(uid, f"el bot ha publicado en «¡Comparte tu App!» este anuncio de «{c['ficha'].get('titulo', '')}»: "
+                                f"«{texto}» ({CATALOGO.enlace}/{COMPARTE_TU_APP}/{r['message_id']}).")
         # Telegram deja al bot borrar sus mensajes durante 48 horas: por si se arrepiente (Juanjo, 27-10-2026).
         self.tg("sendMessage", chat_id=uid, link_preview_options={"is_disabled": True},
                 text=self.tx(uid, "compartido", enlace=f"{CATALOGO.enlace}/{COMPARTE_TU_APP}/{r['message_id']}"),
@@ -3031,6 +3071,8 @@ class Bot:
             hecho.set()
         self.apuntar(usd)
         c["texto"], c["momento"] = texto, time.time()
+        self.nota_programa(uid, f"el bot le ha enseñado este anuncio para «¡Comparte tu App!», aún sin publicar, con botones "
+                                f"para publicarlo, cambiarlo, publicarlo ella o él mismo o cancelarlo: «{self.texto_compartir(uid, c)}»")
         self.enviar(uid, self.tx(uid, "vista_compartir"))
         self.tg("sendMessage", chat_id=uid, text=self.texto_compartir(uid, c),
                 link_preview_options={"is_disabled": True},

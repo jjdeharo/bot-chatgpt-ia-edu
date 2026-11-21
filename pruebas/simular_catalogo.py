@@ -8,6 +8,8 @@ código por correo, quitar un recurso y el idioma en que habla el bot.
 
 Uso: simular_catalogo.py [URL]
 """
+import inspect
+import re
 import sys
 import tempfile
 import threading
@@ -17,6 +19,7 @@ from pathlib import Path
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI.parent / "scripts"))
 import anthropic  # noqa: E402
+import antispam  # noqa: E402
 
 import bot  # noqa: E402
 import catalogo  # noqa: E402
@@ -85,6 +88,7 @@ class HojaFalsa:
 
 def responder_falso(texto, historial=None, ambito=None, lengua=None):
     """La búsqueda no se prueba aquí; sí que «añade … enlace» se convierta en un recurso, como hace Claude."""
+    texto = re.sub(r"^(\[Nota del programa:[^\]]*\]\n)+", "", texto)  # lo que mandó el programa (ADR 0052)
     enlace = texto.split()[-1]
     if texto.startswith("añade") and enlace.startswith("http"):
         return {"texto": "", "accion": {"recurso": enlace}, "uso": {"usd": 0, "llamadas": []}}
@@ -108,6 +112,13 @@ def nuevo_bot(tmp: Path):
     b.hoja = HojaFalsa()
     b.espera, b.fichas_rec, b.listas, b.lenguas, b.recientes, b.compartir = {}, {}, {}, {}, {}, {}
     b.ambitos, b.rechazados, b.valorables = {}, {}, {}
+    b.anunciados, b.notas_prog = {}, {}
+    # Los diccionarios que el bot crea al arrancar y la simulación no pone a mano: sin esto, cada uno nuevo la
+    # rompía (al_grupo, antispam… se quedaron fuera; 21-11-2026).
+    for nombre in re.findall(r"self\.(\w+) = \{\}", inspect.getsource(bot.Bot.__init__)):
+        if not hasattr(b, nombre):
+            setattr(b, nombre, {})
+    b.antispam = antispam.Antispam(b.tg, "token", 0, lambda t: None, [])  # sin grupos: no actúa (ADR 0033)
     b.consultor = type("C", (), {"cliente": b.recursos.cliente,  # para detectar el idioma
                                  "responder": lambda self, texto, *a: responder_falso(texto, *a)})()
     b.en_hilo = lambda f, *a: f(*a)  # sin hilos: la prueba sigue el orden
@@ -124,6 +135,9 @@ def mensaje(b, uid, texto, lengua="es"):
 
 def boton(b, uid, dato):
     n = len(b.tg.enviados)
+    # Los botones de la ficha llevan la clave de la vista que los enseñó: se pulsan los de la última.
+    if dato in ("rp", "rc", "rx", "rnt", "rns") and b.fichas_rec.get(uid, {}).get("clave"):
+        dato = f"{dato}:{b.fichas_rec[uid]['clave']}"
     b.boton({"id": "1", "from": {"id": uid}, "data": dato, "message": {"message_id": 7, "chat": {"id": uid}}})
     return b.tg.enviados[n:]
 
@@ -192,6 +206,20 @@ def main():
                       if x["callback_data"].startswith("rcq:"))
         s = boton(b, VCE, quitar)
         ok &= comprobar("«Quitarlo del grupo» lo borra", s and "Quitado del grupo" in s[-1][1], s)
+        rehacer = next((x["callback_data"] for fila in (s[-1][2] or {}).get("inline_keyboard", []) for x in fila
+                        if x["callback_data"].startswith("rcr:")), None)
+        ok &= comprobar("al quitarlo, ofrece rehacerlo (ADR 0052)", rehacer is not None, s)
+        s = boton(b, VCE, rehacer) + mensaje(b, VCE, "el mismo mensaje, pero en catalán")
+        borrador = next((x for x in s if x[2] and "rcp" in str(x[2])), None)
+        print("   rehecho:", borrador[1][:160] if borrador else None)
+        ok &= comprobar("rehecho en catalán, con el enlace y los botones de siempre",
+                        borrador is not None and URL in borrador[1]
+                        and any(p in f" {borrador[1]} " for p in (" per ", " amb ", " ha creat ", " ha compartit ", " seu ")), s)
+        s = mensaje(b, VCE, "¿qué mensaje me has enseñado para el grupo?")
+        ok &= comprobar("la conversación recibe lo que mandó el programa",
+                        "Nota del programa" in str(b.memoria[VCE][1][-2]["content"])
+                        and "búsqueda" in b.memoria[VCE][1][-1]["content"], s)
+        boton(b, VCE, "rcn")
         s = s_publicar
         ok &= comprobar("publicar da de alta y enlaza a la web general del repositorio",
                         b.hoja.buscar(URL) is not None and any(x[1].count(catalogo.WEB) == 1 and "primero" in x[1]

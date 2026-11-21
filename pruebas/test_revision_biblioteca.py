@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import bot  # noqa: E402
 import fichas  # noqa: E402
 import textos  # noqa: E402
-from test_documento_web import AUTOR, DE, DOC, FICHA, PDF, nuevo_bot  # noqa: E402
+from test_documento_web import AUTOR, DE, DOC, PDF, nuevo_bot  # noqa: E402
 
 JUANJO = 1
 
