@@ -40,6 +40,9 @@ while true; do
   # Cuántas personas hay en cada grupo y en varios a la vez, para el diario (ADR 0032): una vez al día;
   # si falla, a las seis horas. No toca la marca de la pasada: es un añadido.
   python comunidades.py || echo "comunidades: sin cifras nuevas en esta pasada"
+  # El gorro de Papá Noel del 22 de diciembre al 6 de enero en las fotos de los bots y los grupos (ADR 0051):
+  # solo hace algo el día que cambia.
+  python navidad.py || echo "navidad: con fallos; se reintenta en la siguiente pasada"
   date '+%F %T' > /proyecto/datos/ultimo-intento   # cada pasada, haya ido bien o mal
   if [ "$ok" -eq 1 ]; then
     date '+%F %T' > /proyecto/datos/ultima-pasada   # la última puesta al día completa: la que enseñan los bots
