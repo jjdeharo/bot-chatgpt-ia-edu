@@ -38,6 +38,20 @@ LICENCIAS_ARXIV = {
     "/licenses/by-nc-nd/4.0": "CC BY-NC-ND 4.0",
     "/publicdomain/zero/1.0": "CC0 1.0",
 }
+# Instituciones que permiten reutilizar sus documentos públicos por una norma general, no en cada PDF (ADR 0046).
+# Vale para el PDF que sirve su propio dominio (o un subdominio), por https; lo que el PDF reserve expresamente
+# manda sobre esto (bot.preparar_ficha), porque las normas excluyen las obras con derechos de terceros.
+LICENCIAS_INSTITUCIONALES = (
+    (("consilium.europa.eu",),
+     "Reutilización autorizada por la Decisión (UE) 2017/1842 del Consejo, citando la fuente y sin deformar su "
+     "contenido. https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:32017D1842"),
+    (("commission.europa.eu", "ec.europa.eu"),
+     "CC BY 4.0, la licencia de los contenidos de la Comisión Europea según su aviso legal (Decisión "
+     "2011/833/UE). https://commission.europa.eu/legal-notice_es · https://creativecommons.org/licenses/by/4.0/"),
+    (("europarl.europa.eu",),
+     "Reutilización autorizada por el aviso legal del Parlamento Europeo, citando la fuente y sin alterar el "
+     "documento. https://www.europarl.europa.eu/legal-notice/es/"),
+)
 
 ELECCION = {
     "type": "object",
@@ -156,6 +170,21 @@ def id_arxiv(url: str, tipo: str = r"abs|pdf") -> str:
     return m.group(1) if m else ""
 
 
+def licencia_institucional(url: str) -> str:
+    """La licencia general de la institución que sirve el PDF desde su dominio oficial, o cadena vacía."""
+    try:
+        partes = urllib.parse.urlsplit(url)
+    except ValueError:
+        return ""
+    host = (partes.hostname or "").lower()
+    if partes.scheme != "https" or not host:
+        return ""
+    for dominios, licencia in LICENCIAS_INSTITUCIONALES:
+        if any(host == d or host.endswith("." + d) for d in dominios):
+            return licencia
+    return ""
+
+
 def tipo_de_enlace(url: str) -> str:
     """Identifica documentos y aplicaciones cuando su formato o sus metadatos lo indican."""
     try:
@@ -269,9 +298,13 @@ def buscar(cliente, url: str) -> dict:
         if estado == 200 and es_pdf(tipo, datos):
             if len(datos) > MAX_PDF:
                 return {"estado": "grande", "mb": len(datos) / 1024 / 1024, "usd": usd}
-            return {"estado": "pdf", "datos": datos, "usd": usd,
-                    "nombre": nombre_de(final) or nombre_de(actual),
-                    "enlace": doc["url"] if doc else url}  # lo que mandó la persona, no el servidor de los archivos
+            r = {"estado": "pdf", "datos": datos, "usd": usd,
+                 "nombre": nombre_de(final) or nombre_de(actual),
+                 "enlace": doc["url"] if doc else url}  # lo que mandó la persona, no el servidor de los archivos
+            institucional = licencia_institucional(final)  # el dominio que sirve el PDF, tras las redirecciones
+            if institucional:
+                r["licencia_institucional"] = institucional
+            return r
         if estado != 200 or "html" not in tipo or salto == SALTOS:
             break
         titulo, texto, enlaces = leer_pagina(datos[:MAX_PAGINA], final)

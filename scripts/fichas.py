@@ -187,6 +187,16 @@ def con_licencia(ficha: str, licencia: str) -> str:
     return nueva if sustituida else f"{ficha.rstrip()}\n\n**Licencia**\n{licencia}"
 
 
+# Lo que el propio documento reserva: manda sobre la licencia general de su institución (ADR 0046). El «©» solo no
+# cuenta, porque las instituciones europeas lo ponen en todo lo suyo; la falta de licencia, tampoco.
+RESERVA_EXPRESA = re.compile(r"todos los derechos reservados|all rights reserved|derechos de terceros|third[- ]party|"
+                             r"prohib|no (se )?autoriza|sin autorizaci[oó]n", re.I)
+
+
+def reserva_derechos(ficha: str) -> bool:
+    return bool(RESERVA_EXPRESA.search(licencia_de(ficha)))
+
+
 def se_puede_compartir(ficha: str) -> bool:
     """Primer filtro, sin IA: el archivo solo puede adjuntarse si el apartado Licencia nombra una licencia
     abierta y no dice nada en contra; si falta el apartado o hay duda, se publica solo la ficha. Antes bastaba

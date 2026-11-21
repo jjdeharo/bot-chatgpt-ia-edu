@@ -47,5 +47,6 @@
 | [0043](0043-licencia-de-la-version-en-arxiv.md) | Licencia de la versión del artículo en arXiv | aceptado |
 | [0044](0044-destino-de-los-enlaces-sueltos.md) | Destino de los enlaces sueltos | aceptado |
 | [0045](0045-duplicados-en-la-biblioteca.md) | Duplicados en la Biblioteca digital | aceptado |
+| [0046](0046-licencias-generales-de-las-instituciones-europeas.md) | Licencias generales de las instituciones europeas | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

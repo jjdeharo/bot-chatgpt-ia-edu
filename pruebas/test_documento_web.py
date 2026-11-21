@@ -162,6 +162,36 @@ class Buscar(unittest.TestCase):
             self.assertIsNone(dw.documento_arxiv(ARXIV))
 
 
+class LicenciaInstitucional(unittest.TestCase):
+    CONSEJO = "https://data.consilium.europa.eu/doc/document/ST-14902-2026-INIT/es/pdf"
+
+    def test_pdf_del_consejo_lleva_su_decision_de_reutilizacion(self):
+        with web({self.CONSEJO: (200, "application/pdf", PDF)}):
+            r = dw.buscar(None, self.CONSEJO)
+        self.assertIn("2017/1842", r["licencia_institucional"])
+
+    def test_cada_institucion_y_sus_subdominios(self):
+        for url, trozo in (("https://commission.europa.eu/document/download/x.pdf", "CC BY 4.0"),
+                           ("https://joint-research-centre.ec.europa.eu/a.pdf", "CC BY 4.0"),
+                           ("https://www.europarl.europa.eu/RegData/etudes/a.pdf", "Parlamento Europeo"),
+                           ("https://www.consilium.europa.eu/media/1/a.pdf", "2017/1842")):
+            with self.subTest(url=url):
+                self.assertIn(trozo, dw.licencia_institucional(url))
+
+    def test_no_vale_otro_dominio_ni_sin_https(self):
+        for url in ("https://consilium.europa.eu.ejemplo.net/a.pdf", "https://falsoconsilium.europa.eu/a.pdf",
+                    "http://data.consilium.europa.eu/a.pdf", "https://eur-lex.europa.eu/a.pdf",
+                    "https://www.ejemplo.org/consilium.europa.eu/a.pdf"):
+            with self.subTest(url=url):
+                self.assertEqual(dw.licencia_institucional(url), "")
+
+    def test_cuenta_el_dominio_que_sirve_el_pdf_tras_redirigir(self):
+        with web({ANUNCIO: (200, self.CONSEJO, "application/pdf", PDF)}):
+            self.assertIn("2017/1842", dw.buscar(None, ANUNCIO)["licencia_institucional"])
+        with web({self.CONSEJO: (200, "https://cdn.ejemplo.net/a.pdf", "application/pdf", PDF)}):
+            self.assertNotIn("licencia_institucional", dw.buscar(None, self.CONSEJO))
+
+
 class TipoDeEnlace(unittest.TestCase):
     def test_pdf_sin_extension(self):
         with web({FICHA_DOC: (200, "application/octet-stream", PDF)}):
@@ -265,6 +295,30 @@ class Bot(unittest.TestCase):
         self.assertTrue(p["compartir"])
         self.assertEqual(p["file_id"], "subido-1")
         b.fichero.compartible.assert_not_called()
+
+    def test_licencia_institucional_adjunta_el_pdf_sin_licencia_propia(self):
+        b = nuevo_bot(compartir=False)
+        ficha = FICHA.replace("CC BY 4.0", "No se podrá compartir con el grupo ChatGPT-IA-edu: el documento no "
+                              "indica ninguna licencia.")
+        b.fichero.ficha.return_value = (ficha, 0)
+        licencia = dw.licencia_institucional("https://data.consilium.europa.eu/doc/a.pdf")
+        self.llamar(b, {"estado": "pdf", "datos": PDF, "nombre": "a.pdf", "enlace": DOC,
+                        "licencia_institucional": licencia})
+        p = b.pendientes[AUTOR]
+        self.assertEqual(bot.fichas.licencia_de(p["ficha"]), licencia)
+        self.assertTrue(p["compartir"])
+        self.assertEqual(p["file_id"], "subido-1")
+        b.fichero.compartible.assert_not_called()
+
+    def test_lo_que_el_pdf_reserva_manda_sobre_la_licencia_institucional(self):
+        b = nuevo_bot(compartir=False)
+        ficha = FICHA.replace("CC BY 4.0", "No se podrá compartir con el grupo ChatGPT-IA-edu: el documento indica "
+                              "© 2026 Editorial Ejemplo, todos los derechos reservados.")
+        b.fichero.ficha.return_value = (ficha, 0)
+        self.llamar(b, {"estado": "pdf", "datos": PDF, "nombre": "a.pdf", "enlace": DOC,
+                        "licencia_institucional": dw.licencia_institucional("https://ec.europa.eu/a.pdf")})
+        self.assertFalse(any(m == "subir" for m, _ in b.llamadas))
+        self.assertIn("derechos reservados", bot.fichas.licencia_de(b.pendientes[AUTOR]["ficha"]))
 
     def test_no_descargable_da_el_enlace_directo(self):
         b = nuevo_bot()

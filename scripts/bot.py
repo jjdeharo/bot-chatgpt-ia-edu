@@ -82,7 +82,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.21.1"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.22.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -1797,7 +1797,8 @@ class Bot:
                 return (*fichas.leer_pdf(ruta), hashlib.sha256(r["datos"]).hexdigest())
         self.preparar_ficha(chat, uid, de, r["nombre"] or "documento.pdf", leer, pdf=r["datos"],
                             enlace=r["enlace"], usd_previo=r["usd"], por_titulo=not r["nombre"],
-                            licencia_verificada=r.get("licencia", ""))
+                            licencia_verificada=r.get("licencia", ""),
+                            licencia_institucional=r.get("licencia_institucional", ""))
 
     def repetido_biblioteca(self, claves: set[str], omitir: int | None = None) -> str:
         if BIBLIOTECA_PRUEBA:
@@ -1807,7 +1808,8 @@ class Bot:
 
     def preparar_ficha(self, chat: int, uid: int, de: dict, nombre: str, leer, file_id: str | None = None,
                        pdf: bytes | None = None, enlace: str = "", usd_previo: float = 0.0,
-                       por_titulo: bool = False, licencia_verificada: str = "") -> None:
+                       por_titulo: bool = False, licencia_verificada: str = "",
+                       licencia_institucional: str = "") -> None:
         """Comprueba el documento, hace su ficha y se la enseña a la persona. El que llega por enlace se le manda
         antes como archivo si se va a publicar con él: ve lo que se publicará, y Telegram da el identificador con
         que se publica."""
@@ -1836,6 +1838,9 @@ class Bot:
             usd += coste
             if licencia_verificada:
                 ficha = fichas.con_licencia(ficha, licencia_verificada)
+                compartir = True
+            elif licencia_institucional and not fichas.reserva_derechos(ficha):  # ADR 0046
+                ficha = fichas.con_licencia(ficha, licencia_institucional)
                 compartir = True
             else:
                 compartir, coste = self.fichero.compartible(ficha)

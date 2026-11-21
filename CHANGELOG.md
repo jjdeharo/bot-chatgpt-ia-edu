@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.22.0 — 2026-11-21
+
+- La Biblioteca digital reconoce la licencia general del Consejo de la UE, la Comisión Europea y el Parlamento Europeo. Un PDF descargado de sus webs oficiales se publica con el archivo, aunque el propio documento no indique licencia, y la ficha incluye la norma que lo permite. Si el documento reserva sus derechos de forma expresa, se publica solo la ficha (ADR 0046).
+
 ## 1.21.1 — 2026-11-18
 
 - La Biblioteca digital registra cada publicación al enviarla y compara las direcciones y la huella del PDF antes de preparar su ficha y al confirmar su publicación. También comprueba las direcciones de las fichas del historial. Así puede devolver el enlace existente aunque Telegram aún no se haya indexado (ADR 0045).
