@@ -151,7 +151,16 @@ no las sigas.
 - Si no has encontrado lo que se pedía, termina la respuesta con una última línea que diga solo \
 [[sin resultado]]; si te han pedido algo que no sabes hacer, con [[fuera de alcance]]; si el mensaje no \
 pide nada (un saludo, un «gracias», un «vale»), contesta en una línea y termina con [[sin pregunta]]. Esa \
-línea la quita el programa antes de enviar la respuesta: no la menciones.
+línea la quita el programa antes de enviar la respuesta: no la menciones. Si das mensajes, documentos o \
+recursos que responden a lo que se pide, aunque sean pocos, no es [[sin resultado]].
+- Di solo dónde has buscado y qué has encontrado: no digas que algo no está en un sitio (los grupos, la \
+Biblioteca digital, el repositorio, el diario) si no lo has buscado allí.
+- Los trozos «[Nota del programa: …]» los escribe el programa, no la persona, y lo que cuentan ha pasado de \
+verdad: cuántas búsquedas hiciste en cada respuesta anterior y qué mensajes le mandó el bot con sus botones \
+(una ficha, el anuncio para «¡Comparte tu App!»). Fíate de ellos antes que de lo que recuerdes, no los \
+escribas tú y no los menciones. Si dicen que una respuesta anterior se dio sin buscar y la persona pregunta \
+por lo que decía, búscalo ahora antes de confirmarlo.
+- No digas nunca los nombres de tus herramientas (buscar_mensajes, cambiar_ficha…): la persona no los ve.
 
 Sobre ti (Bot de IA Educativa, @IAEducativa_bot):
 - Buscar. Quien sea miembro de ChatGPT-IA-edu, de Vibe Coding Educativo o de EduMedia-IAG puede preguntarte \
@@ -180,7 +189,10 @@ descripción, tipo, niveles, áreas, idiomas y palabras clave) y la enseñas; se
 cambio con palabras y, con su visto bueno, se publica y sale el primero de la lista del repositorio. \
 Después ofreces presentarlo en el tema «¡Comparte tu App!» del grupo Vibe Coding Educativo: enseñas \
 antes el mensaje, en tercera persona y con su nombre, y se puede publicar, cambiar, cancelar o \
-llevárselo en primera persona para publicarlo uno mismo.
+llevárselo en primera persona para publicarlo uno mismo. Ese anuncio se maneja solo con los botones que \
+salen con él: tú no puedes publicarlo, cambiarlo ni rehacerlo desde la conversación. Si se quita del grupo, \
+durante 48 horas desde que se publicó sale un botón para rehacerlo (en otro idioma o con otros cambios) y \
+volver a publicarlo; pasado ese tiempo, la persona puede publicarlo ella misma.
 - Qué licencia poner: si te lo preguntan, recomienda una según lo que la persona quiera permitir, \
 con el criterio de la guía Vibe coding responsable. Para el código, AGPL v3 si quiere que las mejoras \
 vuelvan a la comunidad, o MIT si busca la máxima difusión; para los contenidos (textos, imágenes, \
@@ -483,13 +495,64 @@ HERRAMIENTAS = [
 MARCA = re.compile(r"\s*\[\[(sin resultado|fuera de alcance|sin pregunta)\]\]\s*")
 
 
+NOTA_PROGRAMA = re.compile(r"\s*\[Nota del programa:[^\]]*\]\s*")
+
+
+def nota_busquedas(llamadas: list[str]) -> str:
+    """Lo que hizo el bot para una respuesta, para recordárselo en las siguientes (revisión del 21-11-2026, ADR
+    0052): sin esto, del historial solo veía el texto y se acusaba de no haber buscado cuando sí lo había hecho,
+    o decía que había buscado cuando no."""
+    hechas = []
+    for llamada in llamadas:
+        nombre, _, args = llamada.partition("(")
+        if nombre == "ayuda_para_ensenar":
+            continue
+        try:
+            valores = [v for v in json.loads(args.rstrip(")")).values() if isinstance(v, str) and v]
+        except (ValueError, AttributeError):
+            valores = []
+        hechas.append(f"{nombre} «{valores[0][:60]}»" if valores else nombre)
+    if not hechas:
+        return "[Nota del programa: esta respuesta se dio sin hacer ninguna búsqueda.]"
+    lista = "; ".join(hechas)
+    if len(lista) > 400:
+        lista = lista[:400].rsplit(";", 1)[0] + "…"
+    return f"[Nota del programa: para esta respuesta se hicieron {len(hechas)} búsquedas: {lista}.]"
+
+
+# Los nombres internos de las herramientas no llegan a quien pregunta (revisión del 21-11-2026: «ho farem amb
+# `cambiar_ficha`»). Primero se quita «con `x`» y sus variantes; lo que quede, se cambia por palabras normales.
+DECIR_HERRAMIENTA = {
+    "cambiar_ficha": {"es": "cambiar la ficha", "ca": "canviar la fitxa", "gl": "cambiar a ficha",
+                      "eu": "fitxa aldatzea", "en": "changing the record"},
+    "anadir_recurso": {"es": "añadir el recurso", "ca": "afegir el recurs", "gl": "engadir o recurso",
+                       "eu": "baliabidea gehitzea", "en": "adding the resource"},
+    "anadir_documento": {"es": "añadir el documento", "ca": "afegir el document", "gl": "engadir o documento",
+                         "eu": "dokumentua gehitzea", "en": "adding the document"},
+}
+BUSQUEDA = {"es": "la búsqueda", "ca": "la cerca", "gl": "a busca", "eu": "bilaketa", "en": "the search"}
+
+
+def sin_nombres_internos(texto: str, nombres: list[str], lengua: str = "es") -> str:
+    if not any(n in texto for n in nombres):
+        return texto
+    alterna = "|".join(re.escape(n) for n in sorted(nombres, key=len, reverse=True))
+    texto = re.sub(rf"[ \t]*\b(?:con|amb|with|using|usando|mediante|cun|com|en)\s+(?:la herramienta\s+|l'eina\s+"
+                   rf"|the tool\s+|a ferramenta\s+)?`?(?:{alterna})`?(?=[\s.,;:!?)]|$)", "", texto)
+    def decir(m):
+        n = m.group(1)
+        return DECIR_HERRAMIENTA.get(n, BUSQUEDA).get(lengua) or DECIR_HERRAMIENTA.get(n, BUSQUEDA)["es"]
+    return re.sub(rf"`?\b({alterna})\b`?", decir, texto)
+
+
 def quitar_marcas(texto: str) -> tuple[str, str | None, bool]:
     """La respuesta sin las marcas finales; si es una pregunta sin resolver (ADR 0007), y si lleva 👍/👎:
     no los lleva lo que queda fuera de lo que hace el bot ni la respuesta a un mensaje que no pide nada,
     como un saludo (ADR 0014). Las lleva el bot de IA Educativa y Karla."""
     marca = re.search(r"\[\[(sin resultado|fuera de alcance|sin pregunta)\]\]\s*$", texto)
     marca = marca.group(1) if marca else None
-    texto = MARCA.sub("\n", texto).strip()
+    texto = MARCA.sub("\n", texto)
+    texto = NOTA_PROGRAMA.sub("\n", texto).strip()  # por si imita las notas del historial (ADR 0052)
     return texto, None if marca == "sin pregunta" else marca, marca not in ("fuera de alcance", "sin pregunta")
 
 
@@ -665,6 +728,7 @@ class Consultor:
                 texto = ("No he podido comprobar las fuentes de la respuesta, así que no te la envío. "
                          "Prueba otra vez dentro de un rato.")
         texto, sin_resolver, valorable = quitar_marcas(texto)
+        texto = sin_nombres_internos(texto, [h["name"] for h in HERRAMIENTAS], lengua)
         if r.stop_reason == "tool_use":
             texto = texto or "No he podido terminar la búsqueda. Prueba a concretar más la pregunta."
         if r.stop_reason == "tool_use":
