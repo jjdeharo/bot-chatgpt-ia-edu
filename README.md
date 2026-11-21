@@ -14,7 +14,7 @@ todos.
 También añade documentos a la biblioteca: el miembro le manda el PDF, o el enlace de la página que lo
 presenta, y el bot comprueba que encaje, hace su ficha y lo publica (`scripts/fichas.py`). Con el enlace, el bot
 descarga el documento; si su web no deja descargarlo a un programa, da su enlace directo para que lo descargue la
-persona (`scripts/documento_web.py`, ADR 0035). Y
+persona (`scripts/documento_web.py`, ADR 0035). Si no lo acepta por un motivo en que puede equivocarse, la persona puede pedir una revisión manual, y Juanjo decide con botones (ADR 0050). Y
 añade recursos educativos al [catálogo de Vibe Coding Educativo](https://vibe-coding-educativo.github.io/app_edu/):
 el miembro le manda el enlace, el bot lee el recurso, comprueba que sea
 educativo, que ya se pueda usar en clase, gratuito y con licencia abierta, hace

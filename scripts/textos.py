@@ -98,9 +98,7 @@ ES = {
     "solo_privado": "Hola, {nombre}. Soy el Bot de IA Educativa. En el grupo no puedo contestarte, pero por privado sí. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soy el Bot de IA Educativa. Esto no funciona en el grupo, pero por privado sí. Ábrelo aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Para añadir un documento a la Biblioteca digital, envíamelo en PDF.",
-    "grande": ("Este archivo pesa {mb:.0f} MB y Telegram solo deja a los bots descargar archivos de hasta "
-               "20 MB, así que no puedo leerlo. Puedes subirlo tú directamente a la Biblioteca digital "
-               "(https://t.me/ChatGPTedu/21753) y preparar su ficha con https://chatgpt-ia-edu.github.io/resumen/"),
+    "grande": "Este archivo pesa {mb:.0f} MB y Telegram solo deja a los bots descargar archivos de hasta 20 MB, así que no puedo leerlo.",
     "cupo_docs": "Ya me has enviado {docs} documentos hoy. Mañana podrás enviar más.",
     "leyendo": "Recibido. Lo leo, compruebo si encaja en la biblioteca y preparo la ficha. Tardo un minuto.",
     "buscando_doc": "Recibido. Busco el documento en esa dirección y, si puedo descargarlo, compruebo si encaja en la biblioteca y preparo la ficha. Tardo un minuto.",
@@ -112,12 +110,8 @@ ES = {
     "sin_documento_web": ("No he encontrado ningún documento para descargar en esa página. La Biblioteca digital recoge "
                           "documentos: si tienes el PDF, mándamelo aquí."),
     "web_no_abre": "No he podido abrir esa dirección. Comprueba el enlace o mándame el documento en PDF.",
-    "web_grande": ("El documento pesa {mb:.0f} MB y solo puedo publicar archivos de hasta 50 MB. Puedes subirlo tú "
-                   "directamente a la Biblioteca digital (https://t.me/ChatGPTedu/21753) y preparar su ficha con "
-                   "https://chatgpt-ia-edu.github.io/resumen/"),
-    "sin_texto": ("No puedo leer el texto de este PDF: parece escaneado como imagen. Puedes subirlo tú "
-                  "directamente a la Biblioteca digital (https://t.me/ChatGPTedu/21753) y preparar su "
-                  "ficha con https://chatgpt-ia-edu.github.io/resumen/"),
+    "web_grande": "El documento pesa {mb:.0f} MB y solo puedo publicar archivos de hasta 50 MB.",
+    "sin_texto": "No puedo leer el texto de este PDF: parece escaneado como imagen.",
     "ajeno": "No puedo añadirlo: la Biblioteca digital es para documentos sobre inteligencia artificial en educación, y este trata de otra cosa ({tema}).",
     "repetido": "Este documento ya está en la Biblioteca digital: {enlace}",
     "vista": ("Esta es la ficha. Si te parece bien, publicaré en la Biblioteca digital el documento con "
@@ -278,6 +272,29 @@ ES = {
     "solo_imagenes": "Solo ha enviado imágenes.",
     "pregunta_en_grupo": "<b>Pregunta de {autor} que no he sabido responder</b>\nNo he encontrado la respuesta en lo hablado en los grupos ni en la Biblioteca digital. ¿Alguien puede ayudar?\n<blockquote>{pregunta}</blockquote>\nSi sabes la respuesta, contesta aquí en el grupo respondiendo a este mensaje, y se la haré llegar a {nombre} por privado.",
     "codigo": "Soy software libre (AGPL v3), versión {version}: el código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
+    "si_crees_biblioteca": "Si crees que debería entrar, pulsa «Pedir una revisión» y lo mirará una persona.",
+    "b_revisar_licencia": "Creo que se puede compartir: pedir una revisión",
+    "revision_bib_pedida": "Hecho: pasa a revisión manual. Te avisaré cuando se decida.",
+    "revision_bib_cupo": "Hoy ya has pedido tres revisiones, que es lo máximo por día. Puedes pedir otra mañana.",
+    "revision_bib_si": "Revisado a mano: ya está publicado en la Biblioteca digital: {enlace}\nSi cambias de idea, puedes quitarlo con el botón de abajo durante las próximas 48 horas.",
+    "revision_bib_no": "Revisado a mano: «{titulo}» no entra en la Biblioteca digital.",
+    "revision_bib_mano": "Revisado a mano: la publicación de este documento se hará a mano. No hace falta que hagas nada más.",
+    "motivo_bib_sin_texto": "no puede leer el texto del PDF (parece escaneado)",
+    "motivo_bib_ajeno": "cree que no trata de IA en educación ({tema})",
+    "motivo_bib_repetido": "cree que ya está en la Biblioteca: {enlace}",
+    "motivo_bib_licencia": "cree que su licencia no deja compartir el archivo, y quien lo manda cree que sí",
+    "motivo_bib_web_grande": "pesa {mb:.0f} MB y el bot solo puede subir hasta 50 MB",
+    "revision_bib_a_juanjo": "Revisión de la Biblioteca digital: <a href=\"tg://user?id={id_usuario}\">{autor}</a> ({usuario}) pide que mires un documento que el bot no ha aceptado.\n\nMotivo del bot: {motivo}.\nEnlace: {enlace}\n\nDebajo van el documento y su ficha, con los botones para decidir. Si lo publicas, sale con su nombre.",
+    "revision_bib_sin_ficha": "No hay ficha: el bot no ha podido leer el documento. «Lo gestiono yo» le dice a quien lo manda que se publicará a mano.",
+    "b_bib_con_archivo": "Publicar con el archivo",
+    "b_bib_solo_ficha": "Publicar solo la ficha",
+    "b_bib_no": "No publicar",
+    "b_bib_a_mano": "Lo gestiono yo",
+    "revision_bib_hecho": "Hecho: publicado en la Biblioteca digital: {enlace}\nQueda apuntado para corregir el filtro.",
+    "revision_bib_no_hecho": "Hecho: no se publica, y se lo he dicho a quien lo mandó.",
+    "revision_bib_mano_hecho": "Hecho: le he dicho que se publicará a mano.",
+    "revision_bib_repetido": "No lo publico: ese documento ya está en la Biblioteca: {enlace}\nSigue pendiente por si quieres decidir otra cosa.",
+    "motivo_bib_grande": "pesa {mb:.0f} MB y Telegram no deja a los bots descargar más de 20 MB, así que no ha podido leerlo",
 }
 
 CA = {
@@ -361,9 +378,7 @@ CA = {
     "solo_privado": "Hola, {nombre}. Soc el Bot de IA Educativa. Al grup no et puc respondre, però en privat sí. Escriu-me aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Hola, {nombre}. Soc el Bot de IA Educativa. Això no funciona al grup, però en privat sí. Obre-ho aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Per afegir un document a la Biblioteca digital, envia-me'l en PDF.",
-    "grande": ("Aquest fitxer pesa {mb:.0f} MB i Telegram només deixa als bots baixar fitxers de fins a "
-               "20 MB, així que no el puc llegir. El pots pujar tu directament a la Biblioteca digital "
-               "(https://t.me/ChatGPTedu/21753) i preparar-ne la fitxa amb https://chatgpt-ia-edu.github.io/resumen/"),
+    "grande": "Aquest fitxer pesa {mb:.0f} MB i Telegram només deixa als bots baixar fitxers de fins a 20 MB, així que no el puc llegir.",
     "cupo_docs": "Avui ja m'has enviat {docs} documents. Demà en podràs enviar més.",
     "leyendo": "Rebut. El llegeixo, comprovo si encaixa a la biblioteca i en preparo la fitxa. Trigo un minut.",
     "buscando_doc": "Rebut. Busco el document en aquesta adreça i, si el puc baixar, comprovo si encaixa a la biblioteca i en preparo la fitxa. Trigo un minut.",
@@ -375,12 +390,8 @@ CA = {
     "sin_documento_web": ("No he trobat cap document per baixar en aquesta pàgina. La Biblioteca digital recull "
                           "documents: si tens el PDF, envia-me'l aquí."),
     "web_no_abre": "No he pogut obrir aquesta adreça. Comprova l'enllaç o envia'm el document en PDF.",
-    "web_grande": ("El document pesa {mb:.0f} MB i només puc publicar fitxers de fins a 50 MB. El pots pujar tu "
-                   "directament a la Biblioteca digital (https://t.me/ChatGPTedu/21753) i preparar-ne la fitxa amb "
-                   "https://chatgpt-ia-edu.github.io/resumen/"),
-    "sin_texto": ("No puc llegir el text d'aquest PDF: sembla escanejat com a imatge. El pots pujar tu "
-                  "directament a la Biblioteca digital (https://t.me/ChatGPTedu/21753) i preparar-ne la "
-                  "fitxa amb https://chatgpt-ia-edu.github.io/resumen/"),
+    "web_grande": "El document pesa {mb:.0f} MB i només puc publicar fitxers de fins a 50 MB.",
+    "sin_texto": "No puc llegir el text d'aquest PDF: sembla escanejat com a imatge.",
     "ajeno": "No el puc afegir: la Biblioteca digital és per a documents sobre intel·ligència artificial en educació, i aquest tracta d'una altra cosa ({tema}).",
     "repetido": "Aquest document ja és a la Biblioteca digital: {enlace}",
     "vista": ("Aquesta és la fitxa, en castellà com tota la biblioteca. Si et sembla bé, publicaré a la "
@@ -518,6 +529,13 @@ CA = {
     "no_quitar_pregunta": "Ja no la puc treure: Telegram només deixa esborrar els missatges durant 48 hores. Demana-ho a qui administra el grup.",
     "respuesta_en_grupo": "{quien} ha respost al grup la pregunta que hi vaig portar per tu:\n«{extracto}»\n{enlace}",
     "codigo": "Soc programari lliure (AGPL v3), versió {version}: el codi és a https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
+    "si_crees_biblioteca": "Si creus que hauria d'entrar, prem «Demanar una revisió» i el mirarà una persona.",
+    "b_revisar_licencia": "Crec que es pot compartir: demanar una revisió",
+    "revision_bib_pedida": "Fet: passa a revisió manual. T'avisaré quan es decideixi.",
+    "revision_bib_cupo": "Avui ja has demanat tres revisions, que és el màxim per dia. En pots demanar una altra demà.",
+    "revision_bib_si": "Revisat a mà: ja s'ha publicat a la Biblioteca digital: {enlace}\nSi canvies d'idea, el pots treure amb el botó de sota durant les properes 48 hores.",
+    "revision_bib_no": "Revisat a mà: «{titulo}» no entra a la Biblioteca digital.",
+    "revision_bib_mano": "Revisat a mà: la publicació d'aquest document es farà a mà. No cal que facis res més.",
 }
 
 GL = {
@@ -601,9 +619,7 @@ GL = {
     "solo_privado": "Ola, {nombre}. Son o Bot de IA Educativa. No grupo non podo contestarche, pero en privado si. Escríbeme aquí: https://t.me/{usuario}",
     "solo_privado_comando": "Ola, {nombre}. Son o Bot de IA Educativa. Isto non funciona no grupo, pero en privado si. Ábreo aquí: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Para engadir un documento á Biblioteca dixital, envíamo en PDF.",
-    "grande": ("Este ficheiro pesa {mb:.0f} MB e Telegram só deixa aos bots descargar ficheiros de ata "
-               "20 MB, así que non podo lelo. Podes subilo ti directamente á Biblioteca dixital "
-               "(https://t.me/ChatGPTedu/21753) e preparar a súa ficha con https://chatgpt-ia-edu.github.io/resumen/"),
+    "grande": "Este ficheiro pesa {mb:.0f} MB e Telegram só deixa aos bots descargar ficheiros de ata 20 MB, así que non podo lelo.",
     "cupo_docs": "Hoxe xa me enviaches {docs} documentos. Mañá poderás enviar máis.",
     "leyendo": "Recibido. Léoo, comprobo se encaixa na biblioteca e preparo a ficha. Tardo un minuto.",
     "buscando_doc": "Recibido. Busco o documento nese enderezo e, se podo descargalo, comprobo se encaixa na biblioteca e preparo a ficha. Tardo un minuto.",
@@ -615,12 +631,8 @@ GL = {
     "sin_documento_web": ("Non atopei ningún documento para descargar nesa páxina. A Biblioteca dixital recolle "
                           "documentos: se tes o PDF, mándamo aquí."),
     "web_no_abre": "Non puiden abrir ese enderezo. Comproba a ligazón ou mándame o documento en PDF.",
-    "web_grande": ("O documento pesa {mb:.0f} MB e só podo publicar ficheiros de ata 50 MB. Podes subilo ti "
-                   "directamente á Biblioteca dixital (https://t.me/ChatGPTedu/21753) e preparar a súa ficha con "
-                   "https://chatgpt-ia-edu.github.io/resumen/"),
-    "sin_texto": ("Non podo ler o texto deste PDF: parece escaneado como imaxe. Podes subilo ti "
-                  "directamente á Biblioteca dixital (https://t.me/ChatGPTedu/21753) e preparar a súa "
-                  "ficha con https://chatgpt-ia-edu.github.io/resumen/"),
+    "web_grande": "O documento pesa {mb:.0f} MB e só podo publicar ficheiros de ata 50 MB.",
+    "sin_texto": "Non podo ler o texto deste PDF: parece escaneado como imaxe.",
     "ajeno": "Non podo engadilo: a Biblioteca dixital é para documentos sobre intelixencia artificial en educación, e este trata doutra cousa ({tema}).",
     "repetido": "Este documento xa está na Biblioteca dixital: {enlace}",
     "vista": ("Esta é a ficha, en castelán como toda a biblioteca. Se che parece ben, publicarei na "
@@ -758,6 +770,13 @@ GL = {
     "no_quitar_pregunta": "Xa non podo quitala: Telegram só deixa borrar as mensaxes durante 48 horas. Pídello a quen administra o grupo.",
     "respuesta_en_grupo": "{quien} respondeu no grupo á pregunta que levei por ti:\n«{extracto}»\n{enlace}",
     "codigo": "Son software libre (AGPL v3), versión {version}: o código está en https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
+    "si_crees_biblioteca": "Se cres que debería entrar, preme «Pedir unha revisión» e mirarao unha persoa.",
+    "b_revisar_licencia": "Creo que se pode compartir: pedir unha revisión",
+    "revision_bib_pedida": "Feito: pasa a revisión manual. Avisareite cando se decida.",
+    "revision_bib_cupo": "Hoxe xa pediches tres revisións, que é o máximo por día. Podes pedir outra mañá.",
+    "revision_bib_si": "Revisado a man: xa está publicado na Biblioteca dixital: {enlace}\nSe cambias de idea, podes quitalo co botón de abaixo durante as próximas 48 horas.",
+    "revision_bib_no": "Revisado a man: «{titulo}» non entra na Biblioteca dixital.",
+    "revision_bib_mano": "Revisado a man: a publicación deste documento farase a man. Non fai falta que fagas nada máis.",
 }
 
 EU = {
@@ -842,10 +861,7 @@ EU = {
     "solo_privado": "Kaixo, {nombre}. IA Educativa bota naiz. Taldean ezin dizut erantzun, baina pribatuan bai. Idatzi hemen: https://t.me/{usuario}",
     "solo_privado_comando": "Kaixo, {nombre}. IA Educativa bota naiz. Hau ez dabil taldean, baina pribatuan bai. Ireki hemen: https://t.me/{usuario}?start={comando}",
     "no_pdf": "Liburutegi digitalera dokumentu bat gehitzeko, bidali PDFn.",
-    "grande": ("Fitxategi honek {mb:.0f} MB ditu, eta Telegramek 20 MB arteko fitxategiak bakarrik uzten "
-               "dizkie botei deskargatzen; beraz, ezin dut irakurri. Zuk zeuk igo dezakezu Liburutegi "
-               "digitalera (https://t.me/ChatGPTedu/21753) eta haren fitxa prestatu "
-               "https://chatgpt-ia-edu.github.io/resumen/ orriarekin"),
+    "grande": "Fitxategi honek {mb:.0f} MB ditu, eta Telegramek 20 MB arteko fitxategiak bakarrik uzten die botei deskargatzen; beraz, ezin dut irakurri.",
     "cupo_docs": "Gaur {docs} dokumentu bidali dizkidazu jada. Bihar gehiago bidali ahal izango dituzu.",
     "leyendo": "Jasota. Irakurri, liburutegian sartzen den egiaztatu eta fitxa prestatuko dut. Minutu bat behar dut.",
     "buscando_doc": "Jasota. Dokumentua helbide horretan bilatuko dut eta, deskargatu ahal badut, liburutegian sartzen den egiaztatu eta fitxa prestatuko dut. Minutu bat behar dut.",
@@ -857,12 +873,8 @@ EU = {
     "sin_documento_web": ("Ez dut deskargatzeko dokumenturik aurkitu orri horretan. Liburutegi digitalak dokumentuak "
                           "biltzen ditu: PDFa baduzu, bidali hona."),
     "web_no_abre": "Ezin izan dut helbide hori ireki. Egiaztatu esteka edo bidali dokumentua PDFn.",
-    "web_grande": ("Dokumentuak {mb:.0f} MB ditu eta 50 MB arteko fitxategiak bakarrik argitara ditzaket. Zuk zeuk "
-                   "igo dezakezu Liburutegi digitalera (https://t.me/ChatGPTedu/21753) eta haren fitxa prestatu "
-                   "https://chatgpt-ia-edu.github.io/resumen/ orriarekin"),
-    "sin_texto": ("Ezin dut PDF honen testua irakurri: irudi gisa eskaneatuta dagoela dirudi. Zuk zeuk igo "
-                  "dezakezu Liburutegi digitalera (https://t.me/ChatGPTedu/21753) eta haren fitxa prestatu "
-                  "https://chatgpt-ia-edu.github.io/resumen/ orriarekin"),
+    "web_grande": "Dokumentuak {mb:.0f} MB ditu eta 50 MB arteko fitxategiak bakarrik argitara ditzaket.",
+    "sin_texto": "Ezin dut PDF honen testua irakurri: irudi gisa eskaneatuta dagoela dirudi.",
     "ajeno": "Ezin dut gehitu: Liburutegi digitala hezkuntzako adimen artifizialari buruzko dokumentuetarako da, eta honek beste gai bat jorratzen du ({tema}).",
     "repetido": "Dokumentu hau Liburutegi digitalean dago jada: {enlace}",
     "vista": ("Hau da fitxa, gaztelaniaz liburutegi osoa bezala. Ados bazaude, dokumentua «Aportado por "
@@ -1000,6 +1012,13 @@ EU = {
     "no_quitar_pregunta": "Ezin dut jada kendu: Telegramek 48 orduz bakarrik uzten du mezuak ezabatzen. Eskatu taldearen administratzaileari.",
     "respuesta_en_grupo": "{quien}(e)k taldean erantzun dio zure izenean eraman nuen galderari:\n«{extracto}»\n{enlace}",
     "codigo": "Software librea naiz (AGPL v3), {version} bertsioa: kodea hemen dago: https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
+    "si_crees_biblioteca": "Sartu beharko lukeela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
+    "b_revisar_licencia": "Partekatu daitekeela uste dut: berrikusteko eskatu",
+    "revision_bib_pedida": "Eginda: eskuzko berrikuspenera pasatu da. Erabakitzen denean jakinaraziko dizut.",
+    "revision_bib_cupo": "Gaur hiru berrikuspen eskatu dituzu dagoeneko, egun bateko gehienekoa. Bihar beste bat eska dezakezu.",
+    "revision_bib_si": "Eskuz berrikusita: Liburutegi digitalean argitaratu da: {enlace}\nIritziz aldatzen baduzu, beheko botoiarekin ken dezakezu hurrengo 48 orduetan.",
+    "revision_bib_no": "Eskuz berrikusita: «{titulo}» ez da Liburutegi digitalean sartuko.",
+    "revision_bib_mano": "Eskuz berrikusita: dokumentu hau eskuz argitaratuko da. Ez duzu beste ezer egin beharrik.",
 }
 
 EN = {
@@ -1082,9 +1101,7 @@ EN = {
     "solo_privado": "Hi, {nombre}. I'm the IA Educativa Bot. I can't answer you in the group, but I can in private. Write to me here: https://t.me/{usuario}",
     "solo_privado_comando": "Hi, {nombre}. I'm the IA Educativa Bot. This doesn't work in the group, but it does in private. Open it here: https://t.me/{usuario}?start={comando}",
     "no_pdf": "To add a document to the Digital Library, send it to me as a PDF.",
-    "grande": ("This file is {mb:.0f} MB and Telegram only lets bots download files of up to 20 MB, so I "
-               "can't read it. You can upload it yourself to the Digital Library "
-               "(https://t.me/ChatGPTedu/21753) and prepare its record with https://chatgpt-ia-edu.github.io/resumen/"),
+    "grande": "This file is {mb:.0f} MB and Telegram only lets bots download files of up to 20 MB, so I can't read it.",
     "cupo_docs": "You've already sent me {docs} documents today. You can send more tomorrow.",
     "leyendo": "Received. I'm reading it, checking whether it fits the library and preparing the record. It takes a minute.",
     "buscando_doc": "Received. I'm looking for the document at that address and, if I can download it, checking whether it fits the library and preparing the record. It takes a minute.",
@@ -1096,12 +1113,8 @@ EN = {
     "sin_documento_web": ("I couldn't find any document to download on that page. The Digital Library collects "
                           "documents: if you have the PDF, send it to me here."),
     "web_no_abre": "I couldn't open that address. Check the link or send me the document as a PDF.",
-    "web_grande": ("The document is {mb:.0f} MB and I can only publish files of up to 50 MB. You can upload it "
-                   "yourself to the Digital Library (https://t.me/ChatGPTedu/21753) and prepare its record with "
-                   "https://chatgpt-ia-edu.github.io/resumen/"),
-    "sin_texto": ("I can't read the text of this PDF: it seems to be scanned as an image. You can upload it "
-                  "yourself to the Digital Library (https://t.me/ChatGPTedu/21753) and prepare its record "
-                  "with https://chatgpt-ia-edu.github.io/resumen/"),
+    "web_grande": "The document is {mb:.0f} MB and I can only publish files of up to 50 MB.",
+    "sin_texto": "I can't read the text of this PDF: it seems to be scanned as an image.",
     "ajeno": "I can't add it: the Digital Library is for documents about artificial intelligence in education, and this one is about something else ({tema}).",
     "repetido": "This document is already in the Digital Library: {enlace}",
     "vista": ("This is the record, in Spanish like the whole library. If you agree, I'll publish the document "
@@ -1239,6 +1252,13 @@ EN = {
     "no_quitar_pregunta": "I can no longer remove it: Telegram only allows deleting messages for 48 hours. Ask the group's administrators.",
     "respuesta_en_grupo": "{quien} has replied in the group to the question I took there for you:\n«{extracto}»\n{enlace}",
     "codigo": "I am free software (AGPL v3), version {version}: the code is at https://github.com/jjdeharo/bot-chatgpt-ia-edu.",
+    "si_crees_biblioteca": "If you think it should go in, tap “Request a review” and a person will look at it.",
+    "b_revisar_licencia": "I think it can be shared: request a review",
+    "revision_bib_pedida": "Done: it goes to manual review. I'll let you know when it's decided.",
+    "revision_bib_cupo": "You've already requested three reviews today, which is the daily maximum. You can request another tomorrow.",
+    "revision_bib_si": "Reviewed by hand: it's now published in the Digital Library: {enlace}\nIf you change your mind, you can remove it with the button below during the next 48 hours.",
+    "revision_bib_no": "Reviewed by hand: “{titulo}” doesn't go into the Digital Library.",
+    "revision_bib_mano": "Reviewed by hand: this document will be published by hand. You don't need to do anything else.",
 }
 
 TEXTOS = {"es": ES, "ca": CA, "gl": GL, "eu": EU, "en": EN}

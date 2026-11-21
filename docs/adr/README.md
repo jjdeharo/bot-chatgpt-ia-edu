@@ -51,5 +51,6 @@
 | [0047](0047-biblioteca-cerrada-a-los-miembros.md) | Biblioteca digital cerrada a los miembros | aceptado |
 | [0048](0048-repetidos-comprobados-y-enlaces-de-redes-sociales.md) | Repetidos comprobados por el título, licencias CC y enlaces de redes sociales | aceptado |
 | [0049](0049-documentos-compartidos-en-google-drive.md) | Documentos compartidos en Google Drive | aceptado |
+| [0050](0050-revision-manual-de-la-biblioteca.md) | Revisión manual de lo que la Biblioteca digital no acepta | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

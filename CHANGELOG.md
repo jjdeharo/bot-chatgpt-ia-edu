@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.25.0 — 2026-11-21
+
+- Cuando la Biblioteca digital no acepta un documento por un motivo en que el bot puede equivocarse, quien lo manda puede pedir una revisión manual. Ocurre cuando cree que no trata de IA en educación, que está repetido o que su licencia no deja compartirlo, cuando no puede leer el texto y cuando el archivo pesa demasiado. A Juanjo le llegan quién lo manda, el documento, la ficha y el motivo, con botones para publicarlo con el archivo, solo la ficha o no publicarlo. La persona recibe la decisión, y lo que se publica tras un rechazo queda apuntado para corregir el filtro. Como mucho, tres peticiones por persona y día. Las respuestas ya no invitan a subir el documento directamente al tema, que está cerrado (ADR 0050).
+
 ## 1.24.0 — 2026-11-21
 
 - La Biblioteca digital descarga los documentos que se le mandan con un enlace de Google Drive. Antes contestaba que no había ningún documento, porque la página de Drive solo muestra un visor (ADR 0049).

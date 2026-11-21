@@ -62,6 +62,8 @@ import textos
 ZONA = ZoneInfo("Europe/Madrid")
 BASE = Path(__file__).resolve().parent.parent
 ESTADO = BASE / "datos" / "estado-bot.json"
+REVISIONES_BIB = BASE / "datos" / "revisiones-biblioteca.json"     # lo que se pidió revisar a mano (ADR 0050)
+CORRECCIONES_BIB = BASE / "datos" / "correcciones-biblioteca.jsonl"  # lo que el bot rechazó y se publicó
 SIN_RESOLVER = BASE / "datos" / "sin-resolver.jsonl"
 DIAS_SIN_RESOLVER = 60
 # Preguntar en el grupo lo que el bot no ha sabido responder (ADR 0023): qué mensajes del grupo son preguntas
@@ -82,7 +84,7 @@ CRED = Path(os.environ.get("BOT_CRED", Path.home() / ".config/credenciales/bot-c
 BIBLIOTECA = grupos.con_biblioteca()  # ChatGPT-IA-edu
 CATALOGO = grupos.TODOS["vce"]  # el catálogo de recursos es de Vibe Coding Educativo
 # Mientras se prueba, solo responde a estas personas; con ABIERTO=1, a todo miembro de los grupos.
-VERSION = "1.24.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
+VERSION = "1.25.0"  # a la vista en la ayuda y en /estado; la etiqueta de git lleva la misma (ADR 0020)
 # La cuenta de Juanjo (avisos, /estado) y las autorizadas en pruebas van en el entorno, no en el código público (ADR 0020).
 JUANJO = int(os.environ.get("JUANJO") or 0)
 AUTORIZADOS = {int(x) for x in os.environ.get("AUTORIZADOS", str(JUANJO or "")).split(",") if x}
@@ -137,6 +139,7 @@ MAX_FOTOS = 3  # imágenes por consulta: cada una cuesta unos 1.500 tokens de en
 # Para probar la publicación sin tocar el grupo: el id de un chat privado.
 BIBLIOTECA_PRUEBA = os.environ.get("BIBLIOTECA_PRUEBA")
 CADUCA_FICHA_H = 24
+REVISIONES_BIB_DIA = 3  # peticiones de revisión manual de la Biblioteca por persona y día (ADR 0050)
 
 def con_fotos(texto: str, fotos: list) -> str:
     """El texto de una consulta con la constancia de sus imágenes, para el historial y el registro."""
@@ -677,6 +680,7 @@ class Bot:
         self.compartir = {}    # usuario -> mensaje para «¡Comparte tu App!» a la espera de su visto bueno
         self.cambios_pedidos = {}  # usuario -> cambios de una ficha escritos sin «Cambiar», hasta que elija el recurso
         self.rechazados = {}   # usuario -> último recurso rechazado por su contenido, por si pide revisarlo
+        self.rechazos_bib = {}  # usuario -> último documento que la Biblioteca no aceptó, por si pide revisarlo (ADR 0050)
         self.ambitos = {}      # usuario -> (momento, grupos en que busca o None si todos); caduca con la conversación
         self.valorables = {}   # usuario -> su última respuesta, la única con 👍/👎
         self.al_grupo = {}     # usuario -> la pregunta que puede llevar al grupo (ADR 0023)
@@ -847,6 +851,7 @@ class Bot:
                 d.pop(k, None)
         for d, s in ((d_("pendientes"), CADUCA_FICHA_H * 3600), (d_("fichas_rec"), CADUCA_FICHA_H * 3600),
                      (d_("compartir"), CADUCA_FICHA_H * 3600), (d_("rechazados"), CADUCA_FICHA_H * 3600),
+                     (d_("rechazos_bib"), CADUCA_FICHA_H * 3600),
                      (d_("espera"), ESPERA_MIN * 60)):  # {"momento": …}
             for k in [k for k, v in list(d.items()) if ahora - v.get("momento", 0) > s]:
                 d.pop(k, None)
@@ -1748,8 +1753,10 @@ class Bot:
         nombre = d.get("file_name") or "documento.pdf"
         if d.get("mime_type") != "application/pdf" and not nombre.lower().endswith(".pdf"):
             return self.enviar(chat, self.tx(uid, "no_pdf"))
-        if (d.get("file_size") or 0) > MAX_BYTES:
-            return self.enviar(chat, self.tx(uid, "grande", mb=d["file_size"] / 1024 / 1024))
+        if (d.get("file_size") or 0) > MAX_BYTES:  # no se puede leer, pero una persona sí puede mirarlo (ADR 0050)
+            doc = {"de": msg["from"], "nombre": nombre, "file_id": d["file_id"], "pdf": None, "enlace": "",
+                   "texto": "", "meta": "", "claves": []}
+            return self.rechazo_biblioteca(chat, uid, "grande", {"mb": d["file_size"] / 1024 / 1024}, doc)
         if not self.puede_documento(chat, uid):
             return
         self.enviar(chat, self.tx(uid, "leyendo"))
@@ -1785,7 +1792,7 @@ class Bot:
             if r["estado"] == "no_descargable":
                 return self.enviar(chat, self.tx(uid, "doc_no_descargable", titulo=r["titulo"], enlace=r["enlace"]))
             if r["estado"] == "grande":
-                return self.enviar(chat, self.tx(uid, "web_grande", mb=r["mb"]))
+                return self.rechazo_grande(chat, uid, de, url, r["mb"])
             clave = {"bloqueado": "doc_bloqueado", "sin_documento": "sin_documento_web", "red_social": "doc_red_social",
                      "no_abre": "web_no_abre"}.get(r["estado"], "error_doc")
             return self.enviar(chat, self.tx(uid, clave))
@@ -1826,32 +1833,22 @@ class Bot:
             repetido = self.repetido_biblioteca(claves)
             if repetido:
                 return self.enviar(chat, self.tx(uid, "repetido", enlace=repetido))
+            # Lo que el bot rechaza sin certeza se puede pasar a revisión manual (ADR 0050)
+            datos_doc = {"de": de, "nombre": nombre, "file_id": file_id, "pdf": pdf, "enlace": enlace,
+                         "texto": texto, "meta": meta, "claves": sorted(claves), "por_titulo": por_titulo,
+                         "licencia_verificada": licencia_verificada, "licencia_institucional": licencia_institucional}
             if len(texto.strip()) < 300:
-                return self.enviar(chat, self.tx(uid, "sin_texto"))
+                return self.rechazo_biblioteca(chat, uid, "sin_texto", {}, datos_doc)
             revision, candidatos, coste = self.fichero.revisar(texto, nombre)
             usd += coste
             if not revision["trata_ia_educacion"]:
-                return self.enviar(chat, self.tx(uid, "ajeno", tema=revision["tema"].rstrip(".")))
+                return self.rechazo_biblioteca(chat, uid, "ajeno", {"tema": revision["tema"].rstrip(".")}, datos_doc)
             if 0 < revision["repetido"] <= len(candidatos):
-                return self.enviar(chat, self.tx(uid, "repetido", enlace=candidatos[revision["repetido"] - 1]["enlace"]))
-            ficha, coste = self.fichero.ficha(texto, meta, nombre)
+                return self.rechazo_biblioteca(chat, uid, "repetido",
+                                               {"enlace": candidatos[revision["repetido"] - 1]["enlace"]}, datos_doc)
+            ficha, compartir, coste = self.hacer_ficha(texto, meta, nombre, enlace, licencia_verificada,
+                                                       licencia_institucional)
             usd += coste
-            if licencia_verificada:
-                ficha = fichas.con_licencia(ficha, licencia_verificada)
-                compartir = True
-            elif licencia_institucional and not fichas.reserva_derechos(ficha):  # ADR 0046
-                ficha = fichas.con_licencia(ficha, licencia_institucional)
-                compartir = True
-            else:
-                compartir, coste = self.fichero.compartible(ficha)
-                usd += coste
-            if not fichas.tiene_enlace(ficha) and enlace:  # el del documento que se ha descargado (ADR 0035)
-                ficha = fichas.con_enlace(ficha, enlace)
-            if not fichas.tiene_enlace(ficha):  # sin DOI ni dirección: se busca, y si no, se pide (Juanjo, 03-11-2026)
-                url, coste = self.fichero.buscar_enlace(ficha)
-                usd += coste
-                if url:
-                    ficha = fichas.con_enlace(ficha, url)
             ficha = fichas.con_linea_final(ficha)
             claves = biblioteca_duplicados.claves(urls + biblioteca_duplicados.enlaces_ficha(ficha), huella)
             repetido = self.repetido_biblioteca(claves)
@@ -1877,7 +1874,9 @@ class Bot:
         clave = self.clave_borrador()
         self.pendientes[uid] = {"ficha": ficha, "file_id": file_id, "autor": autor,
                                 "compartir": compartir, "momento": time.time(), "clave": clave,
-                                "claves": sorted(claves)}
+                                "claves": sorted(claves), "de": de, "enlace": enlace,
+                                # sin archivo que publicar, por si pide revisar la licencia (ADR 0050)
+                                "pdf": None if compartir or file_id else pdf, "nombre": nombre}
         registrar(f"ficha preparada: {usd:.4f} USD, compartir={compartir}, enlace={fichas.tiene_enlace(ficha)}")
         if fichas.tiene_enlace(ficha):
             return self.ensenar_documento(chat, uid)
@@ -1888,15 +1887,201 @@ class Bot:
         if m:
             self.pendientes[uid]["mensaje"] = (chat, m["message_id"])
 
+    def hacer_ficha(self, texto: str, meta: str, nombre: str, enlace: str = "", licencia_verificada: str = "",
+                    licencia_institucional: str = "") -> tuple[str, bool, float]:
+        """La ficha, si se puede adjuntar el archivo y lo que ha costado."""
+        ficha, usd = self.fichero.ficha(texto, meta, nombre)
+        if licencia_verificada:
+            ficha = fichas.con_licencia(ficha, licencia_verificada)
+            compartir = True
+        elif licencia_institucional and not fichas.reserva_derechos(ficha):  # ADR 0046
+            ficha = fichas.con_licencia(ficha, licencia_institucional)
+            compartir = True
+        else:
+            compartir, coste = self.fichero.compartible(ficha)
+            usd += coste
+        if not fichas.tiene_enlace(ficha) and enlace:  # el del documento que se ha descargado (ADR 0035)
+            ficha = fichas.con_enlace(ficha, enlace)
+        if not fichas.tiene_enlace(ficha):  # sin DOI ni dirección: se busca, y si no, se pide (Juanjo, 03-11-2026)
+            url, coste = self.fichero.buscar_enlace(ficha)
+            usd += coste
+            if url:
+                ficha = fichas.con_enlace(ficha, url)
+        return ficha, compartir, usd
+
+    # ---- Revisión manual de lo que la Biblioteca no acepta (ADR 0050) ----
+
+    def rechazo_biblioteca(self, chat: int, uid: int, motivo: str, detalle: dict, doc: dict) -> None:
+        """Dice por qué no lo publica y ofrece pedir una revisión manual. Lo necesario para revisarlo se guarda
+        hasta que caduque, como una ficha pendiente."""
+        clave = self.clave_borrador()
+        self.rechazos_bib[uid] = {**doc, "motivo": motivo, "detalle": detalle, "clave": clave, "momento": time.time()}
+        registrar(f"documento no aceptado en la biblioteca ({motivo}): se ofrece la revisión manual")
+        texto = self.tx(uid, motivo, **detalle) + "\n\n" + self.tx(uid, "si_crees_biblioteca")
+        self.tg("sendMessage", chat_id=chat, text=texto, link_preview_options={"is_disabled": True},
+                reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_pedir_revision"),
+                                                    "callback_data": f"bpr:{clave}"}]]})
+
+    def rechazo_grande(self, chat: int, uid: int, de: dict, enlace: str, mb: float) -> None:
+        """Más de 50 MB: el bot no puede subirlo, pero una persona sí puede mirarlo."""
+        doc = {"de": de, "nombre": "", "file_id": None, "pdf": None, "enlace": enlace, "texto": "", "meta": "",
+               "claves": sorted(biblioteca_duplicados.claves([enlace]))}
+        self.rechazo_biblioteca(chat, uid, "web_grande", {"mb": mb}, doc)
+
+    def revisiones_bib(self) -> dict:
+        try:
+            return json.loads(REVISIONES_BIB.read_text())
+        except (OSError, ValueError):
+            return {}
+
+    def guardar_revisiones_bib(self, d: dict) -> None:
+        tmp = REVISIONES_BIB.with_suffix(".tmp")
+        tmp.write_text(json.dumps(d, ensure_ascii=False, indent=1))
+        tmp.replace(REVISIONES_BIB)
+
+    def pedir_revision_biblioteca(self, uid: int, clave: str) -> None:
+        """«Pedir una revisión»: a Juanjo le llega quién lo manda, el documento, la ficha y por qué no se aceptó,
+        con botones para decidir. Hasta tres peticiones por persona y día."""
+        r = self.rechazos_bib.get(uid)
+        p = self.pendientes.get(uid)
+        if r and r.get("clave") == clave:
+            caso = r
+        elif p and p.get("clave") == clave and not p.get("compartir"):  # la licencia no deja adjuntar el archivo
+            caso = {**p, "motivo": "licencia", "detalle": {}}
+        else:
+            return self.enviar(uid, self.tx(uid, "caducado"))
+        if time.time() - caso["momento"] > CADUCA_FICHA_H * 3600:
+            return self.enviar(uid, self.tx(uid, "caducado"))
+        hoy = datetime.now(timezone.utc).date().isoformat()
+        with CERROJO:
+            e = leer_estado()
+            cuenta = e.get("revisiones_bib_hoy", {})
+            if cuenta.get("dia") != hoy:
+                cuenta = {"dia": hoy}
+            if cuenta.get(str(uid), 0) >= REVISIONES_BIB_DIA and uid != JUANJO:
+                return self.enviar(uid, self.tx(uid, "revision_bib_cupo"))
+            cuenta[str(uid)] = cuenta.get(str(uid), 0) + 1
+            e["revisiones_bib_hoy"] = cuenta
+            guardar_estado(e)
+        self.rechazos_bib.pop(uid, None)
+        if caso["motivo"] == "licencia":
+            self.pendientes.pop(uid, None)
+        self.enviar(uid, self.tx(uid, "revision_bib_pedida"))
+        hecho = self.escribiendo(JUANJO)
+        try:
+            ficha, compartir, usd = caso.get("ficha"), caso.get("compartir", False), 0.0
+            if not ficha and len((caso.get("texto") or "").strip()) >= 300:  # la ficha, para que no tenga que hacerla él
+                ficha, compartir, usd = self.hacer_ficha(caso["texto"], caso["meta"], caso["nombre"], caso["enlace"],
+                                                         caso.get("licencia_verificada", ""),
+                                                         caso.get("licencia_institucional", ""))
+                ficha = fichas.con_linea_final(ficha)
+            self.apuntar(usd)
+            de = caso.get("de") or {}
+            autor = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x) or "Sin nombre"
+            usuario = f"@{de['username']}" if de.get("username") else "sin alias"
+            motivo = self.tx(JUANJO, f"motivo_bib_{caso['motivo']}", **caso["detalle"])
+            ref = secrets.token_hex(6)
+            self.tg("sendMessage", chat_id=JUANJO, parse_mode="HTML", link_preview_options={"is_disabled": True},
+                    text=self.tx(JUANJO, "revision_bib_a_juanjo", autor=html.escape(autor), usuario=usuario, id_usuario=uid,
+                                 motivo=html.escape(motivo), enlace=html.escape(caso.get("enlace") or "sin enlace")))
+            file_id = caso.get("file_id")
+            if caso.get("pdf") is not None and not file_id:  # descargado de una web: se sube para que lo vea
+                nombre = caso["nombre"] or (documento_web.nombre_por_titulo(fichas.titulo(ficha)) if ficha else "documento.pdf")
+                subido = self.tg.subir("sendDocument", "document", nombre, caso["pdf"], chat_id=JUANJO)
+                file_id = ((subido or {}).get("document") or {}).get("file_id")
+            elif file_id:
+                self.tg("sendDocument", chat_id=JUANJO, document=file_id)
+            if ficha:
+                botones = [[{"text": self.tx(JUANJO, "b_bib_con_archivo"), "callback_data": f"bjs:{ref}"}]] if file_id else []
+                botones += [[{"text": self.tx(JUANJO, "b_bib_solo_ficha"), "callback_data": f"bjf:{ref}"}],
+                            [{"text": self.tx(JUANJO, "b_bib_no"), "callback_data": f"bjn:{ref}"}]]
+                self.tg("sendMessage", chat_id=JUANJO, text=fichas.a_html(ficha), parse_mode="HTML",
+                        link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": botones})
+            else:  # sin texto que leer: no hay ficha que aprobar
+                self.tg("sendMessage", chat_id=JUANJO, text=self.tx(JUANJO, "revision_bib_sin_ficha"),
+                        reply_markup={"inline_keyboard": [[{"text": self.tx(JUANJO, "b_bib_a_mano"), "callback_data": f"bjm:{ref}"},
+                                                           {"text": self.tx(JUANJO, "b_bib_no"), "callback_data": f"bjn:{ref}"}]]})
+            with CERROJO:
+                d = self.revisiones_bib()
+                d[ref] = {"estado": "por_revisar", "uid": uid, "autor": f"{autor} ({usuario})" if de.get("username") else autor,
+                          "ficha": ficha, "compartir": compartir, "file_id": file_id, "claves": caso.get("claves", []),
+                          "motivo": caso["motivo"], "detalle": caso["detalle"], "enlace": caso.get("enlace", ""),
+                          "fecha": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+                self.guardar_revisiones_bib(d)
+            registrar(f"documento pasado a revisión manual ({caso['motivo']})")
+        except Exception as error:  # noqa: BLE001
+            registrar(f"error al pasar un documento a revisión manual: {type(error).__name__}: {error}")
+            self.enviar(JUANJO, f"No he podido pasarte a revisión un documento de {uid}: {type(error).__name__}.")
+        finally:
+            hecho.set()
+
+    def decidir_revision_biblioteca(self, accion: str) -> None:
+        """Los botones de Juanjo: con el archivo, solo la ficha, a mano (sin texto) o no publicar. Cada decisión
+        se le cuenta a quien lo mandó; lo que se publica tras un rechazo queda apuntado para corregir el filtro."""
+        orden, _, ref = accion.partition(":")
+        with CERROJO:
+            d = self.revisiones_bib()
+            r = d.get(ref)
+            if not r or r.get("estado") != "por_revisar":
+                return self.enviar(JUANJO, self.tx(JUANJO, "revision_ya_no"))
+            d[ref] = {**r, "estado": {"bjs": "publicado", "bjf": "publicado_ficha", "bjm": "a_mano"}.get(orden, "rechazado"),
+                      "decidido": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            self.guardar_revisiones_bib(d)
+        uid = r["uid"]
+        titulo = fichas.titulo(r["ficha"]) if r.get("ficha") else (r.get("enlace") or "el documento")
+        if orden == "bjn":
+            self.enviar(uid, self.tx(uid, "revision_bib_no", titulo=titulo))
+            registrar("revisión manual de la biblioteca: no se publica")
+            return self.enviar(JUANJO, self.tx(JUANJO, "revision_bib_no_hecho"))
+        if orden == "bjm":
+            self.enviar(uid, self.tx(uid, "revision_bib_mano"))
+            registrar("revisión manual de la biblioteca: la gestiona Juanjo")
+            return self.enviar(JUANJO, self.tx(JUANJO, "revision_bib_mano_hecho"))
+        p = {"ficha": r["ficha"], "file_id": r.get("file_id"), "autor": r["autor"], "claves": r.get("claves", []),
+             "compartir": orden == "bjs" and bool(r.get("file_id"))}
+        try:
+            with CERROJO_BIBLIOTECA:
+                repetido = self.repetido_biblioteca(set(p["claves"]))
+                if repetido:
+                    with CERROJO:
+                        d = self.revisiones_bib()
+                        d[ref]["estado"] = "por_revisar"
+                        self.guardar_revisiones_bib(d)
+                    return self.enviar(JUANJO, self.tx(JUANJO, "revision_bib_repetido", enlace=repetido))
+                enlace, destino, ids = self.publicar(p)
+        except Exception as error:  # noqa: BLE001
+            registrar(f"error al publicar tras la revisión manual: {type(error).__name__}: {error}")
+            with CERROJO:
+                d = self.revisiones_bib()
+                d[ref]["estado"] = "por_revisar"
+                self.guardar_revisiones_bib(d)
+            return self.enviar(JUANJO, self.tx(JUANJO, "error_doc"))
+        self.apuntar(0.0, publicado=uid)
+        self.tg("sendMessage", chat_id=uid, text=self.tx(uid, "revision_bib_si", enlace=enlace),
+                link_preview_options={"is_disabled": True},
+                reply_markup={"inline_keyboard": [[
+                    {"text": self.tx(uid, "b_quitar_biblioteca"),
+                     "callback_data": f"bq:{destino}:{'-'.join(map(str, ids))}:{self.firma(uid, destino, '-'.join(map(str, ids)))}"},
+                    {"text": self.tx(uid, "b_mantener"), "callback_data": "bm"}]]})
+        # Para corregir el filtro: lo que el bot rechazó y una persona publicó (Juanjo, 21-11-2026)
+        with CORRECCIONES_BIB.open("a") as f:
+            f.write(json.dumps({"fecha": datetime.now(timezone.utc).isoformat(timespec="seconds"), "motivo": r["motivo"],
+                                "detalle": r["detalle"], "titulo": titulo, "publicado": enlace,
+                                "con_archivo": p["compartir"]}, ensure_ascii=False) + "\n")
+        registrar(f"revisión manual de la biblioteca: publicado ({r['motivo']})")
+        self.enviar(JUANJO, self.tx(JUANJO, "revision_bib_hecho", enlace=enlace))
+
     def ensenar_documento(self, chat: int, uid: int) -> None:
         """La vista previa de la ficha, con «Publicar» y «Cancelar»."""
         p = self.pendientes[uid]
         self.quitar_botones(p.get("mensaje"))  # el «Sin enlace» de la petición, si lo había
         self.enviar(chat, self.tx(uid, "vista" if p["compartir"] else "vista_sin_archivo", autor=p["autor"]))
+        botones = [[{"text": self.tx(uid, "b_publicar"), "callback_data": f"publicar:{p['clave']}"},
+                    {"text": self.tx(uid, "b_cancelar"), "callback_data": f"cancelar:{p['clave']}"}]]
+        if not p["compartir"]:  # si cree que la licencia sí deja compartirlo, que lo mire una persona (ADR 0050)
+            botones.append([{"text": self.tx(uid, "b_revisar_licencia"), "callback_data": f"bpr:{p['clave']}"}])
         m = self.tg("sendMessage", chat_id=chat, text=fichas.a_html(p["ficha"]), parse_mode="HTML",
-                    link_preview_options={"is_disabled": True},
-                    reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_publicar"), "callback_data": f"publicar:{p['clave']}"},
-                                                       {"text": self.tx(uid, "b_cancelar"), "callback_data": f"cancelar:{p['clave']}"}]]})
+                    link_preview_options={"is_disabled": True}, reply_markup={"inline_keyboard": botones})
         if m:
             p["mensaje"] = (chat, m["message_id"])
 
@@ -1967,6 +2152,10 @@ class Bot:
             return self.en_hilo(self.revisar_aviso, accion)
         if accion.startswith(("jrc:", "jrn:", "jrl:")) and uid == JUANJO:
             return self.en_hilo(self.revisar_rechazo, accion)
+        if accion.startswith("bpr:"):  # revisión manual de lo que la Biblioteca no aceptó (ADR 0050)
+            return self.en_hilo(self.pedir_revision_biblioteca, uid, accion[4:])
+        if accion.startswith(("bjs:", "bjf:", "bjn:", "bjm:")) and uid == JUANJO:
+            return self.en_hilo(self.decidir_revision_biblioteca, accion)
         if accion == "bm":
             return self.enviar(uid, self.tx(uid, "mantenido"))
         if accion.startswith("bq:"):  # quitar de la Biblioteca lo que publicó el bot en su nombre

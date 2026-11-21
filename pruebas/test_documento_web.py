@@ -313,7 +313,7 @@ class Telegram:
 
 def nuevo_bot(compartir=True):
     b = bot.Bot.__new__(bot.Bot)
-    for nombre in ("pendientes", "espera", "lenguas"):
+    for nombre in ("pendientes", "espera", "lenguas", "rechazos_bib"):
         setattr(b, nombre, {})
     b.lenguas[AUTOR] = "es"
     b.llamadas = []
