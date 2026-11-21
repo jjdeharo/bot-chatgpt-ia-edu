@@ -1,0 +1,6 @@
+p1	Bocadillo contento	El de ahora, riendo con los ojos cerrados de felicidad
+p2	Robotito	Un robot pequeño con antena de destello, sobre fondo cálido
+p3	Búho con gafas	El búho, el animal del saber, con gafas y el destello de la IA
+p4	Destello con cara	El símbolo de la IA convertido en personaje, con gafas
+p5	Bocadillo con birrete	Con birrete de graduación y guiñando el ojo
+p6	Bombilla	La bombilla de la idea, con gafas

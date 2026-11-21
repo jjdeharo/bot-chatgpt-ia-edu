@@ -136,7 +136,7 @@ class RevisionBiblioteca(unittest.TestCase):
 
     def test_textos_en_los_cinco_idiomas(self):
         for lengua in textos.LENGUAS:
-            for clave in ("si_crees_biblioteca", "b_revisar_licencia", "revision_bib_pedida", "revision_bib_cupo",
+            for clave in ("si_crees_biblioteca", "b_enviar_revision", "b_revisar_licencia", "revision_bib_pedida", "revision_bib_cupo",
                           "revision_bib_si", "revision_bib_no", "revision_bib_mano"):
                 self.assertIn(clave, textos.TEXTOS[lengua], (lengua, clave))
             for clave in ("sin_texto", "web_grande", "grande"):

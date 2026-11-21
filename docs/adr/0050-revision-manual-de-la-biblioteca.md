@@ -8,7 +8,7 @@ El tema de la Biblioteca digital está cerrado a los miembros (ADR 0047): un doc
 
 ## Decisión
 
-- **Cuándo se ofrece.** Cuando el bot decide algo que puede ser un error suyo, la respuesta lleva el botón «Pedir una revisión». Ocurre en cinco casos: el documento no trata de IA en educación, la búsqueda por similitud lo da por repetido, no tiene texto legible (un escaneado), pesa más de 20 MB al subirlo o más de 50 MB al descargarlo de una web. Si la licencia no deja adjuntar el archivo, la vista previa añade «Creo que se puede compartir: pedir una revisión».
+- **Cuándo se ofrece.** Cuando el bot decide algo que puede ser un error suyo, la respuesta dice «Si crees que debería publicarse, puedes enviarlo para revisión» y lleva el botón «Enviar para revisión»: enviarlo es decisión de quien lo manda. Ocurre en cinco casos: el documento no trata de IA en educación, la búsqueda por similitud lo da por repetido, no tiene texto legible (un escaneado), pesa más de 20 MB al subirlo o más de 50 MB al descargarlo de una web. Si la licencia no deja adjuntar el archivo, la vista previa añade «Creo que se puede compartir: enviar para revisión».
 - **Cuándo no se ofrece.** No se ofrece cuando la persona puede resolverlo sola (la web no deja descargar el documento o el enlace es de una red social; el bot ya le dice qué mandar). Tampoco ante un repetido por dirección o por huella del PDF, que es seguro.
 - **Lo que llega a Juanjo, por privado:**
   - quién lo manda (nombre enlazado a su cuenta y alias) y el motivo del bot, con el enlace del supuesto repetido si lo hay;

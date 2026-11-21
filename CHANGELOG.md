@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.25.1 — 2026-11-21
+
+- Cuando la Biblioteca digital no acepta un documento, el bot deja claro que enviarlo a revisión lo decide quien lo manda: «Si crees que debería publicarse, puedes enviarlo para revisión», con el botón «Enviar para revisión» (ADR 0050).
+
 ## 1.25.0 — 2026-11-21
 
 - Cuando la Biblioteca digital no acepta un documento por un motivo en que el bot puede equivocarse, quien lo manda puede pedir una revisión manual. Ocurre cuando cree que no trata de IA en educación, que está repetido o que su licencia no deja compartirlo, cuando no puede leer el texto y cuando el archivo pesa demasiado. A Juanjo le llegan quién lo manda, el documento, la ficha y el motivo, con botones para publicarlo con el archivo, solo la ficha o no publicarlo. La persona recibe la decisión, y lo que se publica tras un rechazo queda apuntado para corregir el filtro. Como mucho, tres peticiones por persona y día. Las respuestas ya no invitan a subir el documento directamente al tema, que está cerrado (ADR 0050).
