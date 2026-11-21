@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.23.1 — 2026-11-21
+
+- La Biblioteca digital adjunta el archivo de cualquier documento con una licencia Creative Commons nombrada con su abreviatura y su versión, también las NoComercial y SinDerivadas. Antes dejó sin archivo un documento CC BY-NC-ND 3.0 (ADR 0048).
+
 ## 1.23.0 — 2026-11-21
 
 - La Biblioteca digital ya no da por repetido un documento nuevo si el título no lo confirma: el del candidato tiene que estar en su texto y coincidir con el del documento. Antes rechazó el «Manual urgente sobre IA en el aula» confundiéndolo con una guía de 2024 (ADR 0048).

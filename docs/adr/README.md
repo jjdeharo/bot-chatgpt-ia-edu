@@ -49,6 +49,6 @@
 | [0045](0045-duplicados-en-la-biblioteca.md) | Duplicados en la Biblioteca digital | aceptado |
 | [0046](0046-licencias-generales-de-las-instituciones-europeas.md) | Licencias generales de las instituciones europeas | aceptado |
 | [0047](0047-biblioteca-cerrada-a-los-miembros.md) | Biblioteca digital cerrada a los miembros | aceptado |
-| [0048](0048-repetidos-comprobados-y-enlaces-de-redes-sociales.md) | Repetidos comprobados por el título y enlaces de redes sociales | aceptado |
+| [0048](0048-repetidos-comprobados-y-enlaces-de-redes-sociales.md) | Repetidos comprobados por el título, licencias CC y enlaces de redes sociales | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

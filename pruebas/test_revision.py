@@ -90,6 +90,20 @@ class PermisoDeCompartir(unittest.TestCase):
             f.c.cliente.messages.create.return_value = r
         return f
 
+    def test_cualquier_cc_nombrada_se_comparte_sin_preguntar_a_claude(self):
+        for lic in ("Creative Commons Atribución-NoComercial-SinDerivadas 3.0 No portada (CC BY-NC-ND 3.0)",
+                    "Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License (CC BY-NC-ND 3.0)",
+                    "CC BY-SA 4.0", "CC0 1.0 Universal"):
+            f = self.fichero({"licencia": "", "permite_compartir": False})
+            self.assertEqual(f.compartible(self.ficha(lic)), (True, 0.0), lic)
+            self.assertFalse(f.c.cliente.messages.create.called, lic)
+
+    def test_una_cc_negada_no_se_salta_a_claude(self):
+        for lic in ("No está bajo CC BY 4.0.", "CC BY 4.0 salvo las imágenes, con todos los derechos reservados"):
+            f = self.fichero({"licencia": "", "permite_compartir": False})
+            f.compartible(self.ficha(lic))
+            self.assertTrue(f.c.cliente.messages.create.called or not fichas.se_puede_compartir(self.ficha(lic)), lic)
+
     def test_una_mencion_no_es_un_permiso(self):
         """Segunda revisión: «no está bajo Creative Commons» y «trabaja en el MIT» pasaban el filtro de expresiones."""
         for lic in ("No está bajo una licencia Creative Commons.",
@@ -99,7 +113,7 @@ class PermisoDeCompartir(unittest.TestCase):
             self.assertTrue(f.c.cliente.messages.create.called, "la decisión la toma Claude, no las expresiones")
 
     def test_las_dos_lecturas_tienen_que_coincidir(self):
-        ficha = self.ficha("CC BY 4.0")
+        ficha = self.ficha("Licencia Creative Commons Reconocimiento")  # sin abreviatura ni versión: decide Claude
         self.assertTrue(self.fichero({"licencia": "CC BY 4.0", "permite_compartir": True}).compartible(ficha)[0])
         self.assertFalse(self.fichero({"licencia": "", "permite_compartir": True}).compartible(ficha)[0])
         self.assertFalse(self.fichero({"licencia": "propietaria", "permite_compartir": True}).compartible(ficha)[0])
@@ -108,7 +122,7 @@ class PermisoDeCompartir(unittest.TestCase):
     def test_sin_claude_solo_la_ficha(self):
         f = self.fichero(RuntimeError("sin red"))
         with mock.patch("sys.stderr", new_callable=io.StringIO):
-            self.assertEqual(f.compartible(self.ficha("CC BY 4.0")), (False, 0.0))
+            self.assertEqual(f.compartible(self.ficha("Licencia Creative Commons Reconocimiento")), (False, 0.0))
 
     def test_lo_cerrado_no_pregunta_a_claude(self):
         f = self.fichero({"licencia": "CC BY 4.0", "permite_compartir": True})
