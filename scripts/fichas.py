@@ -14,6 +14,7 @@ import json
 import re
 import subprocess
 import sys
+import unicodedata
 import urllib.request
 from pathlib import Path
 
@@ -33,10 +34,28 @@ REVISION = {
         "trata_ia_educacion": {"type": "boolean"},
         "tema": {"type": "string", "description": "De qué trata, en pocas palabras"},
         "repetido": {"type": "integer", "description": "Número del candidato que es el mismo documento, o 0"},
+        "titulo": {"type": "string", "description": "Título del documento nuevo, copiado tal como aparece en él"},
+        "titulo_repetido": {"type": "string", "description": "Título del candidato repetido, copiado tal como "
+                            "aparece en su texto, o cadena vacía si no hay repetido"},
     },
-    "required": ["trata_ia_educacion", "tema", "repetido"],
+    "required": ["trata_ia_educacion", "tema", "repetido", "titulo", "titulo_repetido"],
     "additionalProperties": False,
 }
+
+
+def _palabras(texto: str) -> set[str]:
+    sin_tildes = unicodedata.normalize("NFKD", texto.lower()).encode("ascii", "ignore").decode()
+    return {w for w in re.findall(r"[a-z0-9]+", sin_tildes) if len(w) > 3 or w.isdigit()}
+
+
+def mismo_titulo(nuevo: str, repetido: str, texto_candidato: str) -> bool:
+    """Lo que dice el modelo tiene que comprobarse: el título del candidato está en su texto y comparte con el
+    del documento nuevo al menos dos tercios de sus palabras. Haiku llegó a dar por repetido el «Manual urgente
+    sobre IA en el aula» (2026) con una guía de 2024 sin nada en común, y cada vez con una distinta (ADR 0048)."""
+    a, b = _palabras(nuevo), _palabras(repetido)
+    if not a or not b or not b <= _palabras(texto_candidato):
+        return False
+    return len(a & b) / min(len(a), len(b)) >= 2 / 3 and len(a & b) / max(len(a), len(b)) >= 1 / 2
 
 
 def instrucciones() -> str:
@@ -93,6 +112,14 @@ class Fichero:
                        f"Documento nuevo:\n<documento>\n{arranque}\n</documento>\n\n"
                        f"Candidatos de la biblioteca:\n<candidatos>\n{lista}\n</candidatos>"}])
         datos = json.loads(next(b.text for b in r.content if b.type == "text"))
+        n = datos.get("repetido", 0)
+        if 0 < n <= len(candidatos):
+            c = candidatos[n - 1]
+            if not mismo_titulo(datos.get("titulo", ""), datos.get("titulo_repetido", ""),
+                                f"{c['archivo'] or ''}\n{c['texto']}"):
+                print(f"repetido descartado: «{datos.get('titulo', '')[:80]}» no es «{datos.get('titulo_repetido', '')[:80]}» "
+                      f"({c['enlace']})", file=sys.stderr)
+                datos["repetido"] = 0
         return datos, candidatos, coste(r.usage, consultar.PRECIO[consultar.MODELO_CLAUDE])
 
     def compartible(self, ficha: str) -> tuple[bool, float]:

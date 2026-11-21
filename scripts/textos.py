@@ -107,6 +107,8 @@ ES = {
     "doc_no_descargable": ("He encontrado el documento, «{titulo}», pero su web no deja que lo descargue un programa. "
                            "Descárgalo tú desde aquí y mándamelo en PDF: {enlace}"),
     "doc_bloqueado": "Esa web no deja que un programa descargue el documento. Descárgalo tú desde ella y mándamelo en PDF.",
+    "doc_red_social": ("Ese enlace es una publicación en una red social, no el documento. Mándame el PDF o el enlace "
+                       "oficial del documento, en la web de quien lo publica."),
     "sin_documento_web": ("No he encontrado ningún documento para descargar en esa página. La Biblioteca digital recoge "
                           "documentos: si tienes el PDF, mándamelo aquí."),
     "web_no_abre": "No he podido abrir esa dirección. Comprueba el enlace o mándame el documento en PDF.",
@@ -368,6 +370,8 @@ CA = {
     "doc_no_descargable": ("He trobat el document, «{titulo}», però el seu web no deixa que el baixi un programa. "
                            "Baixa'l tu des d'aquí i envia-me'l en PDF: {enlace}"),
     "doc_bloqueado": "Aquest web no deixa que un programa en baixi el document. Baixa'l tu i envia-me'l en PDF.",
+    "doc_red_social": ("Aquest enllaç és una publicació en una xarxa social, no el document. Envia'm el PDF o l'enllaç "
+                       "oficial del document, al web de qui el publica."),
     "sin_documento_web": ("No he trobat cap document per baixar en aquesta pàgina. La Biblioteca digital recull "
                           "documents: si tens el PDF, envia-me'l aquí."),
     "web_no_abre": "No he pogut obrir aquesta adreça. Comprova l'enllaç o envia'm el document en PDF.",
@@ -606,6 +610,8 @@ GL = {
     "doc_no_descargable": ("Atopei o documento, «{titulo}», pero a súa web non deixa que o descargue un programa. "
                            "Descárgao ti desde aquí e mándamo en PDF: {enlace}"),
     "doc_bloqueado": "Esa web non deixa que un programa descargue o documento. Descárgao ti desde ela e mándamo en PDF.",
+    "doc_red_social": ("Esa ligazón é unha publicación nunha rede social, non o documento. Mándame o PDF ou a ligazón "
+                       "oficial do documento, na web de quen o publica."),
     "sin_documento_web": ("Non atopei ningún documento para descargar nesa páxina. A Biblioteca dixital recolle "
                           "documentos: se tes o PDF, mándamo aquí."),
     "web_no_abre": "Non puiden abrir ese enderezo. Comproba a ligazón ou mándame o documento en PDF.",
@@ -846,6 +852,8 @@ EU = {
     "doc_no_descargable": ("Dokumentua aurkitu dut, «{titulo}», baina bere webguneak ez dio programa bati deskargatzen uzten. "
                            "Deskargatu zuk hemendik eta bidali PDFn: {enlace}"),
     "doc_bloqueado": "Webgune horrek ez dio programa bati dokumentua deskargatzen uzten. Deskargatu zuk handik eta bidali PDFn.",
+    "doc_red_social": ("Esteka hori sare sozial bateko argitalpena da, ez dokumentua. Bidali PDFa edo dokumentuaren "
+                       "esteka ofiziala, argitaratzen duenaren webgunean."),
     "sin_documento_web": ("Ez dut deskargatzeko dokumenturik aurkitu orri horretan. Liburutegi digitalak dokumentuak "
                           "biltzen ditu: PDFa baduzu, bidali hona."),
     "web_no_abre": "Ezin izan dut helbide hori ireki. Egiaztatu esteka edo bidali dokumentua PDFn.",
@@ -1083,6 +1091,8 @@ EN = {
     "doc_no_descargable": ("I found the document, \"{titulo}\", but its website doesn't let a program download it. "
                            "Download it yourself from here and send it to me as a PDF: {enlace}"),
     "doc_bloqueado": "That website doesn't let a program download the document. Download it yourself and send it to me as a PDF.",
+    "doc_red_social": ("That link is a social media post, not the document. Send me the PDF or the document's official "
+                       "link, on the publisher's website."),
     "sin_documento_web": ("I couldn't find any document to download on that page. The Digital Library collects "
                           "documents: if you have the PDF, send it to me here."),
     "web_no_abre": "I couldn't open that address. Check the link or send me the document as a PDF.",

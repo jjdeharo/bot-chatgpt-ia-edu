@@ -2,6 +2,11 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.23.0 — 2026-11-21
+
+- La Biblioteca digital ya no da por repetido un documento nuevo si el título no lo confirma: el del candidato tiene que estar en su texto y coincidir con el del documento. Antes rechazó el «Manual urgente sobre IA en el aula» confundiéndolo con una guía de 2024 (ADR 0048).
+- Si alguien manda a la Biblioteca un enlace de LinkedIn, X, Facebook, Instagram, Threads, TikTok o Bluesky, el bot le explica que es una publicación y le pide el PDF o el enlace oficial del documento (ADR 0048).
+
 ## 1.22.0 — 2026-11-21
 
 - La Biblioteca digital reconoce la licencia general del Consejo de la UE, la Comisión Europea y el Parlamento Europeo. Un PDF descargado de sus webs oficiales se publica con el archivo, aunque el propio documento no indique licencia, y la ficha incluye la norma que lo permite. Si el documento reserva sus derechos de forma expresa, se publica solo la ficha (ADR 0046).

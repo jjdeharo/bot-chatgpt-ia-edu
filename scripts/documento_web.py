@@ -170,6 +170,19 @@ def id_arxiv(url: str, tipo: str = r"abs|pdf") -> str:
     return m.group(1) if m else ""
 
 
+# Publicaciones de redes sociales: anuncian un documento, no lo son, y no dejan descargar sin cuenta (ADR 0048).
+REDES_SOCIALES = ("linkedin.com", "lnkd.in", "x.com", "twitter.com", "t.co", "facebook.com", "fb.com", "fb.me",
+                  "instagram.com", "threads.net", "threads.com", "tiktok.com", "bsky.app")
+
+
+def es_red_social(url: str) -> bool:
+    try:
+        host = (urllib.parse.urlsplit(url).hostname or "").lower()
+    except ValueError:
+        return False
+    return any(host == d or host.endswith("." + d) for d in REDES_SOCIALES)
+
+
 def licencia_institucional(url: str) -> str:
     """La licencia general de la institución que sirve el PDF desde su dominio oficial, o cadena vacía."""
     try:
@@ -285,7 +298,10 @@ def buscar(cliente, url: str) -> dict:
     - no_descargable: «enlace» y «titulo» del documento, que la persona tiene que descargar ella;
     - bloqueado: la dirección que mandó no deja descargar a un programa (lo rechaza, o es una web que solo
       funciona con JavaScript y no tiene enlaces que seguir);
-    - grande: «mb»; sin_documento (una página corriente que no presenta ningún documento); no_abre."""
+    - grande: «mb»; sin_documento (una página corriente que no presenta ningún documento); no_abre;
+    - red_social: una publicación de LinkedIn, X, Facebook…, que anuncia el documento y no lo es."""
+    if es_red_social(url):
+        return {"estado": "red_social", "usd": 0.0}
     usd, doc, actual, estado, cerrada = 0.0, None, url, 0, False
     for salto in range(SALTOS + 1):
         arxiv = documento_arxiv(actual)

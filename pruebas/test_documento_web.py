@@ -192,6 +192,56 @@ class LicenciaInstitucional(unittest.TestCase):
             self.assertNotIn("licencia_institucional", dw.buscar(None, self.CONSEJO))
 
 
+class RedesSociales(unittest.TestCase):
+    def test_una_publicacion_de_una_red_no_es_el_documento(self):
+        for url in ("https://www.linkedin.com/posts/alguien_guia-ugcPost-1-zrVt/?utm_source=social_share_send",
+                    "https://es.linkedin.com/pulse/una-guia", "https://lnkd.in/abc", "https://x.com/a/status/1",
+                    "https://m.facebook.com/a/posts/1", "https://bsky.app/profile/a/post/1"):
+            with self.subTest(url=url), web({}):
+                self.assertEqual(dw.buscar(None, url)["estado"], "red_social")
+
+    def test_no_confunde_otros_dominios(self):
+        for url in ("https://linkedin.com.ejemplo.org/a.pdf", "https://www.ejemplo.org/linkedin.com/a.pdf",
+                    "https://www.intef.es/x.pdf"):
+            with self.subTest(url=url):
+                self.assertFalse(dw.es_red_social(url))
+
+
+class MismoTitulo(unittest.TestCase):
+    def test_titulos_distintos_no_son_repetidos(self):
+        self.assertFalse(fichas.mismo_titulo(
+            "Manual urgente sobre IA en el aula: miradas y análisis de la esfera digital desde Abya Yala",
+            "Inteligencia Artificial en la Educación. Una guía práctica para profesores en la era digital",
+            "INTELIGENCIA ARTIFICIAL EN LA EDUCACIÓN: UNA GUÍA PRÁCTICA PARA PROFESORES EN LA ERA DIGITAL 2024"))
+
+    def test_mismo_titulo_aunque_cambien_mayusculas_y_tildes(self):
+        self.assertTrue(fichas.mismo_titulo(
+            "Inteligencia artificial en la educación: una guía práctica para profesores",
+            "INTELIGENCIA ARTIFICIAL EN LA EDUCACION: UNA GUIA PRACTICA PARA PROFESORES",
+            "Libro.pdf\nINTELIGENCIA ARTIFICIAL EN LA EDUCACION: UNA GUIA PRACTICA PARA PROFESORES EN LA ERA DIGITAL"))
+
+    def test_el_titulo_del_candidato_tiene_que_estar_en_su_texto(self):
+        self.assertFalse(fichas.mismo_titulo("Manual urgente sobre IA en el aula", "Manual urgente sobre IA en el aula",
+                                             "Una guía práctica para profesores"))
+
+    def test_revisar_anula_el_repetido_que_no_respalda_el_titulo(self):
+        f = fichas.Fichero.__new__(fichas.Fichero)
+        cand = [{"enlace": "https://t.me/ChatGPTedu/21753/21758", "archivo": "Libro completo de IA de AV.pdf",
+                 "texto": "INTELIGENCIA ARTIFICIAL EN LA EDUCACIÓN: UNA GUÍA PRÁCTICA PARA PROFESORES"}]
+        respuesta = {"trata_ia_educacion": True, "tema": "IA", "repetido": 1, "titulo": "Manual urgente sobre IA en el aula",
+                     "titulo_repetido": "Inteligencia artificial en la educación: una guía práctica para profesores"}
+        r = SimpleNamespace(content=[SimpleNamespace(type="text", text=json.dumps(respuesta))],
+                            usage=SimpleNamespace(input_tokens=1, output_tokens=1, cache_read_input_tokens=0,
+                                                  cache_creation_input_tokens=0))
+        f.c = SimpleNamespace(b=SimpleNamespace(al_dia=lambda: None, biblioteca=lambda *a, **k: cand),
+                              cliente=SimpleNamespace(messages=SimpleNamespace(create=lambda **k: r)))
+        datos, _, _ = f.revisar("Manual urgente sobre IA en el aula " * 20, "manual.pdf")
+        self.assertEqual(datos["repetido"], 0)
+        respuesta.update(titulo="Inteligencia artificial en la educación. Una guía práctica para profesores")
+        r.content[0].text = json.dumps(respuesta)
+        self.assertEqual(f.revisar("x " * 300, "guia.pdf")[0]["repetido"], 1)
+
+
 class TipoDeEnlace(unittest.TestCase):
     def test_pdf_sin_extension(self):
         with web({FICHA_DOC: (200, "application/octet-stream", PDF)}):
@@ -329,6 +379,7 @@ class Bot(unittest.TestCase):
 
     def test_cada_estado_tiene_su_mensaje(self):
         for estado, trozo in (("bloqueado", "no deja"), ("sin_documento", "ningún documento"),
+                              ("red_social", "red social"),
                               ("no_abre", "No he podido abrir"), ("error", "Algo ha fallado")):
             with self.subTest(estado=estado):
                 self.assertIn(trozo, self.llamar(nuevo_bot(), {"estado": estado})[-1])
