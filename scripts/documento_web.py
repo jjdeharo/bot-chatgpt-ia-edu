@@ -175,6 +175,23 @@ REDES_SOCIALES = ("linkedin.com", "lnkd.in", "x.com", "twitter.com", "t.co", "fa
                   "instagram.com", "threads.net", "threads.com", "tiktok.com", "bsky.app")
 
 
+def descarga_drive(url: str) -> str:
+    """La descarga directa de un archivo de Google Drive compartido con enlace (ADR 0049). La página «/view» solo
+    trae el visor, hecho con JavaScript, sin un enlace al archivo que se pueda seguir."""
+    try:
+        partes = urllib.parse.urlsplit(url)
+    except ValueError:
+        return ""
+    if partes.scheme != "https" or (partes.hostname or "").lower() not in ("drive.google.com", "docs.google.com"):
+        return ""
+    m = re.fullmatch(r"/(?:file/d/|uc$|open$)([\w-]{20,})?(?:/.*)?", partes.path)
+    identificador = (m.group(1) if m and m.group(1) else
+                     dict(urllib.parse.parse_qsl(partes.query)).get("id", "") if m else "")
+    if not re.fullmatch(r"[\w-]{20,}", identificador or ""):
+        return ""
+    return f"https://drive.google.com/uc?export=download&id={identificador}"
+
+
 def es_red_social(url: str) -> bool:
     try:
         host = (urllib.parse.urlsplit(url).hostname or "").lower()
@@ -308,7 +325,7 @@ def buscar(cliente, url: str) -> dict:
         if arxiv:
             return {**arxiv, "usd": usd}
         try:
-            estado, final, tipo, datos = catalogo.descargar(actual, MAX_PDF + 1)
+            estado, final, tipo, datos = catalogo.descargar(descarga_drive(actual) or actual, MAX_PDF + 1)
         except (catalogo.NoPublica, OSError, ValueError):
             estado, final, tipo, datos = 0, actual, "", b""
         if estado == 200 and es_pdf(tipo, datos):

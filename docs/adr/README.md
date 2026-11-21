@@ -50,5 +50,6 @@
 | [0046](0046-licencias-generales-de-las-instituciones-europeas.md) | Licencias generales de las instituciones europeas | aceptado |
 | [0047](0047-biblioteca-cerrada-a-los-miembros.md) | Biblioteca digital cerrada a los miembros | aceptado |
 | [0048](0048-repetidos-comprobados-y-enlaces-de-redes-sociales.md) | Repetidos comprobados por el título, licencias CC y enlaces de redes sociales | aceptado |
+| [0049](0049-documentos-compartidos-en-google-drive.md) | Documentos compartidos en Google Drive | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

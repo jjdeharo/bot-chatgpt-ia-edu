@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.24.0 — 2026-11-21
+
+- La Biblioteca digital descarga los documentos que se le mandan con un enlace de Google Drive. Antes contestaba que no había ningún documento, porque la página de Drive solo muestra un visor (ADR 0049).
+
 ## 1.23.1 — 2026-11-21
 
 - La Biblioteca digital adjunta el archivo de cualquier documento con una licencia Creative Commons nombrada con su abreviatura y su versión, también las NoComercial y SinDerivadas. Antes dejó sin archivo un documento CC BY-NC-ND 3.0 (ADR 0048).

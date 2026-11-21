@@ -192,6 +192,26 @@ class LicenciaInstitucional(unittest.TestCase):
             self.assertNotIn("licencia_institucional", dw.buscar(None, self.CONSEJO))
 
 
+class GoogleDrive(unittest.TestCase):
+    ID = "1kMOM3IDQrEkbb_qY0R3QtHdZJPXXnagS"
+
+    def test_enlaces_de_drive_a_su_descarga_directa(self):
+        directa = f"https://drive.google.com/uc?export=download&id={self.ID}"
+        for url in (f"https://drive.google.com/file/d/{self.ID}/view", f"https://drive.google.com/file/d/{self.ID}/view?usp=sharing",
+                    f"https://drive.google.com/open?id={self.ID}", f"https://drive.google.com/uc?id={self.ID}&export=download"):
+            with self.subTest(url=url):
+                self.assertEqual(dw.descarga_drive(url), directa)
+        for url in ("https://drive.google.com/drive/folders/abc", "https://www.ejemplo.org/file/d/" + self.ID, "http://drive.google.com/file/d/" + self.ID):
+            with self.subTest(url=url):
+                self.assertEqual(dw.descarga_drive(url), "")
+
+    def test_se_descarga_el_pdf_y_la_ficha_lleva_el_enlace_que_se_mando(self):
+        vista = f"https://drive.google.com/file/d/{self.ID}/view"
+        with web({f"https://drive.google.com/uc?export=download&id={self.ID}": (200, "application/octet-stream", PDF)}):
+            r = dw.buscar(None, vista)
+        self.assertEqual((r["estado"], r["enlace"]), ("pdf", vista))
+
+
 class RedesSociales(unittest.TestCase):
     def test_una_publicacion_de_una_red_no_es_el_documento(self):
         for url in ("https://www.linkedin.com/posts/alguien_guia-ugcPost-1-zrVt/?utm_source=social_share_send",
