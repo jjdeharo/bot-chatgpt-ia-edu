@@ -282,7 +282,11 @@ async def auditar_una(sem: asyncio.Semaphore, browser, app: dict) -> dict:
                         res["envios_terceros"].append(h)
 
             res["cookies"] = [{"name": c["name"], "domain": c["domain"]} for c in await context.cookies()]
-            dom = await page.evaluate(JS_DOM)
+            try:  # una página con el navegador ocupado (un juego) puede tardar en contestar: lo de la red ya está visto
+                dom = await asyncio.wait_for(page.evaluate(JS_DOM), 20)
+            except Exception:  # noqa: BLE001
+                dom = {"title": "", "pideLogin": False, "inputsPers": [], "tienePriv": False, "senales": []}
+                res["dom_sin_leer"] = True
             res["titulo_html"] = dom["title"][:120]
             res["pide_login"] = bool(dom["pideLogin"])
             res["inputs_personales"] = dom["inputsPers"]
