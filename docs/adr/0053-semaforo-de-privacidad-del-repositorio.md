@@ -69,7 +69,7 @@ El 24-11-2026 Juanjo decidió, por pasos:
   - `juanjo`: le manda a Juanjo cada aviso tal como saldría, para verlo;
   - vacío: solo los apunta en el registro.
 
-  Empieza en `juanjo` hasta que Juanjo apruebe los textos.
+  Empezó en `juanjo` y pasó a `autores` el 24-11-2026, cuando Juanjo aprobó los textos.
 
 ## Consecuencias
 

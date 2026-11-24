@@ -77,7 +77,7 @@ services:
       BOT_CRED: /credenciales/bot-chatgpt-ia-edu.json
       JUANJO: "218499880"
       # «autores»: avisa a los autores; «juanjo»: se los manda solo a Juanjo, para verlos; vacío: solo el registro.
-      AVISOS_SEMAFORO: "juanjo"
+      AVISOS_SEMAFORO: "autores"  # aprobado por Juanjo el 24-11-2026
     volumes:
       - ./repo:/proyecto
       - ./credenciales:/credenciales:ro
