@@ -120,7 +120,11 @@ def color(r: dict) -> dict:
 
 
 def no_respondio(r: dict) -> bool:
-    return bool(r.get("error")) or r.get("http_status", 0) == 0 or r.get("http_status", 0) >= 500
+    """No se ha podido revisar entera (no contesta, error del servidor, o su contenido no se ha podido leer a
+    tiempo). Entonces no se le pone color: se queda el que tenía, o gris si no tenía (Juanjo, 24-11-2026: «el
+    color no debe inventarse»). Un 404 o un enlace a código sí es definitivo: «sin evaluar»."""
+    return (bool(r.get("error")) or r.get("dom_sin_leer", False)
+            or r.get("http_status", 0) == 0 or r.get("http_status", 0) >= 500)
 
 
 def es_roja(x: dict) -> bool:
@@ -134,6 +138,10 @@ def evaluar_uno(url: str) -> dict:
         return {"semaforo": "SIN EVALUAR", "motivo": "El enlace no lleva a una dirección pública.",
                 "fecha": datetime.now().date().isoformat()}
     r = evaluar([{"url": url, "titulo": url}], 1)[0]
+    if no_respondio(r) and not (r.get("http_status", 0) >= 400 and r.get("http_status", 0) < 500):
+        registrar(f"evaluada para el bot: no se ha podido revisar entera · {url}")
+        return {"semaforo": "PENDIENTE", "motivo": "No se ha podido revisar entera: se volverá a intentar esta noche.",
+                "fecha": datetime.now().date().isoformat()}
     x = color(r)
     cache = leer(AUDITORIA, {})
     cache[normalizar_url(url)] = r
@@ -233,8 +241,8 @@ def pasada(sin_hoja: bool = False) -> dict:
     for app, r in zip(apps, vistas):
         x = color(r)
         actual = tuple((app["hoja"].get(c) or "").strip() for c in COLS)
-        if no_respondio(r) and actual[0] and actual[0] != "SIN EVALUAR":
-            continue  # una mala noche de su servidor no le quita el color que tenía; mañana se mira otra vez
+        if no_respondio(r):
+            continue  # sin revisarla entera no se le pone color: se queda el que tenía, o gris; mañana, otra vez
         if actual != (x["semaforo"], x["motivo"], x["fecha"]):
             filas.append({"url": app["url"], **x})
         if actual[0] and actual[0] != x["semaforo"]:

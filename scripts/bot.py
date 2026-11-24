@@ -904,7 +904,8 @@ class Bot:
                                          {"Content-Type": "application/json"})
             with urllib.request.urlopen(pet, timeout=120) as r:
                 sem = json.load(r)
-            return sem if sem.get("semaforo") else None
+            # «PENDIENTE»: no se ha podido revisar entera; la ficha sale sin color (gris) y la noche lo intenta.
+            return sem if sem.get("semaforo") and sem["semaforo"] != "PENDIENTE" else None
         except Exception as error:  # noqa: BLE001 — sin semáforo, la ficha sale como pendiente
             registrar(f"el semáforo de privacidad no responde: {type(error).__name__}: {error}")
             return None
