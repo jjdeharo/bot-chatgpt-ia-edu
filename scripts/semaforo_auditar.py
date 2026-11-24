@@ -98,6 +98,9 @@ def url_publica(url: str) -> bool:
     return u.scheme in ("http", "https") and host_publico(u.hostname or "")
 
 
+TOPE_S = 75  # segundos como mucho por aplicación
+
+
 def dominio_base(host: str) -> str:
     partes = host.lower().split(":")[0].split(".")
     return ".".join(partes[-2:]) if len(partes) >= 2 else host.lower()
@@ -242,8 +245,13 @@ async def auditar_una(sem: asyncio.Semaphore, browser, app: dict) -> dict:
             peticiones: list[tuple[str, str, str]] = []
             page.on("request", lambda req: peticiones.append((req.url, req.method, req.resource_type)))
 
-            resp = await page.goto(app["url"], wait_until="load", timeout=25000)
-            # Los contadores de visitas mandan su aviso después de cargar la página.
+            resp = await page.goto(app["url"], wait_until="domcontentloaded", timeout=25000)
+            # Los contadores de visitas mandan su aviso al acabar de cargar: se espera la carga, pero no más
+            # de 10 s (hay páginas que no la terminan nunca, como un juego que no para), y luego 3,5 s más.
+            try:
+                await page.wait_for_load_state("load", timeout=10000)
+            except Exception:  # noqa: BLE001 — sin carga completa, se sigue con lo que se haya visto
+                pass
             await page.wait_for_timeout(3500)
 
             res["url_final"] = page.url
@@ -299,7 +307,16 @@ async def auditar(apps: list[dict], concurrencia: int = 3, avisar=print) -> list
 
     async def una(browser, app):
         nonlocal hechas
-        r = await auditar_una(sem, browser, app)
+        # Tope por aplicación: una página que no suelta el navegador (un juego que no para) no puede atascar
+        # la pasada ni la evaluación que espera el bot. Cuenta como «no responde».
+        async with sem:
+            try:
+                r = await asyncio.wait_for(auditar_una(asyncio.Semaphore(1), browser, app), TOPE_S)
+            except asyncio.TimeoutError:
+                r = {k: v for k, v in app.items() if k != "hoja"} | {
+                    "url_final": app["url"], "http_status": 0, "terceros": {}, "envios_terceros": [],
+                    "error": f"TimeoutError: la página no ha terminado en {TOPE_S} s",
+                    "fecha_auditoria": date.today().isoformat()}
         hechas += 1
         if hechas % 25 == 0 or hechas == len(apps):
             avisar(f"  inspeccionadas {hechas}/{len(apps)}")
