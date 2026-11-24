@@ -24,6 +24,7 @@ import asyncio
 import csv
 import io
 import ipaddress
+import json
 import re
 import socket
 import urllib.request
@@ -99,6 +100,31 @@ def url_publica(url: str) -> bool:
 
 
 TOPE_S = 75  # segundos como mucho por aplicación
+
+
+def version_web(url: str) -> str | None:
+    """Si el enlace es un repositorio de GitHub que publica una web (su página de inicio o GitHub Pages), esa web.
+    Un paquete de npm o el propio GitHub no cuentan: no son una aplicación que se use en el navegador."""
+    u = urlparse(url)
+    if u.netloc.lower() != "github.com":
+        return None
+    partes = [x for x in u.path.split("/") if x]
+    if len(partes) < 2:
+        return None
+    dueno, repo = partes[0], partes[1].removesuffix(".git")
+    try:
+        pet = urllib.request.Request(f"https://api.github.com/repos/{dueno}/{repo}",
+                                     headers={"Accept": "application/vnd.github+json", "User-Agent": "semaforo-vce"})
+        with urllib.request.urlopen(pet, timeout=20) as r:
+            d = json.load(r)
+    except Exception:  # noqa: BLE001 — sin la API, se queda como repositorio
+        return None
+    web = (d.get("homepage") or "").strip()
+    if web.startswith(("http://", "https://")) and not re.search(r"(github\.com|npmjs\.com)", web, re.I):
+        return web
+    if d.get("has_pages"):
+        return f"https://{dueno.lower()}.github.io/{repo}/"
+    return None
 
 
 def dominio_base(host: str) -> str:
@@ -245,7 +271,11 @@ async def auditar_una(sem: asyncio.Semaphore, browser, app: dict) -> dict:
             peticiones: list[tuple[str, str, str]] = []
             page.on("request", lambda req: peticiones.append((req.url, req.method, req.resource_type)))
 
-            resp = await page.goto(app["url"], wait_until="domcontentloaded", timeout=25000)
+            destino = app["url"]
+            web = await asyncio.to_thread(version_web, destino)
+            if web and url_publica(web):
+                res["version_web"] = destino = web
+            resp = await page.goto(destino, wait_until="domcontentloaded", timeout=25000)
             # Los contadores de visitas mandan su aviso al acabar de cargar: se espera la carga, pero no más
             # de 10 s (hay páginas que no la terminan nunca, como un juego que no para), y luego 3,5 s más.
             try:
@@ -293,7 +323,10 @@ async def auditar_una(sem: asyncio.Semaphore, browser, app: dict) -> dict:
             res["tiene_privacidad"] = bool(dom["tienePriv"])
             res["senales_codigo"] = dom["senales"]
         except Exception as exc:  # una aplicación caída no para las demás
-            res["error"] = f"{type(exc).__name__}: {str(exc).splitlines()[0][:100]}"
+            if "Download is starting" in str(exc):  # el enlace descarga un archivo: no es una web
+                res["descarga"] = True
+            else:
+                res["error"] = f"{type(exc).__name__}: {str(exc).splitlines()[0][:100]}"
         finally:
             if context:
                 try:

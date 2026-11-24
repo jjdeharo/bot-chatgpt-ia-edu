@@ -71,6 +71,16 @@ El 24-11-2026 Juanjo decidió, por pasos:
 
   Empezó en `juanjo` y pasó a `autores` el 24-11-2026, cuando Juanjo aprobó los textos.
 
+- **Lo que no es una aplicación web** sale «sin evaluar», con un motivo que dice lo que
+  pasa (Juanjo, 24-11-2026, al ver que «no se puede abrir» confundía):
+  - un repositorio de código: «Es el código en GitHub, no una aplicación web». Si publica
+    una web (su página de inicio, que no sea npm, o GitHub Pages; lo dice la API de GitHub),
+    se revisa esa web y el motivo empieza por «Revisada su versión web (…)»;
+  - una descarga: «Descarga un programa para instalar»;
+  - un 404: «La página no existe».
+
+  Los enlaces rotos ya los lleva la revisión del repositorio (ADR 0039).
+
 ## Consecuencias
 
 - La web del repositorio (ADR 0002 de app_edu) enseña el color en cada tarjeta y desactiva

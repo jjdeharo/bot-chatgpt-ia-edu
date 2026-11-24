@@ -102,7 +102,7 @@ def evaluar_app(r: dict, fecha_es: str) -> dict | None:
     evaluable como aplicación web (repositorios de código en github.com, HTTP 404, descargas).
     """
     http = r.get("http_status", 0)
-    if r.get("error") or http == 0 or http >= 400:
+    if r.get("descarga") or r.get("error") or http == 0 or http >= 400:
         return None
     fecha_es = fecha_de(r, fecha_es)
 
@@ -376,10 +376,16 @@ def evaluar_app(r: dict, fecha_es: str) -> dict | None:
 
 
 def motivo_no_evaluable(r: dict) -> str:
+    """Por qué no tiene color, dicho como lo ve quien abre el enlace (Juanjo, 24-11-2026)."""
     http = r.get("http_status", 0)
     host = urlparse(r.get("url_final") or r["url"]).netloc.lower()
+    if r.get("descarga"):
+        return "Descarga un programa para instalar: el semáforo solo revisa aplicaciones web."
     if host == "github.com" and not r.get("error") and 0 < http < 400:
-        return "Enlaza al código en GitHub, no a una aplicación que se pueda abrir."
+        return ("Es el código en GitHub, no una aplicación web, y no tiene una versión web publicada: "
+                "el semáforo solo revisa aplicaciones que funcionan en el navegador.")
+    if http == 404:
+        return "La página no existe (error 404)."
     if http >= 400:
         return f"La página no se abre (error {http})."
     return "La página no se abre."
@@ -400,5 +406,7 @@ def resumen(r: dict, hoy: date | None = None) -> dict:
     evaluada = evaluar_app(r, fecha_de({"fecha_auditoria": fecha}, (hoy or date.today()).strftime("%d/%m/%Y")))
     if not evaluada:
         return {"semaforo": "SIN EVALUAR", "motivo": motivo_no_evaluable(r), "fecha": fecha}
-    return {"semaforo": semaforo_resumido(evaluada["escenarios"]),
-            "motivo": " ".join(evaluada["evidencia"])[:300], "fecha": fecha}
+    motivo = " ".join(evaluada["evidencia"])
+    if r.get("version_web"):  # el enlace es un repositorio de código: se ha revisado la web que publica
+        motivo = f"Revisada su versión web ({r['version_web']}). {motivo}"
+    return {"semaforo": semaforo_resumido(evaluada["escenarios"]), "motivo": motivo[:300], "fecha": fecha}

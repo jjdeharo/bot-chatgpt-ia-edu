@@ -123,6 +123,8 @@ def no_respondio(r: dict) -> bool:
     """No se ha podido revisar entera (no contesta, error del servidor, o su contenido no se ha podido leer a
     tiempo). Entonces no se le pone color: se queda el que tenía, o gris si no tenía (Juanjo, 24-11-2026: «el
     color no debe inventarse»). Un 404 o un enlace a código sí es definitivo: «sin evaluar»."""
+    if r.get("descarga"):  # descarga un programa: definitivo, no es que no responda
+        return False
     return (bool(r.get("error")) or r.get("dom_sin_leer", False)
             or r.get("http_status", 0) == 0 or r.get("http_status", 0) >= 500)
 
