@@ -69,7 +69,7 @@ ES = {
         "📱 Añadir un recurso educativo digital al [repositorio de Vibe Coding Educativo](https://vibe-coding-educativo.github.io/app_edu/)"
         ". Envíame su enlace: leo el recurso, preparo su "
         "ficha y te la enseño; si te parece bien, la publico. Tiene que ser gratuito y tener el código "
-        "publicado con una licencia abierta. Con /misrecursos puedes cambiar o quitar los tuyos cuando quieras."),
+        "publicado con una licencia abierta, y no puede seguir a quien lo usa con analítica comercial (semáforo de privacidad en rojo). Con /misrecursos puedes cambiar o quitar los tuyos cuando quieras."),
     "ayuda_menu": 'Todas las opciones están en el menú: el botón «Menú», a la izquierda de donde escribes.',
     "ayuda_final": (
         "Cómo funciono: soy un programa que usa Claude, una IA de Anthropic. Lo que me escribes, los "
@@ -142,6 +142,21 @@ ES = {
                    "ZIP con el código, el enlace a su repositorio de GitHub, o cuéntame en un mensaje qué hace "
                    "y cómo se usa."),
     "no_educativo": "No puedo añadirlo: el repositorio es para recursos educativos, y este no lo parece ({motivo}). Si crees que me equivoco, pulsa «Pedir una revisión» y lo mirará una persona.",
+    "semaforo_rojo": "No puedo añadirlo: tiene el semáforo de privacidad en rojo. {motivo}. El repositorio no admite aplicaciones que siguen a quien las usa con analítica comercial. Para arreglarlo, quita ese servicio de la página o publícala en un sitio sin analítica, como GitHub Pages, y vuelve a mandarme el enlace. Si crees que me equivoco, pulsa «Pedir una revisión» y lo mirará una persona.",
+    "semaforo_mudanza_rojo": "No cambio el enlace: en su nueva dirección, la aplicación tiene el semáforo de privacidad en rojo. {motivo}. El repositorio no admite aplicaciones que siguen a quien las usa con analítica comercial. Quita ese servicio y vuelve a pedirme el cambio.",
+    "semaforo_asunto_rojo": "Tu aplicación «{titulo}» en el Repositorio de Vibe Coding Educativo",
+    "semaforo_aviso_rojo": ("Hola. Soy el Bot de IA Educativa, el programa que gestiona el Repositorio de recursos educativos digitales de Vibe Coding Educativo.\n\n"
+                            "Cada noche reviso la privacidad de las aplicaciones del repositorio con el modelo del anexo I de las orientaciones del INTEF sobre protección de datos. "
+                            "Tu aplicación «{titulo}» tiene ahora el semáforo en rojo. {motivo}. "
+                            "El repositorio no admite aplicaciones que siguen a quien las usa con analítica comercial, así que su ficha se sigue viendo, pero el botón para abrirla queda desactivado.\n\n"
+                            "Para arreglarlo, quita ese servicio de la página o publícala en un sitio sin analítica, como GitHub Pages. Si cambia de dirección, actualiza el enlace con /misrecursos en @IAEducativa_bot. "
+                            "En cuanto deje de estar en rojo, el botón vuelve a funcionar solo y te lo digo.\n\n"
+                            "Si crees que es un error, escribe a la administración del grupo de Vibe Coding Educativo (https://t.me/vceduca).\n\n{repositorio}"),
+    "semaforo_asunto_bien": "Tu aplicación «{titulo}» vuelve a estar activa en el Repositorio de Vibe Coding Educativo",
+    "semaforo_aviso_bien": ("Hola. Soy el Bot de IA Educativa. Tu aplicación «{titulo}» ya no tiene el semáforo de privacidad en rojo, "
+                            "así que el botón para abrirla vuelve a funcionar en el repositorio. Gracias por arreglarlo.\n\n{repositorio}"),
+    "semaforo_a_juanjo_rojo": "Semáforo de privacidad: «{titulo}» ha pasado a rojo. {motivo}. Su enlace queda desactivado en el repositorio. Aviso a su autor: {via}.\n{url}",
+    "semaforo_a_juanjo_bien": "Semáforo de privacidad: «{titulo}» ya no está en rojo. Su enlace vuelve a funcionar. Aviso a su autor: {via}.\n{url}",
     "sin_minimo": "Todavía no lo añado: el repositorio es para recursos que ya se puedan usar en clase, y a este le falta algo ({motivo}). Cuando lo tengas listo, vuelve a mandarme el enlace. Si crees que me equivoco, pulsa «Pedir una revisión» y lo mirará una persona.",
     "b_pedir_revision": "Pedir una revisión",
     "si_no_lo_lee": "Si crees que el enlace se ve bien y el fallo es mío, pulsa «Pedir una revisión» y lo mirará una persona.",
@@ -355,7 +370,7 @@ CA = {
         "📱 Afegir un recurs educatiu digital al [repositori de Vibe Coding Educativo](https://vibe-coding-educativo.github.io/app_edu/)"
         ". Envia'm l'enllaç: llegeixo el recurs, en preparo "
         "la fitxa i te l'ensenyo; si et sembla bé, la publico. Ha de ser gratuït i tenir el codi publicat "
-        "amb una llicència oberta. Amb /misrecursos pots canviar o treure els teus quan vulguis."),
+        "amb una llicència oberta, i no pot seguir qui el fa servir amb analítica comercial (semàfor de privadesa en vermell). Amb /misrecursos pots canviar o treure els teus quan vulguis."),
     "ayuda_menu": "Totes les opcions són al menú: el botó «Menú», a l'esquerra d'on escrius.",
     "ayuda_final": (
         "Com funciono: soc un programa que fa servir Claude, una IA d'Anthropic. El que m'escrius, els "
@@ -425,6 +440,8 @@ CA = {
                    "un ZIP amb el codi, l'enllaç al seu repositori de GitHub, o explica'm en un missatge què fa "
                    "i com es fa servir."),
     "no_educativo": "No el puc afegir: el repositori és per a recursos educatius, i aquest no ho sembla ({motivo}). Si creus que m'equivoco, prem «Demanar una revisió» i el mirarà una persona.",
+    "semaforo_rojo": "No el puc afegir: té el semàfor de privadesa en vermell. {motivo}. El repositori no admet aplicacions que segueixen qui les fa servir amb analítica comercial. Per arreglar-ho, treu aquest servei de la pàgina o publica-la en un lloc sense analítica, com GitHub Pages, i torna'm a enviar l'enllaç. Si creus que m'equivoco, prem «Demanar una revisió» i el mirarà una persona.",
+    "semaforo_mudanza_rojo": "No canvio l'enllaç: a la nova adreça, l'aplicació té el semàfor de privadesa en vermell. {motivo}. El repositori no admet aplicacions que segueixen qui les fa servir amb analítica comercial. Treu aquest servei i torna'm a demanar el canvi.",
     "sin_minimo": "Encara no l'afegeixo: el repositori és per a recursos que ja es puguin fer servir a classe, i a aquest li falta alguna cosa ({motivo}). Quan el tinguis a punt, torna a enviar-me l'enllaç. Si creus que m'equivoco, prem «Demanar una revisió» i el mirarà una persona.",
     "b_pedir_revision": "Demanar una revisió",
     "si_no_lo_lee": "Si creus que l'enllaç es veu bé i l'error és meu, prem «Demanar una revisió» i el mirarà una persona.",
@@ -599,7 +616,7 @@ GL = {
         "📱 Engadir un recurso educativo dixital ao [repositorio de Vibe Coding Educativo](https://vibe-coding-educativo.github.io/app_edu/)"
         ". Envíame a súa ligazón: leo o recurso, preparo a "
         "súa ficha e ensínocha; se che parece ben, publícoa. Ten que ser gratuíto e ter o código "
-        "publicado cunha licenza aberta. Con /misrecursos podes cambiar ou quitar os teus cando queiras."),
+        "publicado cunha licenza aberta, e non pode seguir a quen o usa con analítica comercial (semáforo de privacidade en vermello). Con /misrecursos podes cambiar ou quitar os teus cando queiras."),
     "ayuda_menu": 'Todas as opcións están no menú: o botón «Menú», á esquerda de onde escribes.',
     "ayuda_final": (
         "Como funciono: son un programa que usa Claude, unha IA de Anthropic. O que me escribes, as "
@@ -669,6 +686,8 @@ GL = {
                    "ZIP co código, a ligazón ao seu repositorio de GitHub, ou cóntame nunha mensaxe que fai "
                    "e como se usa."),
     "no_educativo": "Non podo engadilo: o repositorio é para recursos educativos, e este non o parece ({motivo}). Se cres que me equivoco, preme «Pedir unha revisión» e mirarao unha persoa.",
+    "semaforo_rojo": "Non podo engadilo: ten o semáforo de privacidade en vermello. {motivo}. O repositorio non admite aplicacións que seguen a quen as usa con analítica comercial. Para arranxalo, quita ese servizo da páxina ou publícaa nun sitio sen analítica, como GitHub Pages, e volve mandarme a ligazón. Se cres que me equivoco, preme «Pedir unha revisión» e mirarao unha persoa.",
+    "semaforo_mudanza_rojo": "Non cambio a ligazón: no seu novo enderezo, a aplicación ten o semáforo de privacidade en vermello. {motivo}. O repositorio non admite aplicacións que seguen a quen as usa con analítica comercial. Quita ese servizo e volve pedirme o cambio.",
     "sin_minimo": "Aínda non o engado: o repositorio é para recursos que xa se poidan usar na aula, e a este fáltalle algo ({motivo}). Cando o teñas listo, volve mandarme a ligazón. Se cres que me equivoco, preme «Pedir unha revisión» e mirarao unha persoa.",
     "b_pedir_revision": "Pedir unha revisión",
     "si_no_lo_lee": "Se cres que a ligazón se ve ben e o erro é meu, preme «Pedir unha revisión» e mirarao unha persoa.",
@@ -843,7 +862,7 @@ EU = {
         "📱 Baliabide hezitzaile digital bat gehitu [Vibe Coding Educativo taldearen biltegira](https://vibe-coding-educativo.github.io/app_edu/)"
         ". Bidali haren esteka: baliabidea irakurriko dut, "
         "haren fitxa prestatuko dut eta erakutsiko dizut; ados bazaude, argitaratuko dut. Doakoa izan behar "
-        "du, eta kodea lizentzia ireki batekin argitaratuta. /misrecursos komandoarekin zureak aldatu edo "
+        "du, eta kodea lizentzia ireki batekin argitaratuta, eta ezin ditu erabiltzaileak analitika komertzialarekin jarraitu (pribatutasun-semaforoa gorrian). /misrecursos komandoarekin zureak aldatu edo "
         "kendu ditzakezu nahi duzunean."),
     "ayuda_menu": 'Aukera guztiak menuan dituzu: «Menua» botoia, idazten duzun lekuaren ezkerrean.',
     "ayuda_final": (
@@ -914,6 +933,8 @@ EU = {
                    "kodea duen ZIP bat, haren GitHub biltegiaren esteka, edo kontatu mezu batean zer egiten "
                    "duen eta nola erabiltzen den."),
     "no_educativo": "Ezin dut gehitu: biltegia baliabide hezitzaileetarako da, eta hau ez dirudi halakoa ({motivo}). Oker nagoela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
+    "semaforo_rojo": "Ezin dut gehitu: pribatutasun-semaforoa gorrian du. {motivo}. Biltegiak ez du onartzen erabiltzaileak analitika komertzialarekin jarraitzen dituen aplikaziorik. Konpontzeko, kendu zerbitzu hori orritik edo argitaratu analitikarik gabeko leku batean, GitHub Pages bezala, eta bidali berriro esteka. Oker nagoela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
+    "semaforo_mudanza_rojo": "Ez dut esteka aldatzen: helbide berrian, aplikazioak pribatutasun-semaforoa gorrian du. {motivo}. Biltegiak ez du onartzen erabiltzaileak analitika komertzialarekin jarraitzen dituen aplikaziorik. Kendu zerbitzu hori eta eskatu berriro aldaketa.",
     "sin_minimo": "Oraindik ez dut gehitzen: biltegia ikasgelan dagoeneko erabil daitezkeen baliabideetarako da, eta honi zerbait falta zaio ({motivo}). Prest duzunean, bidali berriro esteka. Oker nagoela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
     "b_pedir_revision": "Berrikusteko eskatu",
     "si_no_lo_lee": "Esteka ondo ikusten dela eta akatsa nirea dela uste baduzu, sakatu «Berrikusteko eskatu» eta pertsona batek begiratuko du.",
@@ -1087,7 +1108,7 @@ EN = {
         "📱 Add a digital educational resource to the [Vibe Coding Educativo repository](https://vibe-coding-educativo.github.io/app_edu/)"
         ". Send me its link: I read the resource, prepare "
         "its record and show it to you; if you agree, I publish it. It must be free of charge and have its "
-        "code published under an open licence. With /misrecursos you can change or remove yours whenever you like."),
+        "code published under an open licence, and it must not track its users with commercial analytics (red privacy traffic light). With /misrecursos you can change or remove yours whenever you like."),
     "ayuda_menu": 'All the options are in the menu: the «Menu» button, to the left of where you type.',
     "ayuda_final": (
         "How I work: I'm a program that uses Claude, an AI by Anthropic. What you write to me, the group "
@@ -1157,6 +1178,8 @@ EN = {
                    "with the code, the link to its GitHub repository, or tell me in a message what it does "
                    "and how it is used."),
     "no_educativo": 'I can\'t add it: the repository is for educational resources, and this doesn\'t look like one ({motivo}). If you think I\'m wrong, press "Request a review" and a person will look at it.',
+    "semaforo_rojo": "I can't add it: its privacy traffic light is red. {motivo}. The repository doesn't accept apps that track their users with commercial analytics. To fix it, remove that service from the page or publish it somewhere without analytics, such as GitHub Pages, and send me the link again. If you think I'm wrong, tap \"Request a review\" and a person will look at it.",
+    "semaforo_mudanza_rojo": "I'm not changing the link: at its new address, the app's privacy traffic light is red. {motivo}. The repository doesn't accept apps that track their users with commercial analytics. Remove that service and ask me for the change again.",
     "sin_minimo": "I'm not adding it yet: the repository is for resources that can already be used in class, and this one is missing something ({motivo}). When it's ready, send me the link again. If you think I'm wrong, press \"Request a review\" and a person will look at it.",
     "b_pedir_revision": "Request a review",
     "si_no_lo_lee": "If you think the link works and the fault is mine, tap «Request a review» and a person will look at it.",

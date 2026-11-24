@@ -57,6 +57,36 @@ services:
       timeout: 10s
       start_period: 30s
 
+  # El semáforo de privacidad del repositorio (ADR 0053): con la imagen del boletín, que trae Chromium. Evalúa un
+  # enlace cuando lo pide el bot (puerto 8002, solo en esta red) y cada noche, desde las 3:30, todo el repositorio:
+  # escribe el color en la hoja y avisa a los autores de lo que pasa a rojo. Si se para, el bot publica las fichas
+  # sin color y la pasada siguiente lo pone.
+  semaforo:
+    image: boletin-semanal:local
+    container_name: bot-semaforo
+    restart: unless-stopped
+    user: "1000:10"
+    command: ["/opt/pw/bin/python", "/proyecto/scripts/semaforo.py", "servir"]
+    cpus: 1.5
+    mem_limit: 2g
+    environment:
+      TZ: Europe/Madrid
+      HOME: /tmp
+      PLAYWRIGHT_BROWSERS_PATH: /opt/playwright
+      CATALOGO_CRED: /credenciales/catalogo-vce.json
+      BOT_CRED: /credenciales/bot-chatgpt-ia-edu.json
+      JUANJO: "218499880"
+      # «autores»: avisa a los autores; «juanjo»: se los manda solo a Juanjo, para verlos; vacío: solo el registro.
+      AVISOS_SEMAFORO: "juanjo"
+    volumes:
+      - ./repo:/proyecto
+      - ./credenciales:/credenciales:ro
+    healthcheck:
+      test: ["CMD", "/opt/pw/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/salud', timeout=5)"]
+      interval: 60s
+      timeout: 10s
+      start_period: 30s
+
   bot:
     image: bot-chatgpt-ia-edu:local
     container_name: bot-chatgpt-ia-edu
@@ -66,6 +96,7 @@ services:
     environment: &entorno
       SIGNIFICADO_URL: http://significado:8000
       VOZ_URL: http://voz:8001
+      SEMAFORO_URL: http://semaforo:8002
       # Abierto a todo miembro del grupo desde el 24-10-2026 (antes, solo Juanjo).
       ABIERTO: "1"
       JUANJO: "218499880"  # la cuenta de Juanjo (avisos, /estado); fuera del código público (ADR 0020)

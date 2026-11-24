@@ -117,6 +117,8 @@ def citado_trozo(texto: str, entidad: dict) -> str:
     return b[2 * entidad["offset"]:2 * (entidad["offset"] + entidad["length"])].decode("utf-16-le", "ignore")
 
 
+# El semáforo de privacidad (scripts/semaforo.py, ADR 0053): sin él, la ficha sale como «pendiente» y la noche la evalúa.
+SEMAFORO_URL = os.environ.get("SEMAFORO_URL", "").rstrip("/")
 VOZ_URL = os.environ.get("VOZ_URL", "").rstrip("/")  # el servicio de voz (scripts/voz.py, ADR 0022); sin él, no hay audios
 VOZ_MAX_S = int(os.environ.get("VOZ_MAX_S", "180"))
 NOTA_AUDIO = "[Transcrito de una nota de voz: puede llevar erratas]"
@@ -891,6 +893,23 @@ class Bot:
         if self.tx(uid, "traduccion"):
             partes.append(html.escape(self.tx(uid, "traduccion"), quote=False))
         return f"<i>{' '.join(partes)}</i>"
+
+    def semaforo_de(self, chat: int, url: str) -> dict | None:
+        """El semáforo de privacidad de un enlace, del servicio del NAS (ADR 0053); None si no responde."""
+        if not SEMAFORO_URL:
+            return None
+        hecho = self.escribiendo(chat)
+        try:
+            pet = urllib.request.Request(f"{SEMAFORO_URL}/evaluar", json.dumps({"url": url}).encode(),
+                                         {"Content-Type": "application/json"})
+            with urllib.request.urlopen(pet, timeout=120) as r:
+                sem = json.load(r)
+            return sem if sem.get("semaforo") else None
+        except Exception as error:  # noqa: BLE001 — sin semáforo, la ficha sale como pendiente
+            registrar(f"el semáforo de privacidad no responde: {type(error).__name__}: {error}")
+            return None
+        finally:
+            hecho.set()
 
     def en_hilo(self, funcion, *args) -> None:
         """Lo que tarda (leer un documento, preparar una ficha) va aparte, para no parar las búsquedas."""
@@ -2415,6 +2434,22 @@ class Bot:
             if f["licencia"]:
                 return self.enviar(chat, self.tx(uid, "licencia_cerrada", licencia=f["licencia"]))
             return self.enviar(chat, self.tx(uid, "sin_licencia"))
+        # El semáforo de privacidad: el rojo (analítica comercial) no entra, salvo revisión manual (Juanjo,
+        # 24-11-2026; ADR 0053). Si el servicio no responde, la ficha sale sin color y la noche lo pone.
+        sem = self.semaforo_de(chat, url)
+        if sem and sem["semaforo"] == "ROJO":
+            if catalogo.leer_revisiones().get(catalogo.normalizar(url), {}).get("estado") != "aprobado":
+                self.rechazados[uid] = {"ficha": {**f, "motivo": f"semáforo de privacidad en rojo: {sem['motivo']}"},
+                                        "contenido": contenido, "nota": nota, "momento": time.time(),
+                                        "de": {k: de.get(k) for k in ("first_name", "last_name", "username")}}
+                registrar("recurso rechazado: semáforo de privacidad en rojo")
+                return self.tg("sendMessage", chat_id=chat, link_preview_options={"is_disabled": True},
+                               text=self.tx(uid, "semaforo_rojo", motivo=sem["motivo"].rstrip(".")),
+                               reply_markup={"inline_keyboard": [[{"text": self.tx(uid, "b_pedir_revision"),
+                                                                   "callback_data": "rr"}]]})
+            sem["motivo"] = ("Admitida tras revisión manual. " + sem["motivo"])[:300]
+        if sem:
+            f.update(catalogo.semaforo_en_ficha(sem))
         sugerida = self.sugerir_licencia_visible(chat, uid, f["licencia"], f.pop("licencia_solo_repositorio", False),
                                                  contenido)
         f["licencia"] = catalogo.componer_licencias(f["licencia"], f.pop("licencia_contenidos", ""))
@@ -2660,6 +2695,14 @@ class Bot:
                     self.apuntar(usd)
                     registrar("cambio de enlace no guardado: el recurso nuevo no entra")
                     return self.enviar(chat, self.tx(uid, "mudanza_no_entra", motivo=entra["motivo"].rstrip(".")))
+                # Y que en su sitio nuevo no esté en rojo (ADR 0053); si lo está, el enlace no se cambia.
+                sem = self.semaforo_de(chat, url)
+                if sem and sem["semaforo"] == "ROJO":
+                    self.apuntar(usd)
+                    registrar("cambio de enlace no guardado: semáforo de privacidad en rojo")
+                    return self.enviar(chat, self.tx(uid, "semaforo_mudanza_rojo", motivo=sem["motivo"].rstrip(".")))
+                if sem:
+                    nueva.update(catalogo.semaforo_en_ficha(sem))
         except Exception as error:  # noqa: BLE001
             registrar(f"error al cambiar una ficha: {type(error).__name__}: {error}")
             return self.enviar(chat, self.tx(uid, "error_recurso"))

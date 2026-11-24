@@ -75,7 +75,18 @@ LISTAS = {
 }
 ROTULOS = {"titulo": "Título", "autor": "Autor/a", "url": "Enlace", "descripcion": "Descripción",
            "tipo": "Tipo de recurso", "niveles": "Niveles", "areas": "Áreas", "idiomas": "Idiomas",
-           "palabras_clave": "Palabras clave", "licencia": "Licencia"}
+           "palabras_clave": "Palabras clave", "licencia": "Licencia", "semaforo": "Privacidad"}
+# El semáforo de privacidad (ADR 0053): lo pone el servicio del NAS; solo va a la hoja si la ficha lo trae, así
+# que un cambio que no lo toca conserva el que había.
+COLUMNAS_SEMAFORO = {"semaforo": "Semáforo de privacidad", "motivo_semaforo": "Motivo del semáforo",
+                     "fecha_semaforo": "Fecha del semáforo"}
+NOMBRE_COLOR = {"VERDE": "Verde", "AMARILLO": "Amarillo", "ROJO": "Rojo", "VERDE/AMARILLO": "Verde o amarillo",
+                "SIN EVALUAR": "Sin evaluar"}
+
+
+def semaforo_en_ficha(sem: dict) -> dict:
+    return {"semaforo": sem.get("semaforo", ""), "motivo_semaforo": sem.get("motivo", ""),
+            "fecha_semaforo": sem.get("fecha", "")}
 
 
 def _lista(clave: str, texto: str) -> dict:
@@ -601,11 +612,18 @@ def a_html(f: dict) -> str:
     for k in ("autor", "url", "descripcion", "tipo", "niveles", "areas", "idiomas", "palabras_clave", "licencia"):
         v = ", ".join(f[k]) if isinstance(f.get(k), list) else f.get(k, "")
         lineas.append(f"<b>{ROTULOS[k]}:</b> {html.escape(v or '—', quote=False)}")
+    if f.get("semaforo"):
+        color = NOMBRE_COLOR.get(f["semaforo"], f["semaforo"])
+        lineas.append(f"<b>{ROTULOS['semaforo']}:</b> {html.escape(color, quote=False)}. "
+                      f"{html.escape(f.get('motivo_semaforo', ''), quote=False)}")
     return "\n".join(lineas)
 
 
 def a_fila(f: dict) -> dict:
-    return {COLUMNAS[k]: ", ".join(f[k]) if isinstance(f.get(k), list) else f.get(k, "") for k in COLUMNAS}
+    fila = {COLUMNAS[k]: ", ".join(f[k]) if isinstance(f.get(k), list) else f.get(k, "") for k in COLUMNAS}
+    if f.get("semaforo"):
+        fila.update({c: f.get(k, "") for k, c in COLUMNAS_SEMAFORO.items()})
+    return fila
 
 
 def de_fila(fila: dict) -> dict:
