@@ -228,10 +228,14 @@ async def auditar_una(sem: asyncio.Semaphore, browser, app: dict) -> dict:
                 if url_r.startswith(("data:", "blob:")):
                     return await route.continue_()
                 host = urlparse(url_r).hostname or ""
-                if await asyncio.to_thread(host_publico, host):
-                    return await route.continue_()
-                res.setdefault("bloqueadas", []).append(host)
-                await route.abort()
+                if not await asyncio.to_thread(host_publico, host):
+                    res.setdefault("bloqueadas", []).append(host)
+                    return await route.abort()
+                # Imágenes, vídeos y tipografías no cambian el color: basta saber a qué servidor se piden (la
+                # petición ya consta), sin descargarlas. Así la pasada baja mucho lo que gasta de la fibra.
+                if route.request.resource_type in ("image", "media", "font"):
+                    return await route.abort()
+                await route.continue_()
 
             await context.route("**/*", guardia)
             page = await context.new_page()

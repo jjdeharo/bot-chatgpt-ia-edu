@@ -109,7 +109,7 @@ def admitida(url: str) -> bool:
 
 def evaluar(apps: list[dict], concurrencia: int = 3) -> list[dict]:
     with CERROJO:
-        return asyncio.run(auditar(apps, concurrencia, avisar=registrar))
+        return asyncio.run(auditar(apps, concurrencia, avisar=lambda _: None))
 
 
 def color(r: dict) -> dict:
@@ -117,6 +117,10 @@ def color(r: dict) -> dict:
     if x["semaforo"] == "ROJO" and admitida(r["url"]):
         x["motivo"] = (ADMITIDA + x["motivo"])[:300]
     return x
+
+
+def no_respondio(r: dict) -> bool:
+    return bool(r.get("error")) or r.get("http_status", 0) == 0 or r.get("http_status", 0) >= 500
 
 
 def es_roja(x: dict) -> bool:
@@ -173,8 +177,9 @@ def dueno_y_correo(url: str, filas_api: list[dict] | None) -> tuple[int | None, 
     uid = d.get("recursos", {}).get(n)
     fila = next((f for f in filas_api or [] if normalizar_url(f.get("Enlace (URL) a la aplicación", "")) == n), {})
     correo = str(fila.get("Dirección de correo electrónico", "")).strip().lower()
-    if uid is None and correo:
-        uid = d.get("correos", {}).get(correo)
+    if uid is None and correo:  # correos: {cuenta de Telegram: [correos que ha ligado con su código]}
+        uid = next((u for u, lista in d.get("correos", {}).items()
+                    if correo in [str(x).strip().lower() for x in lista]), None)
     return (int(uid) if uid else None), bool(correo)
 
 
@@ -208,7 +213,18 @@ def pasada(sin_hoja: bool = False) -> dict:
     if len(apps) < 100:  # una hoja vacía o a medias no puede borrar colores ni mandar avisos
         raise RuntimeError(f"la hoja solo trae {len(apps)} aplicaciones")
     registrar(f"pasada: {len(apps)} aplicaciones")
-    vistas = evaluar(apps, 3)
+    # A trozos: entre uno y otro se suelta el navegador, y una evaluación que pide el bot no espera a la pasada entera.
+    vistas = []
+    for i in range(0, len(apps), 12):
+        vistas += evaluar(apps[i:i + 12], 3)
+        if (i // 12) % 4 == 3:
+            registrar(f"  pasada: {len(vistas)}/{len(apps)}")
+    # Las que no han respondido (no un error 404: eso es que no existe), otra vez al final, de una en una.
+    otra_vez = [k for k, r in enumerate(vistas) if no_respondio(r)]
+    if otra_vez:
+        for k, r in zip(otra_vez, evaluar([apps[k] for k in otra_vez], 1)):
+            vistas[k] = r
+        registrar(f"  segundo intento: {len(otra_vez)}; siguen sin responder {sum(no_respondio(vistas[k]) for k in otra_vez)}")
     cache = {normalizar_url(r["url"]): r for r in vistas}
     escribir(AUDITORIA, cache)
 
@@ -217,6 +233,8 @@ def pasada(sin_hoja: bool = False) -> dict:
     for app, r in zip(apps, vistas):
         x = color(r)
         actual = tuple((app["hoja"].get(c) or "").strip() for c in COLS)
+        if no_respondio(r) and actual[0] and actual[0] != "SIN EVALUAR":
+            continue  # una mala noche de su servidor no le quita el color que tenía; mañana se mira otra vez
         if actual != (x["semaforo"], x["motivo"], x["fecha"]):
             filas.append({"url": app["url"], **x})
         if actual[0] and actual[0] != x["semaforo"]:
