@@ -68,6 +68,21 @@ class Antispam(unittest.TestCase):
         """muqin (eXeLearning, 30-10-2026): tres bots seguidos, sin chino."""
         self.assertTrue(self.a.revisar(mensaje(333, "@xcb1cv5fdbot  @dsfsfds56bot  @cxvxcrfdsfbot", "muqin")))
 
+    def test_tanteo_dd(self):
+        """«DD» de Hgd Gg y Bn Ggh (vceduca, 24-11-2026) y «dd» de Ali's Nn (eXeLearning, 25-11-2026):
+        nombres latinos sin sentido que tantean si pueden escribir antes del anuncio."""
+        self.assertTrue(self.a.revisar(mensaje(333, "DD", "Hgd Gg")))
+        self.assertTrue(self.a.revisar(mensaje(334, " dd ", "Ali's Nn")))
+        self.assertTrue(self.a.revisar(mensaje(335, "ddd", "Bn Ggh")))
+        self.assertIn("banChatMember", self.tg.metodos())
+
+    def test_mensajes_cortos_corrientes_no(self):
+        """Primeros mensajes cortos legítimos de la historia de los grupos, y «DD» de quien ya escribía."""
+        for n, texto in enumerate(["Ok", "Sí", "hi", "Yo", "/", "+1", "👍", "Dd y más", "dD?"]):
+            self.assertFalse(self.a.revisar(mensaje(400 + n, texto)), texto)
+        self.assertFalse(self.a.revisar(mensaje(VETERANO, "DD")))
+        self.assertNotIn("banChatMember", self.tg.metodos())
+
     def test_un_bot_solo_no(self):
         """«/donate@AntiUserbotsBot» o «@askplexbot» de alguien nuevo: legítimos en la historia de los grupos."""
         self.assertFalse(self.a.revisar(mensaje(333, "/donate@AntiUserbotsBot")))

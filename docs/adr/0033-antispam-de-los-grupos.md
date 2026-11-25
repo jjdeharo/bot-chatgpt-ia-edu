@@ -1,6 +1,6 @@
 # 33. Antispam de los grupos, sin IA
 
-Fecha: 2026-11-07 · Estado: aceptado
+Fecha: 2026-11-07 · Estado: aceptado · Ampliado el 2026-11-25 (el tanteo «DD»)
 
 ## Contexto
 
@@ -24,8 +24,9 @@ tenía), sin cambiar el resto de sus permisos.
 
 - **Mensajes.** Se quitan los de alguien nuevo (nunca había escrito en el grupo, según
   `datos/<grupo>/mensajes.jsonl`, y el bot le ha visto como mucho 3 mensajes) si el texto o su
-  nombre van en chino, japonés, coreano o cirílico, o si menciona dos bots o más. También una ráfaga
-  de más de 5 mensajes en un minuto de alguien que nunca había escrito.
+  nombre van en chino, japonés, coreano o cirílico, si menciona dos bots o más, o si es solo la letra
+  d («DD», «dd»). También una ráfaga de más de 5 mensajes en un minuto de alguien que nunca había
+  escrito.
 - **Entradas.** Quien entra con el nombre en esas escrituras sale en el momento, aunque no haya
   escrito, salvo que ya hubiera escrito antes en el grupo. Es lo que hacía Juanjo a mano: «los que
   tienen nombres en chino o cirílico los borro directamente y los marco como spam, aunque no hayan
@@ -66,6 +67,15 @@ tenía), sin cambiar el resto de sus permisos.
 - Del spam de la semana que tenía texto, la regla quita todo el que va en chino o con varios bots;
   no quita la venta de suscripciones de «Red de Ingenieros» (nombre con letras decorativas
   latinas, texto en castellano) ni, por el texto, las flechas, que caen por la ráfaga.
+- **El tanteo «DD»** (añadido el 25-11-2026, aprobado por Juanjo ese día). Del 23 al 25-11-2026, una
+  red de cuentas entró en Vibe Coding Educativo y eXeLearning, pasó la verificación de
+  AntiUserbotsBot y, horas después, escribió solo «DD» o «dd», a veces dos veces, para comprobar si ya
+  podía escribir antes del anuncio. Las que tenían el nombre en chino («水/果/機/📱專/賣/…») las quitó
+  el bot por el nombre; las de nombre latino sin sentido, sin foto ni usuario («Hgd Gg», «Bn Ggh»,
+  «Tsvji Gsdbo», «Ali's Nn»), las quitó Juanjo a mano (registro de administradores de esos días).
+  En los cuatro primeros mensajes de cada autor de toda la historia de los grupos no hay ningún
+  mensaje hecho solo de la letra d. Los mensajes cortos legítimos sí abundan («Ok», «Sí», «hi»,
+  «Yo», «/», emojis), por eso la regla no se amplía a cualquier texto corto.
 - `pruebas/test_antispam.py`, con esos casos.
 
 ## Riesgos y limitaciones
@@ -74,7 +84,8 @@ tenía), sin cambiar el resto de sus permisos.
   pasado en la historia de los grupos.
 - Si falta `mensajes.jsonl`, el bot no actúa: sin saber quién ha escrito, no puede saber quién es
   nuevo.
-- Lo que no sea chino, japonés, coreano, cirílico, varios bots o una ráfaga sigue llegando.
+- Lo que no sea chino, japonés, coreano, cirílico, varios bots, el tanteo «DD» o una ráfaga sigue
+  llegando. Si la red cambia de tanteo, hará falta otra regla.
 
 ## Validación
 

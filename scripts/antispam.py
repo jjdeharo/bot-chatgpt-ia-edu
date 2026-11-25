@@ -8,7 +8,8 @@ EduMedia-IAG; Karla bot en eXeLearning) borra el mensaje y expulsa a quien lo es
 
 - es alguien nuevo: nunca había escrito en el grupo (no está en datos/<grupo>/mensajes.jsonl) y el
   bot le ha visto como mucho NUEVO_MAX mensajes desde que arrancó, y
-- el mensaje (o su nombre) va en chino, japonés, coreano o cirílico, o menciona varios bots;
+- el mensaje (o su nombre) va en chino, japonés, coreano o cirílico, o menciona varios bots,
+  o es solo la letra d («DD», «dd»): el mensaje de tanteo de una red de cuentas de spam (ADR 0033);
   o manda más de RAFAGA_N mensajes en RAFAGA_S segundos.
 
 Además, quien entra en el grupo con el nombre en esas escrituras sale en el momento, aunque no haya
@@ -35,6 +36,8 @@ RAFAGA_N, RAFAGA_S = 5, 60
 RECARGA_S = 3600       # cada cuánto se vuelve a leer quién ha escrito alguna vez en cada grupo
 # Chino, japonés y coreano (también los signos de puntuación de esas lenguas) y cirílico
 ESCRITURA = re.compile(r"[Ѐ-ӿ　-ヿ㐀-䶿一-鿿가-힯＀-￯]")
+# «DD» o «dd»: con lo que tantea una red de cuentas de spam si ya puede escribir (23 y 24-11-2026)
+TANTEO = re.compile(r"[dD]+")
 OTRO_BOT = re.compile(r"(?:@|t(?:elegram)?\.me/)[A-Za-z0-9_]{3,}bot\b", re.I)
 
 
@@ -43,6 +46,8 @@ def motivo(msg: dict) -> str | None:
     texto = (msg.get("text") or msg.get("caption") or "")
     de = msg.get("from") or {}
     nombre = " ".join(x for x in (de.get("first_name"), de.get("last_name")) if x)
+    if TANTEO.fullmatch(texto.strip()):
+        return "escribe solo «DD», el tanteo de las cuentas de spam"
     if len(ESCRITURA.findall(texto)) >= 2:
         return "escribe en chino, japonés, coreano o cirílico"
     if len(ESCRITURA.findall(nombre)) >= 2:

@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.26.1 — 2026-11-25
+
+- El antispam quita también el mensaje de tanteo de una red de cuentas de spam: alguien que nunca había escrito en el grupo y manda solo «DD» o «dd». Esas cuentas, con nombres latinos sin sentido, se colaban porque la regla solo miraba el chino, el cirílico, los bots y las ráfagas (ADR 0033).
+
 ## 1.26.0 — 2026-11-21
 
 - Los dos bots recuerdan qué hicieron en cada respuesta anterior: cuántas búsquedas hicieron y de qué. Antes, del historial solo veían el texto, y el Bot de IA Educativa llegó a corregirse en falso («no la había comprobado») y a decir que había buscado cuando no (ADR 0052).
