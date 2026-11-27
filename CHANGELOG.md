@@ -2,6 +2,10 @@
 
 Las versiones siguen a los bots en marcha, no a los datos. La etiqueta de git y `bot.VERSION` llevan el mismo número.
 
+## 1.27.0 — 2026-11-27
+
+- El aviso del diario sale en dos mensajes: primero la portada, sin sonido, y después el texto, que ocupa ya todo el ancho. En un solo mensaje, Telegram estrechaba el texto al ancho de la portada. Solo suena el segundo (ADR 0054).
+
 ## 1.26.1 — 2026-11-25
 
 - El antispam quita también el mensaje de tanteo de una red de cuentas de spam: alguien que nunca había escrito en el grupo y manda solo «DD» o «dd». Esas cuentas, con nombres latinos sin sentido, se colaban porque la regla solo miraba el chino, el cirílico, los bots y las ráfagas (ADR 0033).

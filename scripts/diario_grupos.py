@@ -17,8 +17,13 @@ a la viñeta), esa es la imagen grande del aviso, la misma en los tres grupos. C
 pocos minutos antes, el bot comprueba que ya está; si no, espera hasta ESPERA_IMAGEN y después publica con la
 de la página del grupo, como antes.
 
+Desde el 27-11-2026 (ADR 0054), el aviso sale en dos mensajes: primero la portada, como vista previa grande del
+enlace de su grupo y sin sonido, y después el texto, sin vista previa. En un solo mensaje, Telegram estrechaba el texto
+al ancho de la portada, que es alta. Solo suena el segundo, así que cada miembro recibe un aviso, no dos.
+
 Lo publicado se apunta grupo a grupo en datos/diario/<fecha>.publicado.json, para no repetir
-un grupo si otro falló. Si el bot estaba parado, publica dentro de la VENTANA; después, ese día
+un grupo si otro falló, con el número de cada mensaje enviado: si el texto falla tras la portada, en la vuelta
+siguiente sale solo lo que faltaba, y un aviso ya enviado se corrige con editMessageText sobre esos números. Si el bot estaba parado, publica dentro de la VENTANA; después, ese día
 se queda sin aviso (mejor nada que un «buenos días» a media tarde)."""
 import html
 import json
@@ -50,11 +55,12 @@ def imagen_disponible(url: str) -> bool:
         return False
 
 
-def mensaje(datos: dict, aviso, con_imagen: bool = True) -> dict | None:
-    """Los parámetros de sendMessage para un aviso, o None si no hay nada que publicar. Con `con_imagen`, la vista
-    previa es la portada del número («imagen»), si el archivo la trae; si no, la página del enlace."""
+def mensaje(datos: dict, aviso, con_imagen: bool = True) -> list[dict] | None:
+    """Los mensajes de un aviso, en orden (los parámetros de cada sendMessage), o None si no hay nada que publicar.
+    Primero la portada: el enlace de su grupo con la vista previa grande, sin sonido; con `con_imagen`, la vista previa
+    es la portada del número («imagen»), si el archivo la trae, y si no, la página del enlace. Después el texto."""
     if isinstance(aviso, str):   # el formato anterior: texto hecho, con su enlace al final
-        return {"text": aviso} if aviso.strip() else None
+        return [{"text": aviso}] if aviso.strip() else None
     if not isinstance(aviso, dict):
         return None
     puntos = [p.strip() for p in aviso.get("puntos") or [] if isinstance(p, str) and p.strip()]
@@ -72,8 +78,10 @@ def mensaje(datos: dict, aviso, con_imagen: bool = True) -> dict | None:
         lineas += ["", e(saludo)]
     lineas += [""] + [f"• {e(p)}" for p in puntos] + ["", f"👉 {e(url)}"]
     imagen = (datos.get("imagen") or "").strip() if con_imagen else ""
-    return {"text": "\n".join(lineas).strip(), "parse_mode": "HTML",
-            "link_preview_options": {"url": imagen or url, "prefer_large_media": True, "show_above_text": True}}
+    portada = {"text": url, "disable_notification": True,
+               "link_preview_options": {"url": imagen or url, "prefer_large_media": True, "show_above_text": True}}
+    texto = {"text": "\n".join(lineas).strip(), "parse_mode": "HTML", "link_preview_options": {"is_disabled": True}}
+    return [portada, texto]
 
 
 def leer(dia: date, carpeta: Path = CARPETA) -> dict:
@@ -84,8 +92,8 @@ def leer(dia: date, carpeta: Path = CARPETA) -> dict:
     return datos if datos.get("fecha") == dia.isoformat() else {}
 
 
-def avisos(dia: date, carpeta: Path = CARPETA, con_imagen: bool = True) -> dict[str, dict]:
-    """Los avisos del día, ya montados: grupo → parámetros de sendMessage."""
+def avisos(dia: date, carpeta: Path = CARPETA, con_imagen: bool = True) -> dict[str, list[dict]]:
+    """Los avisos del día, ya montados: grupo → los parámetros de cada sendMessage, en orden."""
     try:
         datos = json.loads((carpeta / f"{dia.isoformat()}.json").read_text())
     except (OSError, ValueError):
@@ -96,15 +104,24 @@ def avisos(dia: date, carpeta: Path = CARPETA, con_imagen: bool = True) -> dict[
     return {g: m for g, m in montados.items() if m}
 
 
-def publicados(dia: date, carpeta: Path = CARPETA) -> set[str]:
+def _estado(dia: date, carpeta: Path) -> dict:
     try:
-        return set(json.loads((carpeta / f"{dia.isoformat()}.publicado.json").read_text()).get("grupos", []))
+        return json.loads((carpeta / f"{dia.isoformat()}.publicado.json").read_text())
     except (OSError, ValueError):
-        return set()
+        return {}
+
+
+def publicados(dia: date, carpeta: Path = CARPETA) -> set[str]:
+    return set(_estado(dia, carpeta).get("grupos", []))
+
+
+def enviados(dia: date, grupo: str, carpeta: Path = CARPETA) -> list[int]:
+    """Los números de los mensajes ya enviados de un aviso, en orden."""
+    return list((_estado(dia, carpeta).get("mensajes") or {}).get(grupo, []))
 
 
 def pendientes(ahora: datetime | None = None, activos=None, carpeta: Path = CARPETA,
-               disponible=imagen_disponible) -> tuple[date, dict[str, dict]]:
+               disponible=imagen_disponible) -> tuple[date, dict[str, list[dict]]]:
     """El día y los avisos que toca publicar ahora (vacío si no toca, o si aún se espera a la portada)."""
     dia, local = hoy_local(ahora)
     salida = datetime.combine(dia, HORA, tzinfo=MADRID)
@@ -120,22 +137,39 @@ def pendientes(ahora: datetime | None = None, activos=None, carpeta: Path = CARP
     return dia, lista
 
 
-def apuntar(dia: date, grupo: str, carpeta: Path = CARPETA) -> None:
-    hechos = publicados(dia, carpeta) | {grupo}
+def _guardar(dia: date, estado: dict, carpeta: Path) -> None:
     carpeta.mkdir(parents=True, exist_ok=True)
-    (carpeta / f"{dia.isoformat()}.publicado.json").write_text(json.dumps(
-        {"grupos": sorted(hechos), "momento": datetime.now(timezone.utc).isoformat()}))
+    estado["momento"] = datetime.now(timezone.utc).isoformat()
+    (carpeta / f"{dia.isoformat()}.publicado.json").write_text(json.dumps(estado))
 
 
-def publicar(tg, dia: date, lista: dict[str, dict], carpeta: Path = CARPETA) -> list[str]:
-    """Publica cada aviso en el tema General de su grupo y devuelve los grupos donde ha salido."""
+def apuntar(dia: date, grupo: str, carpeta: Path = CARPETA) -> None:
+    estado = _estado(dia, carpeta)
+    estado["grupos"] = sorted(set(estado.get("grupos", [])) | {grupo})
+    _guardar(dia, estado, carpeta)
+
+
+def apuntar_mensaje(dia: date, grupo: str, mensaje_id, carpeta: Path = CARPETA) -> None:
+    estado = _estado(dia, carpeta)
+    estado.setdefault("mensajes", {}).setdefault(grupo, []).append(mensaje_id)
+    _guardar(dia, estado, carpeta)
+
+
+def publicar(tg, dia: date, lista: dict[str, list[dict]], carpeta: Path = CARPETA) -> list[str]:
+    """Publica cada aviso en el tema General de su grupo, mensaje a mensaje, y devuelve los grupos donde ha salido
+    entero. Si uno falla, el resto de ese grupo espera a la vuelta siguiente, que sigue por el que faltaba."""
     import grupos
     hechos = []
-    for clave, partes in lista.items():
+    for clave, mensajes in lista.items():
         g = grupos.TODOS.get(clave)
         if not g:
             continue
-        if tg("sendMessage", chat_id=g.id, **partes) is not None:
+        for partes in mensajes[len(enviados(dia, clave, carpeta)):]:
+            r = tg("sendMessage", chat_id=g.id, **partes)
+            if r is None:
+                break
+            apuntar_mensaje(dia, clave, r.get("message_id") if isinstance(r, dict) else None, carpeta)
+        else:
             apuntar(dia, clave, carpeta)
             hechos.append(clave)
     return hechos

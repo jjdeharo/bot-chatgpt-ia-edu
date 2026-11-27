@@ -1,6 +1,6 @@
 # 37. La portada como imagen del aviso del diario
 
-Fecha: 2026-11-14 · Estado: aceptado
+Fecha: 2026-11-14 · Estado: aceptado; el «un solo mensaje», sustituido por el ADR 0054 (27-11-2026)
 
 ## Contexto
 
@@ -19,7 +19,8 @@ habíamos quedado. Arreglalo y si se puede edita los mensajes para que se vea».
   (`portadas/<fecha>-es.jpg` del sitio). El bot la pone como vista previa del mensaje: grande y encima del
   texto (`prefer_large_media`, `show_above_text`). Es la misma en los tres grupos; el enlace del final sigue
   siendo el de la página de cada grupo.
-- **Un solo mensaje**, no dos. Con la imagen como vista previa, el texto ocupa todo el ancho del globo y no
+- **Un solo mensaje**, no dos. *(Sustituido por el ADR 0054: el supuesto era falso; Telegram también estrecha el
+  texto al ancho de la vista previa.)* Con la imagen como vista previa, el texto ocupa todo el ancho del globo y no
   se estrecha, que era el motivo para partirlo; y un mensaje así se puede editar, cosa que no se puede hacer
   con uno de foto si después cambia la imagen.
 - La portada se sube a la web pocos minutos antes de las 7:00. El bot comprueba que ya se descarga; si no,

@@ -54,5 +54,7 @@
 | [0050](0050-revision-manual-de-la-biblioteca.md) | Revisión manual de lo que la Biblioteca digital no acepta | aceptado |
 | [0051](0051-gorro-de-navidad.md) | El gorro de Papá Noel en las vacaciones de Navidad | aceptado |
 | [0052](0052-lo-que-el-bot-recuerda-de-lo-que-hizo.md) | Lo que el bot recuerda de lo que hizo, y rehacer el anuncio de «¡Comparte tu App!» | aceptado |
+| [0053](0053-semaforo-de-privacidad-del-repositorio.md) | Semáforo de privacidad del repositorio | aceptado |
+| [0054](0054-el-aviso-del-diario-en-dos-mensajes.md) | El aviso del diario en dos mensajes | aceptado |
 
 Para una nueva: `nuevo-adr "Título de la decisión"` desde la raíz del repositorio.

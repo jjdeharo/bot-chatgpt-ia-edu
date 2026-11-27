@@ -48,12 +48,15 @@ class Diario(unittest.TestCase):
                        "vce": {"saludo": "Buenos días.", "puntos": []}}}))
         _, lista = d.pendientes(datetime(2026, 11, 5, 6, 0, tzinfo=timezone.utc), carpeta=self.tmp)
         self.assertEqual(set(lista), {"chatgpt"})   # sin puntos no hay aviso
-        m = lista["chatgpt"]
+        portada, m = lista["chatgpt"]
         self.assertEqual(m["parse_mode"], "HTML")
         self.assertTrue(m["text"].startswith("<b>Diario de IA Educativa · Núm. 4</b>\nJueves, 5 de noviembre\n\nBuenos días."))
         self.assertIn("• Uno &lt;con&gt; &amp; signos\n• Dos\n\n👉 https://diarioiaeducativa.github.io/?n=4", m["text"])
-        self.assertEqual(m["link_preview_options"], {"url": "https://diarioiaeducativa.github.io/?n=4",
-                                                     "prefer_large_media": True, "show_above_text": True})
+        self.assertEqual(m["link_preview_options"], {"is_disabled": True})   # el texto, sin vista previa
+        self.assertNotIn("disable_notification", m)                          # y es el que suena
+        self.assertEqual(portada, {"text": "https://diarioiaeducativa.github.io/?n=4", "disable_notification": True,
+                                   "link_preview_options": {"url": "https://diarioiaeducativa.github.io/?n=4",
+                                                            "prefer_large_media": True, "show_above_text": True}})
 
     def test_enlace_propio_de_cada_grupo(self):
         (self.tmp / "2026-11-08.json").write_text(json.dumps({
@@ -61,9 +64,10 @@ class Diario(unittest.TestCase):
             "avisos": {"chatgpt": {"saludo": "Hola.", "puntos": ["Uno"]},
                        "vce": {"saludo": "Hola.", "puntos": ["Dos"], "url": "https://diarioiaeducativa.github.io/n/7-vce.html"}}}))
         _, lista = d.pendientes(datetime(2026, 11, 8, 6, 0, tzinfo=timezone.utc), carpeta=self.tmp)
-        self.assertEqual(lista["chatgpt"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/?n=7")
-        self.assertEqual(lista["vce"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/n/7-vce.html")
-        self.assertTrue(lista["vce"]["text"].endswith("👉 https://diarioiaeducativa.github.io/n/7-vce.html"))
+        self.assertEqual(lista["chatgpt"][0]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/?n=7")
+        self.assertEqual(lista["vce"][0]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/n/7-vce.html")
+        self.assertEqual(lista["vce"][0]["text"], "https://diarioiaeducativa.github.io/n/7-vce.html")
+        self.assertTrue(lista["vce"][1]["text"].endswith("👉 https://diarioiaeducativa.github.io/n/7-vce.html"))
 
     def test_portada_como_imagen_del_aviso(self):
         (self.tmp / "2026-11-14.json").write_text(json.dumps({
@@ -72,27 +76,56 @@ class Diario(unittest.TestCase):
             "avisos": {"vce": {"saludo": "Hola.", "puntos": ["Uno"], "url": "https://diarioiaeducativa.github.io/n/13-vce.html"}}}))
         a_las_7 = datetime(2026, 11, 14, 6, 1, tzinfo=timezone.utc)
         _, lista = d.pendientes(a_las_7, carpeta=self.tmp, disponible=lambda u: True)
-        self.assertEqual(lista["vce"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/portadas/2026-11-13-es.jpg")
-        self.assertTrue(lista["vce"]["text"].endswith("👉 https://diarioiaeducativa.github.io/n/13-vce.html"))
+        self.assertEqual(lista["vce"][0]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/portadas/2026-11-13-es.jpg")
+        self.assertEqual(lista["vce"][0]["text"], "https://diarioiaeducativa.github.io/n/13-vce.html")
+        self.assertTrue(lista["vce"][1]["text"].endswith("👉 https://diarioiaeducativa.github.io/n/13-vce.html"))
         # Si la portada aún no está en la web, se espera; pasada la espera, sale con la imagen de la página del grupo
         _, lista = d.pendientes(a_las_7, carpeta=self.tmp, disponible=lambda u: False)
         self.assertEqual(lista, {})
         _, lista = d.pendientes(datetime(2026, 11, 14, 6, 25, tzinfo=timezone.utc), carpeta=self.tmp, disponible=lambda u: False)
-        self.assertEqual(lista["vce"]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/n/13-vce.html")
+        self.assertEqual(lista["vce"][0]["link_preview_options"]["url"], "https://diarioiaeducativa.github.io/n/13-vce.html")
 
     def test_sin_cabecera_sale_igual(self):
         (self.tmp / "2026-11-05.json").write_text(json.dumps(
             {"fecha": "2026-11-05", "avisos": {"vce": {"saludo": "Buenos días.", "puntos": ["Uno", "Dos"]}}}))
         _, lista = d.pendientes(datetime(2026, 11, 5, 6, 0, tzinfo=timezone.utc), carpeta=self.tmp)
-        self.assertEqual(lista["vce"]["text"], "Buenos días.\n\n• Uno\n• Dos\n\n👉 https://diarioiaeducativa.github.io/")
+        self.assertEqual(lista["vce"][1]["text"], "Buenos días.\n\n• Uno\n• Dos\n\n👉 https://diarioiaeducativa.github.io/")
 
     def test_formato_anterior_tal_cual(self):
         _, lista = d.pendientes(datetime(2026, 11, 2, 6, 0, tzinfo=timezone.utc), carpeta=self.tmp)
-        self.assertEqual(lista["chatgpt"], {"text": "Hola A"})
+        self.assertEqual(lista["chatgpt"], [{"text": "Hola A"}])
 
     def test_archivo_de_otro_dia_no_vale(self):
         (self.tmp / "2026-11-03.json").write_text(json.dumps({"fecha": "2026-11-02", "avisos": {"vce": "x"}}))
         _, lista = d.pendientes(datetime(2026, 11, 3, 6, 30, tzinfo=timezone.utc), carpeta=self.tmp)
+        self.assertEqual(lista, {})
+
+    def test_publica_en_dos_mensajes_y_sigue_por_el_que_falto(self):
+        """La portada y el texto, en orden; si el texto falla, la vuelta siguiente manda solo el texto (ADR 0054)."""
+        import types
+        (self.tmp / "2026-11-28.json").write_text(json.dumps({
+            "fecha": "2026-11-28", "titulo": "Núm. 27", "url": "https://diarioiaeducativa.github.io/?n=27",
+            "avisos": {"vce": {"saludo": "Hola.", "puntos": ["Uno"]}}}))
+        sys.modules["grupos"] = types.SimpleNamespace(TODOS={"vce": types.SimpleNamespace(id=-100)})
+        self.addCleanup(sys.modules.pop, "grupos", None)
+        a_las_7 = datetime(2026, 11, 28, 6, 0, tzinfo=timezone.utc)
+        dia = a_las_7.date()
+        llamadas = []
+
+        def tg(metodo, **p):
+            llamadas.append(p)
+            return None if fallar and "parse_mode" in p else {"message_id": len(llamadas)}
+
+        fallar = True
+        _, lista = d.pendientes(a_las_7, carpeta=self.tmp)
+        self.assertEqual(d.publicar(tg, dia, lista, self.tmp), [])
+        self.assertEqual(d.enviados(dia, "vce", self.tmp), [1])
+        fallar = False
+        _, lista = d.pendientes(a_las_7, carpeta=self.tmp)
+        self.assertEqual(d.publicar(tg, dia, lista, self.tmp), ["vce"])
+        self.assertEqual([("parse_mode" in p) for p in llamadas], [False, True, True])   # la portada, una sola vez
+        self.assertEqual(d.enviados(dia, "vce", self.tmp), [1, 3])
+        _, lista = d.pendientes(a_las_7, carpeta=self.tmp)
         self.assertEqual(lista, {})
 
 
